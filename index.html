@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阅读笔记 - 首页</title>
+    <style>
+        :root {
+            --brand-color: #2d6a4f;
+            --brand-light: rgba(240, 249, 244, 0.9);
+            --brand-hover: rgba(220, 237, 226, 0.95);
+            --text-main: #1a202c;
+            --nav-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        body { 
+            margin: 0; font-family: "Georgia", "PingFang SC", serif; 
+            background-image: url('sea.avif');
+            background-size: cover; background-position: center; background-attachment: fixed;
+            color: var(--text-main); padding-top: 70px;
+        }
+
+        /* --- 导航栏优化：加入搜索框 --- */
+        .top-nav {
+            position: fixed; top: 0; width: 100%; height: 70px;
+            background: var(--nav-bg); backdrop-filter: blur(12px);
+            z-index: 1000; display: flex; align-items: center; justify-content: space-between; 
+            padding: 0 40px; box-sizing: border-box; box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+        .nav-left { font-weight: bold; color: var(--brand-color); font-size: 1.2rem; cursor: pointer; text-decoration: none; flex-shrink: 0; }
+        
+        /* 搜索框样式 */
+        .nav-search-container {
+            flex-grow: 1;
+            max-width: 500px;
+            margin: 0 30px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .nav-search-input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border-radius: 25px;
+            border: 1px solid rgba(45, 106, 79, 0.2);
+            background: rgba(255, 255, 255, 0.7);
+            outline: none;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+        .nav-search-input:focus {
+            background: #fff;
+            border-color: var(--brand-color);
+            box-shadow: 0 0 10px rgba(45, 106, 79, 0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            color: var(--brand-color);
+            opacity: 0.6;
+        }
+
+        .nav-right { display: flex; gap: 20px; flex-shrink: 0; }
+        .nav-link { text-decoration: none; color: var(--text-main); font-size: 0.95rem; font-weight: 500; transition: 0.3s; }
+        .nav-link:hover { color: var(--brand-color); }
+
+        /* === 新增：音乐按钮样式 === */
+      .music-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 4px 8px; /* 与文字链接的视觉高度/内边距匹配 */
+    border-radius: 6px;
+    transition: color 0.3s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    line-height: 1.2;
+}
+.music-btn:hover {
+    color: var(--brand-color);
+}
+.music-btn.playing {
+    color: #e63946;
+}
+
+        /* 隐藏 audio 元素 */
+        #bg-music {
+            position: absolute;
+            left: -9999px;
+        }
+
+        /* --- 筛选面板 --- */
+        .filter-panel {
+            max-width: 1000px; margin: 40px auto 20px;
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);
+            padding: 20px 30px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .filter-group { display: flex; gap: 15px; align-items: center; }
+        select, .btn-sort {
+            padding: 8px 15px; border-radius: 8px; border: 1px solid #ddd;
+            background: white; cursor: pointer; font-family: inherit; transition: 0.2s;
+        }
+        .btn-sort:hover { background: var(--brand-light); border-color: var(--brand-color); }
+
+        /* --- 笔记网格 --- */
+        .note-grid {
+            max-width: 1000px; margin: 0 auto 30px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px; padding: 0 20px;
+        }
+
+        .note-item {
+            background: rgba(255, 255, 255, 0.92); border-radius: 15px;
+            padding: 25px; transition: all 0.3s ease;
+            text-decoration: none; color: inherit;
+            display: flex; flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.3);
+            min-height: 200px;
+        }
+        .note-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            background: #fff;
+            border-color: var(--brand-color);
+        }
+        .note-item h2 { margin: 0 0 10px 0; font-size: 1.3rem; color: var(--brand-color); line-height: 1.4; }
+        .note-item .date { font-size: 0.85rem; color: #777; margin-bottom: 15px; }
+        .note-item .excerpt { 
+            font-size: 0.9rem; line-height: 1.6; color: #444; 
+            margin-bottom: 20px; flex-grow: 1;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .mini-tag { font-size: 0.75rem; background: #eef5f1; padding: 2px 8px; border-radius: 4px; color: var(--brand-color); font-weight: bold; margin-right: 5px; margin-bottom: 5px; display: inline-block; }
+
+        /* --- 分页按钮 --- */
+        .pagination {
+            max-width: 1000px; margin: 0 auto 80px;
+            display: flex; justify-content: center; align-items: center; gap: 20px;
+        }
+        .page-info { color: white; font-size: 0.9rem; background: rgba(0,0,0,0.4); padding: 5px 15px; border-radius: 20px; }
+        .pagination button { background: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        @media (max-width: 768px) {
+            .nav-search-container { display: none; } /* 移动端暂时隐藏搜索以节省空间 */
+            .filter-panel { flex-direction: column; gap: 15px; margin: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 背景音乐元素（静音预加载） -->
+<audio id="bg-music" preload="auto" loop>
+    <source src="Over_Reprise.mp3" type="audio/mpeg">
+    您的浏览器不支持音频。
+</audio>
+
+<nav class="top-nav">
+    <a href="index.html" class="nav-left">🌊 猫猫咩咩阅览室</a>
+    
+
+    <div class="nav-right">
+        <a href="showitem.html?type=book" class="nav-link">📚 书目</a>
+        <a href="showitem.html?type=paper" class="nav-link">📝 论文</a>
+        <!-- 新增：音乐播放按钮 -->
+        <button class="music-btn" id="music-toggle" title="播放/暂停背景音乐">🎵</button>
+    </div>
+</nav>
+
+<div style="display: flex; justify-content: center; align-items: center; padding: 100px 20px 40px; width: 100%; box-sizing: border-box;">
+    <div style="max-width: 800px; width: 100%; padding: 40px 60px; background: rgba(20, 20, 20, 0.4); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3); text-align: center; color: #ffffff;">
+        <h1 style="font-size: 3rem; margin-bottom: 25px; text-shadow: 0 2px 8px rgba(0,0,0,0.4); letter-spacing: 4px;">阅读笔记</h1>
+        <p style="font-size: 1.15rem; line-height: 1.9; letter-spacing: 1px; text-align: justify; text-shadow: 0 1px 4px rgba(0,0,0,0.3); font-weight: 400; margin: 0;">
+            “我们已经无法向前推进并把否定从完全物化了的语言中挤出来：人们并非没有听到拒绝和指责，相反，他们早就注意到了，只是他们听到信息之后，就把它转译成了社会学、心理学和美学问题，把其余的当成了假装自我批判的政治宣传。” <br>
+            <span style="display: block; text-align: right; margin-top: 15px; opacity: 0.8;">—— 马尔库塞</span>
+        </p>
+    </div>
+</div>
+
+<section class="filter-panel">
+    <div class="filter-group">
+        <span>标签筛选:</span>
+        <select id="tagFilter" onchange="resetAndRender()">
+            <option value="all">全部标签</option>
+        </select>
+    </div>
+<div class="nav-search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="globalSearch" class="nav-search-input" placeholder="搜索标题、内容、来源、附注..." oninput="resetAndRender()">
+    </div>
+    <div id="statusLabel" style="font-size: 0.9rem; color: var(--brand-color); font-weight: bold;"></div>
+    <div class="filter-group">
+        <span>时间排序:</span>
+        <button class="btn-sort" onclick="sortNotes('desc')">倒序</button>
+        <button class="btn-sort" onclick="sortNotes('asc')">正序</button>
+    </div>
+    
+</section>
+
+<div class="note-grid" id="noteGrid"></div>
+
+<div class="pagination" id="paginationBar"></div>
+
+<script src="notedata.js"></script>
+
+<script>
+    let currentSort = 'desc';
+    let currentPage = 1;
+    const pageSize = 12;
+
+    // === 新增：音乐控制逻辑 ===
+    document.addEventListener('DOMContentLoaded', () => {
+        const audio = document.getElementById('bg-music');
+        const btn = document.getElementById('music-toggle');
+
+        // 静音预加载，绕过 autoplay 限制
+        audio.muted = true;
+        audio.load();
+
+        btn.addEventListener('click', () => {
+            if (audio.paused) {
+                audio.muted = false;
+                audio.play().then(() => {
+                    btn.classList.add('playing');
+                    btn.textContent = '⏸️';
+                }).catch(err => {
+                    alert('播放失败：请先与页面进行一次交互（如点击任意位置），再尝试播放音乐。');
+                    console.warn('Autoplay blocked:', err);
+                });
+            } else {
+                audio.pause();
+                btn.classList.remove('playing');
+                btn.textContent = '🎵';
+            }
+        });
+    });
+
+    function initFilters() {
+        const selector = document.getElementById('tagFilter');
+        const tags = new Set();
+        Object.values(ALL_NOTES).forEach(note => {
+            if (note.tag && Array.isArray(note.tag)) {
+                note.tag.forEach(t => tags.add(t));
+            }
+        });
+        const sortedTags = Array.from(tags).sort();
+        sortedTags.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t;
+            opt.innerText = "# " + t;
+            selector.appendChild(opt);
+        });
+    }
+
+    function resetAndRender() {
+        currentPage = 1;
+        renderNotes();
+    }
+
+    function sortNotes(order) {
+        currentSort = order;
+        currentPage = 1;
+        renderNotes();
+    }
+
+    function changePage(step) {
+        currentPage += step;
+        renderNotes();
+        window.scrollTo({ top: document.querySelector('.filter-panel').offsetTop - 100, behavior: 'smooth' });
+    }
+
+    function renderNotes() {
+        const grid = document.getElementById('noteGrid');
+        const pagiBar = document.getElementById('paginationBar');
+        const tagFilter = document.getElementById('tagFilter').value;
+        const searchQuery = document.getElementById('globalSearch').value.toLowerCase().trim();
+        const statusLabel = document.getElementById('statusLabel');
+        
+        // 1. 转化为数组
+        let notesList = Object.keys(ALL_NOTES).map(id => ({ id: id, ...ALL_NOTES[id] }));
+
+        // 2. 执行搜索过滤 (深度匹配所有指定字段)
+        if (searchQuery) {
+            notesList = notesList.filter(n => {
+                // 匹配标题
+                const inTitle = (n.title || "").toLowerCase().includes(searchQuery);
+                // 匹配来源
+                const inSource = (n.source || "").toLowerCase().includes(searchQuery);
+                // 匹配附注
+                const inDetail = (n.detail || "").toLowerCase().includes(searchQuery);
+                // 匹配内容区（material 和 comments）
+                const inContents = (n.contents || []).some(c => {
+                    const materialMatch = (c.material || "").toLowerCase().includes(searchQuery);
+                    const commentMatch = (c.comments || []).some(comm => comm.toLowerCase().includes(searchQuery));
+                    return materialMatch || commentMatch;
+                });
+
+                return inTitle || inSource || inDetail || inContents;
+            });
+            statusLabel.innerText = `找到 ${notesList.length} 条匹配结果`;
+        } else {
+            statusLabel.innerText = "";
+        }
+
+        // 3. 执行标签过滤
+        if (tagFilter !== 'all') {
+            notesList = notesList.filter(n => n.tag && n.tag.includes(tagFilter));
+        }
+
+        // 4. 执行排序
+        notesList.sort((a, b) => {
+            const dateA = new Date(a.time || 0);
+            const dateB = new Date(b.time || 0);
+            return currentSort === 'desc' ? dateB - dateA : dateA - dateB;
+        });
+
+        // 5. 分页计算
+        const totalItems = notesList.length;
+        const totalPages = Math.ceil(totalItems / pageSize);
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const pagedNotes = notesList.slice(start, end);
+
+        // 6. 渲染网格
+        if (pagedNotes.length === 0) {
+            grid.innerHTML = `<div style="color:white; grid-column: 1/-1; text-align:center; padding: 100px; background: rgba(0,0,0,0.2); border-radius: 15px;">未能找到相关笔记</div>`;
+            pagiBar.innerHTML = "";
+            return;
+        }
+
+        grid.innerHTML = pagedNotes.map(n => {
+            const firstContent = n.contents && n.contents[0] ? n.contents[0] : {};
+            // 预览文字逻辑：优先显示 material 里的文字
+            const rawText = firstContent.material || (firstContent.comments ? firstContent.comments[0] : "") || "暂无预览内容";
+            const excerpt = rawText.replace(/<[^>]+>/g, '').substring(0, 85);
+            const displayTags = (n.tag || []).map(t => `<span class="mini-tag">#${t}</span>`).join('');
+
+            return `
+                <a href="note.html?id=${n.id}" class="note-item">
+                    <h2>${n.title || '无标题'}</h2>
+                    <div class="date">📅 ${n.time || '未知日期'}</div>
+                    <div class="excerpt">${excerpt}${rawText.length > 85 ? '...' : ''}</div>
+                    <div class="note-tags">
+                        ${displayTags}
+                    </div>
+                </a>
+            `;
+        }).join('');
+
+        // 7. 渲染分页
+        if (totalPages > 1) {
+            pagiBar.innerHTML = `
+                <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>
+                <span class="page-info">第 ${currentPage} / ${totalPages} 页</span>
+                <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>
+            `;
+        } else {
+            pagiBar.innerHTML = "";
+        }
+    }
+
+    window.onload = () => {
+        initFilters();
+        renderNotes();
+    };
+</script>
+
+</body>
+</html>

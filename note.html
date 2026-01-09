@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>笔记详情 - 猫猫咩咩阅览室</title>
+    <style>
+        :root {
+            --brand-color: #2d6a4f;
+            --brand-light: rgba(240, 249, 244, 0.9);
+            --brand-hover: rgba(220, 237, 226, 0.95);
+            --material-bg: #fffcf0;
+            --text-main: #1a202c;
+            --text-muted: #4a5568;
+            --nav-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        body { 
+            margin: 0; font-family: "Georgia", "PingFang SC", serif; 
+            background-image: url('sea.avif');
+            background-size: cover; background-position: center; background-attachment: fixed;
+            padding-top: 60px; color: var(--text-main);
+        }
+
+        /* --- 导航栏 --- */
+        .top-nav {
+            position: fixed; top: 0; width: 100%; height: 60px;
+            background: var(--nav-bg); backdrop-filter: blur(12px);
+            z-index: 1000; display: flex; align-items: center; padding: 0 50px;
+            box-sizing: border-box; box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        }
+        .nav-item { cursor: pointer; font-weight: bold; color: var(--brand-color); text-decoration: none; font-size: 1.1rem; transition: 0.3s; }
+        .nav-item:hover { opacity: 0.7; }
+
+        /* === 背景音乐控制按钮 === */
+        .music-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .music-btn {
+            width: 32px;
+            height: 32px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--brand-color);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, transform 0.2s;
+            border-radius: 50%;
+            padding: 0;
+            opacity: 0.7;
+        }
+        .music-btn:hover {
+            color: #1b4332;
+            transform: scale(1.1);
+            opacity: 1;
+        }
+        .music-btn.playing {
+            color: #e63946;
+        }
+        .music-btn.skip {
+            font-size: 0.8rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .top-nav:hover .music-btn.skip {
+            opacity: 0.7;
+            pointer-events: auto;
+        }
+
+        /* --- 顶部 Banner (本地轮播版) --- */
+        .hero-banner {
+            height: 450px; width: 100%; position: relative;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; background-color: transparent;
+            -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+        }
+
+        /* 双图层轮播样式 */
+        .hero-slideshow {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            transition: opacity 1.5s ease-in-out, transform 4.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+            opacity: 0; z-index: 1; transform: scale(1);
+        }
+        .hero-slideshow.active {
+            opacity: 1; z-index: 2;
+        }
+
+        .hero-title-box {
+            position: relative; 
+            z-index: 10; 
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            padding: 40px 60px; 
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2); 
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            max-width: 80%;
+            transition: 
+                background 0.3s ease,
+                border-color 0.3s ease,
+                backdrop-filter 0.3s ease;
+        }
+
+        .hero-title-box:hover {
+            background: rgba(0, 0, 0, 0);
+            border-color: rgba(0, 0, 0, 0);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        .hero-title { 
+            font-size: 2.4rem; 
+            margin: 0; 
+            color: white; 
+            letter-spacing: 3px; 
+            line-height: 1.3; 
+            font-weight: 600;
+            text-shadow: 0 2px 15px rgba(0,0,0,0.4);
+        }
+
+        /* --- 动态波浪 --- */
+        .waves-container {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            height: 120px; z-index: 5; line-height: 0;
+        }
+        .waves { position: relative; width: 100%; height: 100%; }
+        .parallax > use { animation: move-forever 25s cubic-bezier(.55,.5,.45,.5) infinite; }
+        .parallax > use:nth-child(1) { animation-delay: -2s; animation-duration: 7s; fill: rgba(255,255,255,0.2); }
+        .parallax > use:nth-child(2) { animation-delay: -3s; animation-duration: 10s; fill: rgba(255,255,255,0.15); }
+        .parallax > use:nth-child(3) { animation-delay: -4s; animation-duration: 13s; fill: rgba(255,255,255,0.1); }
+        .parallax > use:nth-child(4) { animation-delay: -5s; animation-duration: 20s; fill: rgba(255,255,255,0.5); }
+
+        @keyframes move-forever {
+            0% { transform: translate3d(-90px,0,0); }
+            100% { transform: translate3d(85px,0,0); }
+        }
+
+        /* --- 主内容区 --- */
+        .main-container {
+            max-width: 1100px; margin: -30px auto 80px;
+            display: grid; grid-template-columns: 280px 1fr; gap: 30px; 
+            padding: 0 20px; position: relative; z-index: 20;
+        }
+
+        /* --- 侧边栏 --- */
+        .related-links {
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px);
+            padding: 25px; border-radius: 15px; position: sticky; top: 80px; height: fit-content;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.3);
+        }
+        .related-links h3 { font-size: 1.1rem; color: var(--brand-color); margin-top: 0; border-bottom: 2px solid var(--brand-light); padding-bottom: 10px; }
+        .link-item { color: var(--text-main); text-decoration: none; font-size: 0.9rem; display: block; padding: 10px 0; border-bottom: 1px inset rgba(0,0,0,0.03); transition: 0.3s; }
+        .link-item:hover { color: var(--brand-color); transform: translateX(5px); }
+
+        /* --- 笔记正文卡片 --- */
+        .note-card {
+            background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px);
+            border-radius: 20px; padding: 50px; box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+
+        .tag { background: var(--brand-light); color: var(--brand-color); padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-right: 8px; }
+
+        .meta-section { 
+            font-size: 0.85rem; color: var(--text-muted); 
+            margin: 25px 0 40px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .para { text-indent: 2em; margin-bottom: 1.5em; line-height: 1.9; text-align: justify; }
+
+        .material-box {
+            background: var(--material-bg); padding: 35px;
+            border-radius: 12px; border-left: 5px solid #e9d8a6;
+            margin-bottom: 30px; font-size: 1.1rem; color: #333; line-height: 1.7;
+        }
+
+        .comment-item {
+            background-color: var(--brand-light);
+            background-image: radial-gradient(rgba(45,106,79,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            padding: 30px; border-radius: 15px;
+            border: 1px solid rgba(45, 106, 79, 0.1);
+            margin-bottom: 25px; transition: 0.4s;
+        }
+        .comment-item strong { color: var(--brand-color); display: block; margin-bottom: 12px; font-size: 0.9rem; letter-spacing: 1px; }
+
+        .content-group { margin-bottom: 50px; }
+
+        @media (max-width: 768px) {
+            .main-container { grid-template-columns: 1fr; margin-top: -10px; }
+            .hero-title { font-size: 1.6rem; }
+            .hero-title-box { padding: 25px; }
+            .note-card { padding: 30px; }
+            .related-links { display: none; }
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="top-nav">
+    <a href="index.html" class="nav-item">🌊 返回首页</a>
+    <div class="music-controls">
+        <button class="music-btn skip" id="prev-btn">⏮</button>
+        <button class="music-btn" id="music-toggle">▶</button>
+        <button class="music-btn skip" id="next-btn">⏭</button>
+    </div>
+</nav>
+
+<header class="hero-banner">
+    <div id="slide1" class="hero-slideshow active"></div>
+    <div id="slide2" class="hero-slideshow"></div>
+    
+    <div class="hero-title-box">
+        <h1 class="hero-title" id="display-title">加载中...</h1>
+    </div>
+
+    <div class="waves-container">
+        <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+        viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+            <defs>
+                <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+            </defs>
+            <g class="parallax">
+                <use xlink:href="#gentle-wave" x="48" y="0" />
+                <use xlink:href="#gentle-wave" x="48" y="3" />
+                <use xlink:href="#gentle-wave" x="48" y="5" />
+                <use xlink:href="#gentle-wave" x="48" y="7" />
+            </g>
+        </svg>
+    </div>
+</header>
+
+<main class="main-container">
+    <aside class="related-links">
+        <h3>🔗 关联笔记</h3>
+        <div id="related-box"></div>
+    </aside>
+
+    <article class="note-card">
+        <div id="tag-box"></div>
+        <div class="meta-section" id="meta-box"></div>
+        <div id="contents-container"></div>
+    </article>
+</main>
+
+<div style="display: none;">
+    <img src="1.jpg"><img src="2.jpg"><img src="3.jpg"><img src="sea.avif">
+</div>
+
+<script src="notedata.js"></script>
+
+<script>
+    // --- 1. 轮播逻辑 (三图一组 Scale 推进版) ---
+    const imageData = [
+        { src: '1.jpg', scale: 1.0 }, { src: '2.jpg', scale: 1.05 }, { src: '3.jpg', scale: 1.1 },
+        { src: '4.jpg', scale: 1.0 }, { src: '5.jpg', scale: 1.05 }, { src: '6.jpg', scale: 1.1 },
+        { src: '7.jpg', scale: 1.0 }, { src: '8.jpg', scale: 1.05 }, { src: '9.jpg', scale: 1.1 },
+        { src: '10.png', scale: 1.0 }, { src: '11.jpg', scale: 1.05 }, { src: '12.jpg', scale: 1.1 }
+    ];
+
+    let currentIndex = 0;
+    const slide1 = document.getElementById('slide1');
+    const slide2 = document.getElementById('slide2');
+    let activeSlide = slide1;
+
+    function preloadImage(url) {
+        const img = new Image();
+        img.src = url;
+    }
+
+    function changeSlide() {
+        currentIndex = (currentIndex + 1) % imageData.length;
+        const nextData = imageData[currentIndex];
+        const nextSlide = (activeSlide === slide1) ? slide2 : slide1;
+
+        nextSlide.style.backgroundImage = `url('${nextData.src}')`;
+        nextSlide.style.transform = `scale(${nextData.scale})`;
+
+        nextSlide.classList.add('active');
+        activeSlide.classList.remove('active');
+        activeSlide = nextSlide;
+
+        preloadImage(imageData[(currentIndex + 1) % imageData.length].src);
+    }
+
+    slide1.style.backgroundImage = `url('${imageData[0].src}')`;
+    slide1.style.transform = `scale(${imageData[0].scale})`;
+    setInterval(changeSlide, 4500);
+
+    // --- 2. 数据渲染逻辑 ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const noteId = urlParams.get('id');
+    const data = ALL_NOTES[noteId];
+
+    function parseText(text) {
+        if (!text) return "";
+        return text.split('\n')
+                   .filter(p => p.trim() !== "")
+                   .map(p => `<p class="para">${p.trim()}</p>`)
+                   .join('');
+    }
+
+    if (data) {
+        document.title = (data.title || "阅读笔记") + " - 详情";
+        document.getElementById('display-title').innerText = data.title || "Untitled";
+        
+        document.getElementById('tag-box').innerHTML = (data.tag || []).map(t => 
+            `<span class="tag"># ${t}</span>`
+        ).join('');
+
+        document.getElementById('meta-box').innerHTML = `
+            <strong>✍️ 作者/摘抄：</strong>${data.author || '佚名'} | 
+            <strong>📚 来源：</strong>${data.source || '独立记录'} | 
+            📅 ${data.time || '未知时间'}
+        `;
+
+        const container = document.getElementById('contents-container');
+        
+        const contentsHTML = (data.contents || []).map(item => {
+            const materialHTML = item.material 
+                ? `<div class="material-box">${parseText(item.material)}</div>` 
+                : '';
+            
+            const commentsHTML = (item.comments || []).map(c => `
+                <div class="comment-item">
+                    <strong>🍃 NOTE</strong>
+                    <div class="comment-text">${parseText(c)}</div>
+                </div>
+            `).join('');
+
+            return `
+                <div class="content-group">
+                    ${materialHTML}
+                    <div class="comments-box">${commentsHTML}</div>
+                </div>
+            `;
+        }).join('');
+
+        const detailHTML = data.detail ? `
+            <div style="margin-top: 50px; padding: 25px; background: #f1f5f9; border-radius: 12px; font-size: 0.9rem; color: #475569; border: 1px solid #e2e8f0; border-left: 5px solid var(--brand-color);">
+                <b style="color: var(--brand-color)">INFO：</b>${data.detail}
+            </div>
+        ` : '';
+
+        container.innerHTML = contentsHTML + detailHTML;
+
+        const currentTags = data.tag || [];
+        const relatedIds = Object.keys(ALL_NOTES).filter(id => {
+            if (id === noteId) return false;
+            return (ALL_NOTES[id].tag || []).some(t => currentTags.includes(t));
+        });
+
+        const selectedIds = relatedIds.sort(() => 0.5 - Math.random()).slice(0, 8);
+        const relatedBox = document.getElementById('related-box');
+        
+        if (selectedIds.length > 0) {
+            relatedBox.innerHTML = selectedIds.map(id => `
+                <a href="note.html?id=${id}" class="link-item">· ${ALL_NOTES[id].title}</a>
+            `).join('');
+        } else {
+            relatedBox.innerHTML = "<p style='color:#999; font-size:0.85rem;'>暂无关联笔记</p>";
+        }
+
+    } else {
+        document.getElementById('display-title').innerText = "笔记不见了";
+        document.querySelector('.note-card').innerHTML = `
+            <div style="text-align:center; padding: 50px 0;">
+                <h2 style="color: #666;">内容不存在或已被移除</h2>
+                <a href="index.html" style="color: var(--brand-color); font-weight: bold; text-decoration: none;">← 返回首页</a>
+            </div>`;
+    }
+
+    // === 背景音乐播放器===
+    const MUSIC_FILES = [
+        'jazz.mp3',
+        'Over_Reprise.mp3',
+        'jazz2.mp3',
+	'jazz3.mp3'
+    ];
+
+    let currentTrackIndex = 0;
+    const audio = new Audio();
+    audio.volume = 0.3;
+
+    const musicToggleBtn = document.getElementById('music-toggle');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    function loadTrack(index) {
+        if (MUSIC_FILES.length === 0) return;
+        currentTrackIndex = index % MUSIC_FILES.length;
+        if (currentTrackIndex < 0) currentTrackIndex += MUSIC_FILES.length;
+        audio.src = MUSIC_FILES[currentTrackIndex];
+        audio.load();
+    }
+
+    function updateButtonState() {
+        musicToggleBtn.textContent = audio.paused ? '🎵' : '⏸';
+        musicToggleBtn.classList.toggle('playing', !audio.paused);
+    }
+
+    function playCurrent() {
+        audio.play().then(() => {
+            updateButtonState();
+        }).catch(e => {
+            console.warn("Audio play failed:", e);
+            musicToggleBtn.textContent = '🔇';
+        });
+    }
+
+    function pauseCurrent() {
+        audio.pause();
+        updateButtonState();
+    }
+
+    audio.addEventListener('ended', () => {
+        currentTrackIndex = (currentTrackIndex + 1) % MUSIC_FILES.length;
+        loadTrack(currentTrackIndex);
+        playCurrent();
+    });
+
+    musicToggleBtn.addEventListener('click', () => {
+        if (audio.paused) {
+            if (!audio.src) loadTrack(currentTrackIndex);
+            playCurrent();
+        } else {
+            pauseCurrent();
+        }
+    });
+
+    prevBtn.addEventListener('click', () => {
+        currentTrackIndex = (currentTrackIndex - 1 + MUSIC_FILES.length) % MUSIC_FILES.length;
+        loadTrack(currentTrackIndex);
+        playCurrent();
+    });
+
+    nextBtn.addEventListener('click', () => {
+        currentTrackIndex = (currentTrackIndex + 1) % MUSIC_FILES.length;
+        loadTrack(currentTrackIndex);
+        playCurrent();
+    });
+
+    loadTrack(0);
+    updateButtonState();
+</script>
+
+</body>
+</html>

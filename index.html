@@ -1,5 +1,53 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+<!-- 密码保护脚本 -->
+<script>
+(function() {
+    const correctPassword = "maomaomiemie0529";
+    const authKey = "note_auth_token";
+    const authExpiryKey = "note_auth_expiry";
+
+    function isAuthenticated() {
+        const token = localStorage.getItem(authKey);
+        const expiry = localStorage.getItem(authExpiryKey);
+        if (!token || !expiry) return false;
+        if (Date.now() > parseInt(expiry)) {
+            localStorage.removeItem(authKey);
+            localStorage.removeItem(authExpiryKey);
+            return false;
+        }
+        return token === btoa(correctPassword);
+    }
+
+    function setAuthenticated() {
+        const now = Date.now();
+        const expiry = now + 7*24 * 60 * 60 * 1000; // 一周后过期
+        localStorage.setItem(authKey, btoa(correctPassword));
+        localStorage.setItem(authExpiryKey, expiry.toString());
+    }
+
+    function promptPassword() {
+        const password = prompt("🔒 请输入密码访问：");
+        if (password === correctPassword) {
+            setAuthenticated();
+            location.reload(); // 刷新页面进入
+        } else if (password !== null) {
+            alert("密码错误，请重试。");
+            promptPassword();
+        } else {
+            // 用户点了取消，跳转到空白页或关闭
+            document.body.innerHTML = "<div style='text-align:center; padding:100px; color:#666;'>访问已取消。</div>";
+        }
+    }
+
+    // 如果不是登录页且未认证，要求输入密码
+    if (!isAuthenticated() && window.location.pathname !== "/login.html") {
+        promptPassword();
+    }
+})();
+</script>
+
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

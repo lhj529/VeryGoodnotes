@@ -1,52 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<!-- 密码保护脚本 -->
-<script>
-(function() {
-    const correctPassword = "maomaomiemie0529";
-    const authKey = "note_auth_token";
-    const authExpiryKey = "note_auth_expiry";
-
-    function isAuthenticated() {
-        const token = localStorage.getItem(authKey);
-        const expiry = localStorage.getItem(authExpiryKey);
-        if (!token || !expiry) return false;
-        if (Date.now() > parseInt(expiry)) {
-            localStorage.removeItem(authKey);
-            localStorage.removeItem(authExpiryKey);
-            return false;
-        }
-        return token === btoa(correctPassword);
-    }
-
-    function setAuthenticated() {
-        const now = Date.now();
-        const expiry = now + 7*24 * 60 * 60 * 1000; // 一周后过期
-        localStorage.setItem(authKey, btoa(correctPassword));
-        localStorage.setItem(authExpiryKey, expiry.toString());
-    }
-
-    function promptPassword() {
-        const password = prompt("🔒 请输入密码访问：");
-        if (password === correctPassword) {
-            setAuthenticated();
-            location.reload(); // 刷新页面进入
-        } else if (password !== null) {
-            alert("密码错误，请重试。");
-            promptPassword();
-        } else {
-            // 用户点了取消，跳转到空白页或关闭
-            document.body.innerHTML = "<div style='text-align:center; padding:100px; color:#666;'>访问已取消。</div>";
-        }
-    }
-
-    // 如果不是登录页且未认证，要求输入密码
-    if (!isAuthenticated() && window.location.pathname !== "/login.html") {
-        promptPassword();
-    }
-})();
-</script>
-
 
 <head>
     <meta charset="UTF-8">
@@ -68,7 +21,7 @@
             color: var(--text-main); padding-top: 70px;
         }
 
-        /* --- 导航栏优化：加入搜索框 --- */
+        /* --- 导航栏 --- */
         .top-nav {
             position: fixed; top: 0; width: 100%; height: 70px;
             background: var(--nav-bg); backdrop-filter: blur(12px);
@@ -77,7 +30,6 @@
         }
         .nav-left { font-weight: bold; color: var(--brand-color); font-size: 1.2rem; cursor: pointer; text-decoration: none; flex-shrink: 0; }
         
-        /* 搜索框样式 */
         .nav-search-container {
             flex-grow: 1;
             max-width: 500px;
@@ -108,38 +60,40 @@
             opacity: 0.6;
         }
 
-        .nav-right { display: flex; gap: 20px; flex-shrink: 0; }
+        .nav-right { display: flex; gap: 20px; align-items: center; flex-shrink: 0; }
         .nav-link { text-decoration: none; color: var(--text-main); font-size: 0.95rem; font-weight: 500; transition: 0.3s; }
         .nav-link:hover { color: var(--brand-color); }
+        
+        /* 导航栏“添加”高亮样式 */
+        .nav-link.add-btn { color: var(--brand-color); font-weight: bold; }
 
-        /* === 新增：音乐按钮样式 === */
-      .music-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-main);
-    font-size: 0.95rem;
-    font-weight: 500;
-    padding: 4px 8px; /* 与文字链接的视觉高度/内边距匹配 */
-    border-radius: 6px;
-    transition: color 0.3s;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    line-height: 1.2;
-}
-.music-btn:hover {
-    color: var(--brand-color);
-}
-.music-btn.playing {
-    color: #e63946;
-}
+        .music-btn {
+            background: none; border: none; cursor: pointer; color: var(--text-main);
+            font-size: 0.95rem; font-weight: 500; padding: 4px 8px; border-radius: 6px;
+            transition: color 0.3s; display: inline-flex; align-items: center;
+            justify-content: center; text-decoration: none; line-height: 1.2;
+        }
+        .music-btn:hover { color: var(--brand-color); }
+        .music-btn.playing { color: #e63946; }
 
-        /* 隐藏 audio 元素 */
-        #bg-music {
-            position: absolute;
-            left: -9999px;
+        #bg-music { position: absolute; left: -9999px; }
+
+        /* --- 悬浮添加按钮 --- */
+        .float-add-btn {
+            position: fixed; bottom: 40px; right: 40px;
+            width: 56px; height: 56px;
+            background: var(--brand-color);
+            color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none; font-size: 24px;
+            box-shadow: 0 8px 25px rgba(45, 106, 79, 0.4);
+            z-index: 2000;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .float-add-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            background: #1e4d38;
+            box-shadow: 0 12px 30px rgba(45, 106, 79, 0.5);
         }
 
         /* --- 筛选面板 --- */
@@ -176,8 +130,7 @@
         .note-item:hover {
             transform: translateY(-8px);
             box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-            background: #fff;
-            border-color: var(--brand-color);
+            background: #fff; border-color: var(--brand-color);
         }
         .note-item h2 { margin: 0 0 10px 0; font-size: 1.3rem; color: var(--brand-color); line-height: 1.4; }
         .note-item .date { font-size: 0.85rem; color: #777; margin-bottom: 15px; }
@@ -198,30 +151,30 @@
         .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
 
         @media (max-width: 768px) {
-            .nav-search-container { display: none; } /* 移动端暂时隐藏搜索以节省空间 */
+            .nav-search-container { display: none; }
             .filter-panel { flex-direction: column; gap: 15px; margin: 20px; }
         }
     </style>
 </head>
+
 <body>
 
-<!-- 背景音乐元素（静音预加载） -->
 <audio id="bg-music" preload="auto" loop>
     <source src="Over_Reprise.mp3" type="audio/mpeg">
-    您的浏览器不支持音频。
 </audio>
 
 <nav class="top-nav">
     <a href="index.html" class="nav-left">🌊 猫猫咩咩阅览室</a>
     
-
     <div class="nav-right">
+        <a href="write.html" class="nav-link add-btn">➕ 添加笔记</a>
         <a href="showitem.html?type=book" class="nav-link">📚 书目</a>
         <a href="showitem.html?type=paper" class="nav-link">📝 论文</a>
-        <!-- 新增：音乐播放按钮 -->
         <button class="music-btn" id="music-toggle" title="播放/暂停背景音乐">🎵</button>
     </div>
 </nav>
+
+<a href="write.html" class="float-add-btn" title="撰写新笔记">➕</a>
 
 <div style="display: flex; justify-content: center; align-items: center; padding: 100px 20px 40px; width: 100%; box-sizing: border-box;">
     <div style="max-width: 800px; width: 100%; padding: 40px 60px; background: rgba(20, 20, 20, 0.4); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3); text-align: center; color: #ffffff;">
@@ -240,7 +193,7 @@
             <option value="all">全部标签</option>
         </select>
     </div>
-<div class="nav-search-container">
+    <div class="nav-search-container">
         <span class="search-icon">🔍</span>
         <input type="text" id="globalSearch" class="nav-search-input" placeholder="搜索标题、内容、来源、附注..." oninput="resetAndRender()">
     </div>
@@ -250,7 +203,6 @@
         <button class="btn-sort" onclick="sortNotes('desc')">倒序</button>
         <button class="btn-sort" onclick="sortNotes('asc')">正序</button>
     </div>
-    
 </section>
 
 <div class="note-grid" id="noteGrid"></div>
@@ -264,12 +216,10 @@
     let currentPage = 1;
     const pageSize = 12;
 
-    // === 新增：音乐控制逻辑 ===
     document.addEventListener('DOMContentLoaded', () => {
         const audio = document.getElementById('bg-music');
         const btn = document.getElementById('music-toggle');
 
-        // 静音预加载，绕过 autoplay 限制
         audio.muted = true;
         audio.load();
 
@@ -280,8 +230,7 @@
                     btn.classList.add('playing');
                     btn.textContent = '⏸️';
                 }).catch(err => {
-                    alert('播放失败：请先与页面进行一次交互（如点击任意位置），再尝试播放音乐。');
-                    console.warn('Autoplay blocked:', err);
+                    alert('播放失败：请先与页面进行一次交互再尝试。');
                 });
             } else {
                 audio.pause();
@@ -294,11 +243,13 @@
     function initFilters() {
         const selector = document.getElementById('tagFilter');
         const tags = new Set();
-        Object.values(ALL_NOTES).forEach(note => {
-            if (note.tag && Array.isArray(note.tag)) {
-                note.tag.forEach(t => tags.add(t));
-            }
-        });
+        if(typeof ALL_NOTES !== 'undefined') {
+            Object.values(ALL_NOTES).forEach(note => {
+                if (note.tag && Array.isArray(note.tag)) {
+                    note.tag.forEach(t => tags.add(t));
+                }
+            });
+        }
         const sortedTags = Array.from(tags).sort();
         sortedTags.forEach(t => {
             const opt = document.createElement('option');
@@ -332,52 +283,43 @@
         const searchQuery = document.getElementById('globalSearch').value.toLowerCase().trim();
         const statusLabel = document.getElementById('statusLabel');
         
-        // 1. 转化为数组
+        if (typeof ALL_NOTES === 'undefined') return;
+
         let notesList = Object.keys(ALL_NOTES).map(id => ({ id: id, ...ALL_NOTES[id] }));
 
-        // 2. 执行搜索过滤 (深度匹配所有指定字段)
         if (searchQuery) {
             notesList = notesList.filter(n => {
-                // 匹配标题
                 const inTitle = (n.title || "").toLowerCase().includes(searchQuery);
-                // 匹配来源
                 const inSource = (n.source || "").toLowerCase().includes(searchQuery);
-                // 匹配附注
                 const inDetail = (n.detail || "").toLowerCase().includes(searchQuery);
-                // 匹配内容区（material 和 comments）
                 const inContents = (n.contents || []).some(c => {
                     const materialMatch = (c.material || "").toLowerCase().includes(searchQuery);
                     const commentMatch = (c.comments || []).some(comm => comm.toLowerCase().includes(searchQuery));
                     return materialMatch || commentMatch;
                 });
-
                 return inTitle || inSource || inDetail || inContents;
             });
-            statusLabel.innerText = `找到 ${notesList.length} 条匹配结果`;
+            statusLabel.innerText = `找到 ${notesList.length} 条结果`;
         } else {
             statusLabel.innerText = "";
         }
 
-        // 3. 执行标签过滤
         if (tagFilter !== 'all') {
             notesList = notesList.filter(n => n.tag && n.tag.includes(tagFilter));
         }
 
-        // 4. 执行排序
         notesList.sort((a, b) => {
             const dateA = new Date(a.time || 0);
             const dateB = new Date(b.time || 0);
             return currentSort === 'desc' ? dateB - dateA : dateA - dateB;
         });
 
-        // 5. 分页计算
         const totalItems = notesList.length;
         const totalPages = Math.ceil(totalItems / pageSize);
         const start = (currentPage - 1) * pageSize;
         const end = start + pageSize;
         const pagedNotes = notesList.slice(start, end);
 
-        // 6. 渲染网格
         if (pagedNotes.length === 0) {
             grid.innerHTML = `<div style="color:white; grid-column: 1/-1; text-align:center; padding: 100px; background: rgba(0,0,0,0.2); border-radius: 15px;">未能找到相关笔记</div>`;
             pagiBar.innerHTML = "";
@@ -386,7 +328,6 @@
 
         grid.innerHTML = pagedNotes.map(n => {
             const firstContent = n.contents && n.contents[0] ? n.contents[0] : {};
-            // 预览文字逻辑：优先显示 material 里的文字
             const rawText = firstContent.material || (firstContent.comments ? firstContent.comments[0] : "") || "暂无预览内容";
             const excerpt = rawText.replace(/<[^>]+>/g, '').substring(0, 85);
             const displayTags = (n.tag || []).map(t => `<span class="mini-tag">#${t}</span>`).join('');
@@ -396,14 +337,11 @@
                     <h2>${n.title || '无标题'}</h2>
                     <div class="date">📅 ${n.time || '未知日期'}</div>
                     <div class="excerpt">${excerpt}${rawText.length > 85 ? '...' : ''}</div>
-                    <div class="note-tags">
-                        ${displayTags}
-                    </div>
+                    <div class="note-tags">${displayTags}</div>
                 </a>
             `;
         }).join('');
 
-        // 7. 渲染分页
         if (totalPages > 1) {
             pagiBar.innerHTML = `
                 <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>

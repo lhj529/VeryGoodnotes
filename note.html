@@ -218,6 +218,7 @@
 
 <script>
     // --- 1. 轮播逻辑 ---
+   // --- 1. 轮播逻辑 (全量预加载版) ---
     const imageData = [
         { src: '1.jpg', scale: 1.0 }, { src: '2.jpg', scale: 1.05 }, { src: '3.jpg', scale: 1.1 },
         { src: '4.jpg', scale: 1.0 }, { src: '5.jpg', scale: 1.05 }, { src: '6.jpg', scale: 1.1 },
@@ -225,25 +226,34 @@
         { src: '10.png', scale: 1.0 }, { src: '11.jpg', scale: 1.05 }, { src: '12.jpg', scale: 1.1 }
     ];
 
+    // ✨ 核心预加载：立即将所有图片下载到浏览器缓存
+    const preCache = [];
+    imageData.forEach(data => {
+        const img = new Image();
+        img.src = data.src;
+        preCache.push(img);
+    });
+
     let currentIndex = 0;
     const slide1 = document.getElementById('slide1');
     const slide2 = document.getElementById('slide2');
     let activeSlide = slide1;
 
-    function preloadImage(url) { const img = new Image(); img.src = url; }
-
+    // 移除了原有的 preloadImage 函数，改用上面的全量预加载
     function changeSlide() {
         currentIndex = (currentIndex + 1) % imageData.length;
         const nextData = imageData[currentIndex];
         const nextSlide = (activeSlide === slide1) ? slide2 : slide1;
+        
+        // 此时图片已在缓存中，切换将不再产生白闪
         nextSlide.style.backgroundImage = `url('${nextData.src}')`;
         nextSlide.style.transform = `scale(${nextData.scale})`;
         nextSlide.classList.add('active');
         activeSlide.classList.remove('active');
         activeSlide = nextSlide;
-        preloadImage(imageData[(currentIndex + 1) % imageData.length].src);
     }
 
+    // 初始化第一张图
     slide1.style.backgroundImage = `url('${imageData[0].src}')`;
     slide1.style.transform = `scale(${imageData[0].scale})`;
     setInterval(changeSlide, 4500);

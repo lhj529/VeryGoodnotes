@@ -60,15 +60,13 @@
         }
         .hero-slideshow.active { opacity: 1; z-index: 2; }
 
-        /* 修改部分：标题框及其悬停效果 */
         .hero-title-box {
             position: relative; z-index: 10; background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(12px); padding: 40px 60px; border-radius: 15px;
             text-align: center; border: 1px solid rgba(255,255,255,0.2);
-            transition: all 0.6s ease; /* 让过渡更丝滑 */
+            transition: all 0.6s ease;
             cursor: pointer;
         }
-        /* 鼠标移上去变得彻底透明 */
         .hero-title-box:hover {
             background: rgba(0, 0, 0, 0);
             backdrop-filter: blur(0px);
@@ -152,6 +150,7 @@
         .book-card:hover .book-cover-wrapper { transform: rotate(-2deg) scale(1.05); }
         .book-cover-wrapper img { width: 100%; height: 100%; object-fit: cover; }
 
+        .book-info { flex: 1; }
         .book-info h3 { margin: 0 0 8px; font-size: 1.4rem; color: var(--brand-color); }
         .reader-cat { color: #d946ef; font-weight: 500; margin-top: 5px;}
         .reader-mee { color: #3b82f6; font-weight: 500; margin-top: 5px;}
@@ -186,10 +185,45 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes zoomIn { from { transform: scale(0.8); } to { transform: scale(1); } }
 
+        /* --- 移动端适配 --- */
         @media (max-width: 768px) {
-            .main-container { grid-template-columns: 1fr; }
-            .book-card { flex-direction: column; align-items: center; text-align: center; }
-            .filter-section { padding: 15px; flex-direction: column; align-items: flex-start; }
+            .top-nav { padding: 0 20px; }
+            .hero-banner { height: 300px; }
+            .hero-title { font-size: 1.8rem; }
+            .hero-title-box { padding: 25px 30px; }
+
+            .main-container { 
+                grid-template-columns: 1fr; 
+                margin-top: -15px; 
+                padding: 0 15px;
+            }
+            
+            .filter-section { 
+                padding: 15px; 
+                flex-direction: column; 
+                align-items: stretch; 
+                gap: 15px;
+            }
+            .filter-group { justify-content: space-between; }
+
+            .related-links { display: none; } /* 移动端隐藏侧边栏 */
+
+            .book-card { 
+                flex-direction: column; 
+                align-items: center; 
+                text-align: center; 
+                padding: 20px !important;
+                gap: 15px;
+            }
+            .book-cover-wrapper { width: 150px; height: 210px; }
+            .book-info h3 { font-size: 1.2rem; }
+            .book-info p { font-size: 0.85rem !important; }
+            
+            /* 让阅读状态在手机端左对齐，提高可读性 */
+            .book-info div[style*="border-top"] {
+                text-align: left;
+                width: 100%;
+            }
         }
     </style>
 </head>

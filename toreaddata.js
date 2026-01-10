@@ -54,7 +54,7 @@ var TOREAD_NOTES = {
       "咩": "completed"
     },
     "complete_time": {
-      "咩": "2026-12-27"
+      "咩": "2025-12-27"
     },
     "score": {
       "咩": ""

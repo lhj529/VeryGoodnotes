@@ -39,12 +39,11 @@
         .music-controls { display: flex; align-items: center; gap: 5px; margin-left: auto; }
         .music-btn { width: 32px; height: 32px; background: none; border: none; cursor: pointer; color: var(--brand-color); display: flex; align-items: center; justify-content: center; transition: 0.2s; border-radius: 50%; padding: 0; opacity: 0.7; }
         
-        /* 手机端默认显示切歌键，方便操作 */
         .music-btn.skip { font-size: 0.8rem; opacity: 0.5; pointer-events: auto; }
 
         /* --- 顶部 Banner 适配 --- */
         .hero-banner {
-            height: 200px; /* 手机端高度减小 */
+            height: 200px; 
             width: 100%; position: relative;
             display: flex; justify-content: center; align-items: center;
             overflow: hidden;
@@ -96,7 +95,7 @@
         /* --- 表单栅格适配 --- */
         .meta-grid { 
             display: grid; 
-            grid-template-columns: 1fr; /* 手机端单列 */
+            grid-template-columns: 1fr; 
             gap: 15px; 
             margin-bottom: 25px; 
         }
@@ -106,7 +105,7 @@
         label { font-weight: bold; color: var(--brand-color); font-size: 0.8rem; }
         input, select, textarea { 
             padding: 10px; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; 
-            background: white; font-family: inherit; font-size: 16px; /* 防止 iOS 输入框聚焦缩放 */
+            background: white; font-family: inherit; font-size: 16px; 
         }
 
         /* 书单阅读状态盒子适配 */
@@ -120,6 +119,9 @@
             margin-top: 20px; 
         }
         @media (min-width: 600px) { .readers-container { grid-template-columns: 1fr 1fr; } }
+        
+        .reader-box { display: flex; flex-direction: column; gap: 12px; }
+        .reader-title { font-weight: bold; border-bottom: 1px solid var(--brand-color); padding-bottom: 5px; color: var(--brand-color); }
 
         /* 内容块适配 */
         .content-cell { position: relative; margin-bottom: 15px; padding: 20px 15px; border-radius: 10px; border-left: 5px solid #ccc; background: #fff; }
@@ -210,25 +212,39 @@
             <div class="readers-container">
                 <div class="reader-box">
                     <div class="reader-title">🐱 猫猫</div>
-                    <select id="tr-status-cat">
-                        <option value="">空</option>
-                        <option value="todo">想读</option>
-                        <option value="reading">在读</option>
-                        <option value="completed">已读</option>
-                    </select>
-                    <input type="date" id="tr-date-cat">
-                    <label>评分</label><input type="number" step="0.5" id="tr-score-cat" value="5">
+                    <div class="input-group">
+                        <select id="tr-status-cat">
+                            <option value="">空</option>
+                            <option value="todo">想读</option>
+                            <option value="reading">在读</option>
+                            <option value="completed">已读</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input type="date" id="tr-date-cat">
+                    </div>
+                    <div class="input-group">
+                        <label>评分</label>
+                        <input type="number" step="0.5" id="tr-score-cat" value="5">
+                    </div>
                 </div>
                 <div class="reader-box">
                     <div class="reader-title">🐑 咩咩</div>
-                    <select id="tr-status-mie">
-                        <option value="">空</option>
-                        <option value="todo">想读</option>
-                        <option value="reading">在读</option>
-                        <option value="completed">已读</option>
-                    </select>
-                    <input type="date" id="tr-date-mie">
-                    <label>评分</label><input type="number" step="0.5" id="tr-score-mie" value="5">
+                    <div class="input-group">
+                        <select id="tr-status-mie">
+                            <option value="">空</option>
+                            <option value="todo">想读</option>
+                            <option value="reading">在读</option>
+                            <option value="completed">已读</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input type="date" id="tr-date-mie">
+                    </div>
+                    <div class="input-group">
+                        <label>评分</label>
+                        <input type="number" step="0.5" id="tr-score-mie" value="5">
+                    </div>
                 </div>
             </div>
         </div>

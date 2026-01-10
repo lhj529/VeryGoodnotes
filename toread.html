@@ -101,7 +101,26 @@
             display: flex; flex-wrap: wrap; align-items: center; gap: 25px;
             border: 1px solid rgba(255,255,255,0.5);
         }
-        .filter-group { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; color: var(--text-muted); }
+        .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 8px 14px;
+    border-radius: 12px;
+
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(45, 106, 79, 0.15);
+
+    box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+}
+
+.filter-group span {
+    font-weight: 600;
+    color: var(--brand-color);
+    white-space: nowrap;
+}
+
         
         .filter-group select {
             appearance: none; background: #fff; border: 1.5px solid #e2e8f0;
@@ -155,6 +174,20 @@
         .reader-cat { color: #d946ef; font-weight: 500; margin-top: 5px;}
         .reader-mee { color: #3b82f6; font-weight: 500; margin-top: 5px;}
 
+        /* --- 分页器 --- */
+        .pagination {
+            display: flex; justify-content: center; align-items: center;
+            gap: 10px; margin-top: 20px; padding: 20px;
+        }
+        .page-btn {
+            padding: 8px 16px; border-radius: 8px; border: 1px solid var(--brand-color);
+            background: white; color: var(--brand-color); cursor: pointer;
+            font-weight: bold; transition: 0.3s;
+        }
+        .page-btn:hover { background: var(--brand-hover); }
+        .page-btn.active { background: var(--brand-color); color: white; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
         /* --- 空状态样式 --- */
         .empty-state {
             background: rgba(255, 255, 255, 0.8);
@@ -191,39 +224,15 @@
             .hero-banner { height: 300px; }
             .hero-title { font-size: 1.8rem; }
             .hero-title-box { padding: 25px 30px; }
-
-            .main-container { 
-                grid-template-columns: 1fr; 
-                margin-top: -15px; 
-                padding: 0 15px;
-            }
-            
-            .filter-section { 
-                padding: 15px; 
-                flex-direction: column; 
-                align-items: stretch; 
-                gap: 15px;
-            }
+            .main-container { grid-template-columns: 1fr; margin-top: -15px; padding: 0 15px; }
+            .filter-section { padding: 15px; flex-direction: column; align-items: stretch; gap: 15px; }
             .filter-group { justify-content: space-between; }
-
-            .related-links { display: none; } /* 移动端隐藏侧边栏 */
-
-            .book-card { 
-                flex-direction: column; 
-                align-items: center; 
-                text-align: center; 
-                padding: 20px !important;
-                gap: 15px;
-            }
+            .related-links { display: none; }
+            .book-card { flex-direction: column; align-items: center; text-align: center; padding: 20px !important; gap: 15px; }
             .book-cover-wrapper { width: 150px; height: 210px; }
             .book-info h3 { font-size: 1.2rem; }
             .book-info p { font-size: 0.85rem !important; }
-            
-            /* 让阅读状态在手机端左对齐，提高可读性 */
-            .book-info div[style*="border-top"] {
-                text-align: left;
-                width: 100%;
-            }
+            .book-info div[style*="border-top"] { text-align: left; width: 100%; }
         }
     </style>
 </head>
@@ -243,7 +252,7 @@
     <div id="slide1" class="hero-slideshow active"></div>
     <div id="slide2" class="hero-slideshow"></div>
     <div class="hero-title-box">
-        <h1 class="hero-title" id="display-title">📖 To Read List</h1>
+        <h1 class="hero-title" id="display-title">📖 Reading & Viewing List</h1>
     </div>
     <div class="waves-container">
         <svg class="waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
@@ -263,9 +272,17 @@
             <label for="hide-template" style="cursor:pointer">✨ 隐藏模板示例</label>
         </div>
         <div class="filter-group">
-            <span>🔍 筛选内容：</span>
+            <span>🔍 筛选类型：</span>
+            <select id="media-type">
+                <option value="all">全部</option>
+                <option value="book">仅书单 📖</option>
+                <option value="movie">仅影单 🎬</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <span>状态：</span>
             <select id="filter-type">
-                <option value="all">全部书目</option>
+                <option value="all">全部</option>
                 <option value="both-want">共同心愿</option>
                 <option value="someone-completed">已阅存档</option>
             </select>
@@ -282,12 +299,13 @@
     <aside class="related-links">
         <h3 id="sidebar-title">👥 我们想看</h3>
         <div id="related-box">
-            <p style="font-size:0.85rem; color:#888;">状态说明：<br>📚 待读 / 📖 在读 / ✅ 已读<br>⭐ 评分（零到五星）</p>
+            <p style="font-size:0.85rem; color:#888;">状态说明：<br>📚 待看 / 📖 在看 / ✅ 已看<br>⭐ 评分（零到五星）</p>
         </div>
     </aside>
 
     <article class="note-card">
         <div id="contents-container"></div>
+        <div id="pagination-container" class="pagination"></div>
     </article>
 </main>
 
@@ -335,8 +353,10 @@
         document.body.style.overflow = 'auto';
     }
 
-    // --- 3. 核心渲染逻辑 ---
-    const STATUS_TEXT = { todo: '📚 待读', reading: '📖 在读', completed: '✅ 已读' };
+    // --- 3. 核心渲染与分页逻辑 ---
+    const STATUS_TEXT = { todo: '📚 待看', reading: '📖 在看', completed: '✅ 已看' };
+    let currentPage = 1;
+    const itemsPerPage = 20;
 
     function renderStars(score) {
         if (!score) return '';
@@ -393,21 +413,33 @@
 
     function refreshToReadList() {
         const container = document.getElementById('contents-container');
+        const paginationContainer = document.getElementById('pagination-container');
         if (typeof TOREAD_NOTES === 'undefined') return;
 
         const hideTemplate = document.getElementById('hide-template').checked;
+        const mediaType = document.getElementById('media-type').value;
         const filterType = document.getElementById('filter-type').value;
         const sortType = document.getElementById('sort-type').value;
 
         let books = Object.entries(TOREAD_NOTES);
 
+        // 核心过滤逻辑
         books = books.filter(([id, book]) => {
+            // 隐藏模板
             if (hideTemplate && (id === 'tr_demo' || book.isTemplate || id.includes('example'))) return false;
+            
+            // 仅书单/仅影单逻辑 (根据 video 状态分类)
+            if (mediaType === 'book' && book.video === true) return false; // 如果选了书单，排除 video 为 true 的
+            if (mediaType === 'movie' && book.video !== true) return false; // 如果选了影单，排除 video 不为 true 的
+
+            // 状态过滤
             if (filterType === 'both-want') return Object.keys(book.readers || {}).length >= 2;
             if (filterType === 'someone-completed') return Object.values(book.readers || {}).some(s => s === 'completed');
+            
             return true;
         });
 
+        // 排序逻辑
         if (sortType === 'score-desc') {
             books.sort((a, b) => {
                 const getScore = (bk) => bk.score ? Math.max(...Object.values(bk.score).map(parseFloat)) : 0;
@@ -415,28 +447,84 @@
             });
         }
 
-        const emptyHtml = `
-            <div class="empty-state">
-                <span class="empty-icon">🍃</span>
-                <p style="margin:0; font-weight:bold; font-size:1.1rem;">此分类下暂无书目</p>
-                <p style="margin:10px 0 0; font-size:0.9rem; opacity:0.7;">换个筛选条件试试看吧~</p>
-            </div>`;
+        // 分页计算
+        const totalItems = books.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
 
-        container.innerHTML = books.length > 0 ? 
-            books.map(([id, book]) => renderToReadBook(id, book)).join('') : 
-            emptyHtml;
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const pagedBooks = books.slice(start, end);
+
+        // 渲染列表
+        if (books.length > 0) {
+            container.innerHTML = pagedBooks.map(([id, book]) => renderToReadBook(id, book)).join('');
+            renderPagination(totalPages);
+        } else {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <span class="empty-icon">🍃</span>
+                    <p style="margin:0; font-weight:bold; font-size:1.1rem;">此分类下暂无条目</p>
+                    <p style="margin:10px 0 0; font-size:0.9rem; opacity:0.7;">换个筛选条件试试看吧~</p>
+                </div>`;
+            paginationContainer.innerHTML = '';
+        }
     }
 
-    ['hide-template', 'filter-type', 'sort-type'].forEach(id => {
-        document.getElementById(id).addEventListener('change', refreshToReadList);
+    function renderPagination(totalPages) {
+        const container = document.getElementById('pagination-container');
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">上一页</button>`;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                html += `<span style="color:var(--brand-color)">...</span>`;
+            }
+        }
+
+        html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">下一页</button>`;
+        container.innerHTML = html;
+    }
+
+    function changePage(page) {
+        currentPage = page;
+        refreshToReadList();
+        window.scrollTo({ top: document.getElementById('filter-bar').offsetTop - 80, behavior: 'smooth' });
+    }
+
+    // 绑定事件
+    ['hide-template', 'media-type', 'filter-type', 'sort-type'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => {
+            currentPage = 1; // 筛选改变时重置为第一页
+            refreshToReadList();
+        });
     });
 
+   // --- 2. 音乐逻辑 ---
+    const MUSIC_FILES = ['jazz.mp3', 'Over_Reprise.mp3', 'jazz2.mp3', 'jazz3.mp3'];
+    let currentTrackIndex = 0;
     const audio = new Audio();
-    audio.src = 'jazz.mp3';
-    document.getElementById('music-toggle').onclick = () => {
-        if (audio.paused) { audio.play(); document.getElementById('music-toggle').textContent = '⏸'; }
-        else { audio.pause(); document.getElementById('music-toggle').textContent = '▶'; }
-    };
+    audio.volume = 0.3;
+    const musicToggleBtn = document.getElementById('music-toggle');
+
+    function loadTrack(index) {
+        currentTrackIndex = (index + MUSIC_FILES.length) % MUSIC_FILES.length;
+        audio.src = MUSIC_FILES[currentTrackIndex];
+        audio.load();
+    }
+    musicToggleBtn.addEventListener('click', () => {
+        if (!audio.src) loadTrack(0);
+        if (audio.paused) { audio.play().then(() => musicToggleBtn.textContent = '⏸'); }
+        else { audio.pause(); musicToggleBtn.textContent = '▶'; }
+    });
+    document.getElementById('prev-btn').onclick = () => { loadTrack(currentTrackIndex - 1); audio.play(); musicToggleBtn.textContent = '⏸'; };
+    document.getElementById('next-btn').onclick = () => { loadTrack(currentTrackIndex + 1); audio.play(); musicToggleBtn.textContent = '⏸'; };
 
     window.onload = refreshToReadList;
 </script>

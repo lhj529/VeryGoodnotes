@@ -15,7 +15,6 @@
             --nav-bg: rgba(255, 255, 255, 0.85);
         }
 
-        /* --- 修复背景显示问题 --- */
         body { 
             margin: 0; 
             font-family: "Georgia", "PingFang SC", serif; 
@@ -27,7 +26,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- 导航栏适配 --- */
         .top-nav {
             position: fixed; top: 0; width: 100%; height: 60px;
             background: var(--nav-bg); backdrop-filter: blur(12px);
@@ -38,10 +36,8 @@
         
         .music-controls { display: flex; align-items: center; gap: 5px; margin-left: auto; }
         .music-btn { width: 32px; height: 32px; background: none; border: none; cursor: pointer; color: var(--brand-color); display: flex; align-items: center; justify-content: center; transition: 0.2s; border-radius: 50%; padding: 0; opacity: 0.7; }
-        
         .music-btn.skip { font-size: 0.8rem; opacity: 0.5; pointer-events: auto; }
 
-        /* --- 顶部 Banner 适配 --- */
         .hero-banner {
             height: 200px; 
             width: 100%; position: relative;
@@ -74,7 +70,6 @@
         .hero-title { font-size: 1.4rem; margin: 0; color: white; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.4); }
         @media (min-width: 768px) { .hero-title { font-size: 2.2rem; } .hero-title-box { padding: 30px 50px; width: auto; } }
 
-        /* --- 页面容器适配 --- */
         .main-container { max-width: 900px; margin: -20px auto 60px; position: relative; z-index: 20; padding: 0 15px; }
         @media (min-width: 768px) { .main-container { margin-top: -40px; } }
 
@@ -92,7 +87,6 @@
         }
         @media (min-width: 768px) { .write-card { padding: 40px; border-radius: 20px; } }
 
-        /* --- 表单栅格适配 --- */
         .meta-grid { 
             display: grid; 
             grid-template-columns: 1fr; 
@@ -108,7 +102,6 @@
             background: white; font-family: inherit; font-size: 16px; 
         }
 
-        /* 书单阅读状态盒子适配 */
         .readers-container { 
             display: grid; 
             grid-template-columns: 1fr; 
@@ -123,7 +116,6 @@
         .reader-box { display: flex; flex-direction: column; gap: 12px; }
         .reader-title { font-weight: bold; border-bottom: 1px solid var(--brand-color); padding-bottom: 5px; color: var(--brand-color); }
 
-        /* 内容块适配 */
         .content-cell { position: relative; margin-bottom: 15px; padding: 20px 15px; border-radius: 10px; border-left: 5px solid #ccc; background: #fff; }
         .cell-material { border-left-color: #e9d8a6; background: var(--material-bg); }
         .cell-comment { border-left-color: var(--brand-color); background: var(--brand-light); }
@@ -167,7 +159,7 @@
 <main class="main-container">
     <div class="mode-tabs">
         <div class="tab-btn active" onclick="switchMode('note', event)">读书笔记</div>
-        <div class="tab-btn" onclick="switchMode('toread', event)">书单数据</div>
+        <div class="tab-btn" onclick="switchMode('toread', event)">书单&影单</div>
     </div>
 
     <div class="write-card">
@@ -182,6 +174,7 @@
                     <select id="type">
                         <option value="书">书</option>
                         <option value="论文">论文</option>
+                        <option value="影视">影视</option>
                         <option value="其它">其它</option>
                     </select>
                 </div>
@@ -201,7 +194,7 @@
 
         <div id="toread-form" style="display: none;">
             <div class="meta-grid">
-                <div class="input-group"><label>书名</label><input type="text" id="tr-title"></div>
+                <div class="input-group"><label>名称</label><input type="text" id="tr-title"></div>
                 <div class="input-group"><label>作者</label><input type="text" id="tr-author"></div>
                 <div class="input-group"><label>译者</label><input type="text" id="tr-translator"></div>
                 <div class="input-group"><label>出版社</label><input type="text" id="tr-press"></div>
@@ -215,9 +208,9 @@
                     <div class="input-group">
                         <select id="tr-status-cat">
                             <option value="">空</option>
-                            <option value="todo">想读</option>
-                            <option value="reading">在读</option>
-                            <option value="completed">已读</option>
+                            <option value="todo">想看</option>
+                            <option value="reading">在看</option>
+                            <option value="completed">已看</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -233,9 +226,9 @@
                     <div class="input-group">
                         <select id="tr-status-mie">
                             <option value="">空</option>
-                            <option value="todo">想读</option>
-                            <option value="reading">在读</option>
-                            <option value="completed">已读</option>
+                            <option value="todo">想看</option>
+                            <option value="reading">在看</option>
+                            <option value="completed">已看</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -255,7 +248,6 @@
 </main>
 
 <script>
-    // --- 1. 轮播逻辑 ---
     const imageData = [
         { src: '1.jpg', scale: 1.0 }, { src: '2.jpg', scale: 1.05 }, { src: '3.jpg', scale: 1.1 },
         { src: '4.jpg', scale: 1.0 }, { src: '5.jpg', scale: 1.05 }, { src: '6.jpg', scale: 1.1 },
@@ -264,11 +256,7 @@
     ];
 
     const preCache = [];
-    imageData.forEach(data => {
-        const img = new Image();
-        img.src = data.src;
-        preCache.push(img);
-    });
+    imageData.forEach(data => { const img = new Image(); img.src = data.src; preCache.push(img); });
 
     let slideIdx = 0;
     const slide1 = document.getElementById('slide1');
@@ -289,7 +277,6 @@
     }
     setInterval(changeSlide, 4500);
 
-    // --- 2. 音乐逻辑 ---
     const MUSIC_FILES = ['jazz.mp3', 'Over_Reprise.mp3', 'jazz2.mp3', 'jazz3.mp3'];
     let currentTrackIndex = 0;
     const audio = new Audio();
@@ -304,12 +291,12 @@
     musicToggleBtn.addEventListener('click', () => {
         if (!audio.src) loadTrack(0);
         if (audio.paused) { audio.play().then(() => musicToggleBtn.textContent = '⏸'); }
-        else { audio.pause(); musicToggleBtn.textContent = '▶'; }
+        else { audio.pause();
+        musicToggleBtn.textContent = '▶'; }
     });
     document.getElementById('prev-btn').onclick = () => { loadTrack(currentTrackIndex - 1); audio.play(); musicToggleBtn.textContent = '⏸'; };
     document.getElementById('next-btn').onclick = () => { loadTrack(currentTrackIndex + 1); audio.play(); musicToggleBtn.textContent = '⏸'; };
 
-    // --- 3. 业务功能 ---
     let currentMode = 'note';
     function switchMode(mode, event) {
         currentMode = mode;
@@ -369,7 +356,11 @@
                 completeTime["咩"] = document.getElementById('tr-date-mie').value;
                 score["咩"] = document.getElementById('tr-score-mie').value;
             }
+            const typeVal = document.getElementById('type').value;
+            const videoFlag = typeVal === '影视' ? true : false;
+
             result[key] = {
+                "video": videoFlag,
                 "title": document.getElementById('tr-title').value,
                 "author": document.getElementById('tr-author').value,
                 "translator": document.getElementById('tr-translator').value,
@@ -377,7 +368,9 @@
                 "coverExt": document.getElementById('tr-ext').value,
                 "field": document.getElementById('tr-field').value,
                 "reason": document.getElementById('tr-reason').value,
-                "readers": readers, "complete_time": completeTime, "score": score
+                "readers": readers, 
+                "complete_time": completeTime, 
+                "score": score
             };
         }
 

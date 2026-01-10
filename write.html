@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>笔记数据生成</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>添加数据</title>
     <style>
         :root {
             --brand-color: #2d6a4f;
@@ -15,125 +15,138 @@
             --nav-bg: rgba(255, 255, 255, 0.85);
         }
 
+        /* --- 修复背景显示问题 --- */
         body { 
-            margin: 0; font-family: "Georgia", "PingFang SC", serif; 
-            background-image: url('sea.avif');
-            background-size: cover; background-position: center; background-attachment: fixed;
-            padding-top: 60px; color: var(--text-main);
+            margin: 0; 
+            font-family: "Georgia", "PingFang SC", serif; 
+            background: #1a202c url('sea.avif') no-repeat center center fixed;
+            background-size: cover;
+            padding-top: 60px; 
+            color: var(--text-main);
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- 导航栏 --- */
+        /* --- 导航栏适配 --- */
         .top-nav {
             position: fixed; top: 0; width: 100%; height: 60px;
             background: var(--nav-bg); backdrop-filter: blur(12px);
-            z-index: 1000; display: flex; align-items: center; padding: 0 50px;
+            z-index: 1000; display: flex; align-items: center; padding: 0 20px;
             box-sizing: border-box; box-shadow: 0 2px 15px rgba(0,0,0,0.08);
         }
-        .nav-item { cursor: pointer; font-weight: bold; color: var(--brand-color); text-decoration: none; font-size: 1.1rem; transition: 0.3s; }
-        .nav-item:hover { opacity: 0.7; }
-
-        .music-controls { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+        .nav-item { cursor: pointer; font-weight: bold; color: var(--brand-color); text-decoration: none; font-size: 1rem; transition: 0.3s; }
+        
+        .music-controls { display: flex; align-items: center; gap: 5px; margin-left: auto; }
         .music-btn { width: 32px; height: 32px; background: none; border: none; cursor: pointer; color: var(--brand-color); display: flex; align-items: center; justify-content: center; transition: 0.2s; border-radius: 50%; padding: 0; opacity: 0.7; }
-        .music-btn:hover { transform: scale(1.1); opacity: 1; }
-        .music-btn.skip { font-size: 0.8rem; opacity: 0; pointer-events: none; }
-        .top-nav:hover .music-btn.skip { opacity: 0.7; pointer-events: auto; }
+        
+        /* 手机端默认显示切歌键，方便操作 */
+        .music-btn.skip { font-size: 0.8rem; opacity: 0.5; pointer-events: auto; }
 
-        /* --- 顶部 Banner --- */
+        /* --- 顶部 Banner 适配 --- */
         .hero-banner {
-            height: 350px; width: 100%; position: relative;
+            height: 200px; /* 手机端高度减小 */
+            width: 100%; position: relative;
             display: flex; justify-content: center; align-items: center;
             overflow: hidden;
             -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
         }
+        @media (min-width: 768px) { .hero-banner { height: 300px; } }
+
         .hero-slideshow {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-size: cover; background-position: center;
             transition: opacity 1.5s ease-in-out, transform 4.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
-            opacity: 0; z-index: 1; transform: scale(1);
+            opacity: 0; z-index: 1;
         }
         .hero-slideshow.active { opacity: 1; z-index: 2; }
 
-        /* 标题框鼠标移入变透明 */
         .hero-title-box {
-            position: relative; z-index: 10; background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            padding: 30px 50px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); 
-            text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            transition: background 0.5s, border-color 0.5s, backdrop-filter 0.5s, box-shadow 0.5s;
+            position: relative; z-index: 10; 
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px); 
+            padding: 15px 25px; border-radius: 12px; 
+            text-align: center; border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.4s ease;
+            cursor: pointer;
+            width: 80%;
+            max-width: 400px;
         }
-        .hero-title-box:hover { 
-            background: rgba(0, 0, 0, 0); 
-            border-color: rgba(0, 0, 0, 0); 
-            backdrop-filter: none; 
-            -webkit-backdrop-filter: none;
-            box-shadow: none;
+        .hero-title-box:hover { opacity: 0.2; transform: translateY(-2px); }
+        .hero-title { font-size: 1.4rem; margin: 0; color: white; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.4); }
+        @media (min-width: 768px) { .hero-title { font-size: 2.2rem; } .hero-title-box { padding: 30px 50px; width: auto; } }
+
+        /* --- 页面容器适配 --- */
+        .main-container { max-width: 900px; margin: -20px auto 60px; position: relative; z-index: 20; padding: 0 15px; }
+        @media (min-width: 768px) { .main-container { margin-top: -40px; } }
+
+        .mode-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .tab-btn {
+            background: rgba(255,255,255,0.8); padding: 8px 20px; border-radius: 20px;
+            cursor: pointer; font-weight: bold; color: var(--brand-color); border: none;
+            transition: 0.3s; font-size: 0.9rem;
         }
-        .hero-title { font-size: 2.2rem; margin: 0; color: white; letter-spacing: 3px; text-shadow: 0 2px 15px rgba(0,0,0,0.4); }
+        .tab-btn.active { background: var(--brand-color); color: white; box-shadow: 0 4px 12px rgba(45, 106, 79, 0.3); }
 
-        /* --- 动态波浪 --- */
-        .waves-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; z-index: 5; }
-        .waves { width: 100%; height: 100%; }
-        .parallax > use { animation: move-forever 25s cubic-bezier(.55,.5,.45,.5) infinite; }
-        @keyframes move-forever { 0% { transform: translate3d(-90px,0,0); } 100% { transform: translate3d(85px,0,0); } }
-
-        /* --- 主编辑区 --- */
-        .main-container { max-width: 900px; margin: -40px auto 80px; position: relative; z-index: 20; padding: 0 20px; }
         .write-card {
             background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-            border-radius: 20px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
+        @media (min-width: 768px) { .write-card { padding: 40px; border-radius: 20px; } }
 
-        /* 表单样式 */
-        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; border-bottom: 2px dashed var(--brand-light); padding-bottom: 30px; }
+        /* --- 表单栅格适配 --- */
+        .meta-grid { 
+            display: grid; 
+            grid-template-columns: 1fr; /* 手机端单列 */
+            gap: 15px; 
+            margin-bottom: 25px; 
+        }
+        @media (min-width: 600px) { .meta-grid { grid-template-columns: 1fr 1fr; } }
+
         .input-group { display: flex; flex-direction: column; gap: 6px; }
-        label { font-weight: bold; color: var(--brand-color); font-size: 0.85rem; }
+        label { font-weight: bold; color: var(--brand-color); font-size: 0.8rem; }
         input, select, textarea { 
-            padding: 12px; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; 
-            background: white; font-family: inherit; font-size: 1rem;
+            padding: 10px; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; 
+            background: white; font-family: inherit; font-size: 16px; /* 防止 iOS 输入框聚焦缩放 */
         }
-        input:focus { outline: 2px solid var(--brand-color); border-color: transparent; }
 
-        /* Jupyter 风格单元格 */
-        .content-cell {
-            position: relative; margin-bottom: 20px; padding: 25px;
-            border-radius: 12px; border-left: 6px solid #ccc;
-            background: #fff; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        /* 书单阅读状态盒子适配 */
+        .readers-container { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 15px; 
+            padding: 15px; 
+            background: var(--brand-light); 
+            border-radius: 12px; 
+            margin-top: 20px; 
         }
+        @media (min-width: 600px) { .readers-container { grid-template-columns: 1fr 1fr; } }
+
+        /* 内容块适配 */
+        .content-cell { position: relative; margin-bottom: 15px; padding: 20px 15px; border-radius: 10px; border-left: 5px solid #ccc; background: #fff; }
         .cell-material { border-left-color: #e9d8a6; background: var(--material-bg); }
         .cell-comment { border-left-color: var(--brand-color); background: var(--brand-light); }
+        .cell-type-tag { position: absolute; top: -8px; right: 10px; font-size: 0.65rem; padding: 2px 10px; border-radius: 10px; color: white; font-weight: bold; }
+        .cell-textarea { width: 100%; min-height: 80px; border: none; background: transparent; outline: none; resize: vertical; font-size: 1rem; box-sizing: border-box; }
+
+        .actions { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
+        @media (min-width: 600px) { .actions { flex-direction: row; justify-content: center; } }
+
+        .btn { padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; font-family: inherit; text-align: center; }
+        .btn-gen { background: #1a202c; color: white; width: 100%; font-size: 1rem; }
+        .btn-del { background: transparent; color: #e63946; font-size: 0.75rem; border: 1px solid #e63946; margin-top: 8px; padding: 4px 10px; width: fit-content; }
         
-        .cell-type-tag {
-            position: absolute; top: -10px; right: 15px; font-size: 0.7rem; 
-            padding: 3px 12px; border-radius: 20px; color: white; font-weight: bold;
-        }
-        .cell-material .cell-type-tag { background: #b89b3d; }
-        .cell-comment .cell-type-tag { background: var(--brand-color); }
-
-        .cell-textarea { width: 100%; min-height: 100px; border: none; background: transparent; outline: none; resize: vertical; line-height: 1.7; font-size: 1rem; }
-
-        /* 按钮 */
-        .actions { display: flex; gap: 15px; justify-content: center; margin: 30px 0; }
-        .btn { padding: 12px 25px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; font-family: inherit; }
-        .btn-add-m { background: #e9d8a6; color: #5f4d1a; }
-        .btn-add-c { background: var(--brand-color); color: white; }
-        .btn-gen { background: #1a202c; color: white; width: 100%; font-size: 1.1rem; margin-top: 20px; }
-        .btn-del { background: transparent; color: #e63946; font-size: 0.8rem; border: 1px solid #e63946; margin-top: 10px; padding: 4px 10px; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); opacity: 0.9; }
-
-        /* 输出区 */
-        #output-area {
-            margin-top: 40px; background: #1e1e1e; color: #d4d4d4;
-            padding: 25px; border-radius: 12px; font-family: "Consolas", monospace;
-            white-space: pre-wrap; word-break: break-all;
-            display: none; border-left: 6px solid #007acc; font-size: 0.9rem;
+        #output-area { 
+            margin-top: 25px; background: #1e1e1e; color: #d4d4d4; padding: 15px; 
+            border-radius: 10px; font-family: "Consolas", monospace; white-space: pre-wrap; 
+            word-break: break-all; display: none; border-left: 5px solid #007acc; font-size: 0.8rem; 
+            overflow-x: auto;
         }
     </style>
 </head>
-
 <body>
 
 <nav class="top-nav">
-    <a href="index.html" class="nav-item">🌊 返回首页</a>
+    <a href="index.html" class="nav-item">🌊 返回</a>
     <div class="music-controls">
         <button class="music-btn skip" id="prev-btn">⏮</button>
         <button class="music-btn" id="music-toggle">▶</button>
@@ -144,62 +157,89 @@
 <header class="hero-banner">
     <div id="slide1" class="hero-slideshow active"></div>
     <div id="slide2" class="hero-slideshow"></div>
-    
     <div class="hero-title-box">
-        <h1 class="hero-title">📝 笔记数据生成</h1>
-    </div>
-
-    <div class="waves-container">
-        <svg class="waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
-            <defs><path id="wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" /></defs>
-            <g class="parallax">
-                <use xlink:href="#wave" x="48" y="0" fill="rgba(255,255,255,0.3)" />
-                <use xlink:href="#wave" x="48" y="3" fill="rgba(255,255,255,0.2)" />
-                <use xlink:href="#wave" x="48" y="5" fill="rgba(255,255,255,0.1)" />
-                <use xlink:href="#wave" x="48" y="7" fill="rgba(255,255,255,0.6)" />
-            </g>
-        </svg>
+        <h1 class="hero-title" id="page-title">📝 笔记生成</h1>
     </div>
 </header>
 
 <main class="main-container">
+    <div class="mode-tabs">
+        <div class="tab-btn active" onclick="switchMode('note', event)">读书笔记</div>
+        <div class="tab-btn" onclick="switchMode('toread', event)">书单数据</div>
+    </div>
+
     <div class="write-card">
-        <div class="meta-grid">
-            <div class="input-group"><label>标题</label><input type="text" id="title" placeholder="笔记标题"></div>
-            <div class="input-group"><label>作者/摘抄</label><input type="text" id="author" placeholder="作者/摘抄者"></div>
-            <div class="input-group"><label>时间</label><input type="date" id="time"></div>
-            <div class="input-group"><label>来源</label><input type="text" id="source" placeholder="书名或文章名"></div>
-            <div class="input-group">
-                <label>类型</label>
-                <select id="type">
-                    <option value="书">书</option><option value="论文">论文</option><option value="其它">其它</option>
-                </select>
+        <div id="note-form">
+            <div class="meta-grid">
+                <div class="input-group"><label>标题</label><input type="text" id="title"></div>
+                <div class="input-group"><label>作者</label><input type="text" id="author"></div>
+                <div class="input-group"><label>时间</label><input type="date" id="time"></div>
+                <div class="input-group"><label>来源</label><input type="text" id="source"></div>
+                <div class="input-group">
+                    <label>类型</label>
+                    <select id="type">
+                        <option value="书">书</option>
+                        <option value="论文">论文</option>
+                        <option value="其它">其它</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>标签 (逗号隔开)</label><input type="text" id="tag"></div>
             </div>
-            <div class="input-group"><label>标签 (逗号分隔)</label><input type="text" id="tag" placeholder="例：哲学, 思维"></div>
-            <div class="input-group" style="grid-column: span 2;"><label>PDF 附件 (文件名, 逗号分隔)</label><input type="text" id="link" placeholder="1.pdf, 2.pdf"></div>
-            <div class="input-group" style="grid-column: span 2;"><label>详细说明 (Detail)</label><input type="text" id="detail" placeholder="出版信息或备注"></div>
-        </div>
-
-        <div id="cells-container">
-            <div class="content-cell cell-material" data-type="material">
-                <span class="cell-type-tag">摘抄块</span>
-                <textarea class="cell-textarea" placeholder="输入摘抄内容..."></textarea>
+            <div id="cells-container">
+                <div class="content-cell cell-material" data-type="material">
+                    <span class="cell-type-tag">摘抄块</span>
+                    <textarea class="cell-textarea" placeholder="输入摘抄内容..."></textarea>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn" style="background:#e9d8a6; color:#5f4d1a;" onclick="addCell('material')">+ 增加摘抄</button>
+                <button class="btn" style="background:var(--brand-color); color:white;" onclick="addCell('comment')">+ 增加感想</button>
             </div>
         </div>
 
-        <div class="actions">
-            <button class="btn btn-add-m" onclick="addCell('material')">+ 增加摘抄块</button>
-            <button class="btn btn-add-c" onclick="addCell('comment')">+ 增加感想块</button>
+        <div id="toread-form" style="display: none;">
+            <div class="meta-grid">
+                <div class="input-group"><label>书名</label><input type="text" id="tr-title"></div>
+                <div class="input-group"><label>作者</label><input type="text" id="tr-author"></div>
+                <div class="input-group"><label>译者</label><input type="text" id="tr-translator"></div>
+                <div class="input-group"><label>出版社</label><input type="text" id="tr-press"></div>
+                <div class="input-group"><label>领域</label><input type="text" id="tr-field"></div>
+                <div class="input-group"><label>封面后缀</label><input type="text" id="tr-ext" value="jpg"></div>
+                <div class="input-group" style="grid-column: 1 / -1;"><label>简介/理由</label><textarea id="tr-reason" style="min-height: 60px;"></textarea></div>
+            </div>
+            <div class="readers-container">
+                <div class="reader-box">
+                    <div class="reader-title">🐱 猫猫</div>
+                    <select id="tr-status-cat">
+                        <option value="">不想读</option>
+                        <option value="todo">想读</option>
+                        <option value="reading">在读</option>
+                        <option value="completed">已读</option>
+                    </select>
+                    <input type="date" id="tr-date-cat">
+                    <label>评分</label><input type="number" step="0.5" id="tr-score-cat" value="5">
+                </div>
+                <div class="reader-box">
+                    <div class="reader-title">🐑 咩咩</div>
+                    <select id="tr-status-mie">
+                        <option value="">不想读</option>
+                        <option value="todo">想读</option>
+                        <option value="reading">在读</option>
+                        <option value="completed">已读</option>
+                    </select>
+                    <input type="date" id="tr-date-mie">
+                    <label>评分</label><input type="number" step="0.5" id="tr-score-mie" value="5">
+                </div>
+            </div>
         </div>
 
-        <button class="btn btn-gen" onclick="generateJSON()">✨ 生成 JSON 代码</button>
+        <button class="btn btn-gen" style="margin-top: 20px;" onclick="generateData()">✨ 生成 JSON 代码</button>
         <pre id="output-area"></pre>
     </div>
 </main>
 
 <script>
-    // --- 1. 轮播逻辑实现 (1-12张图) ---
-    // --- 1. 轮播逻辑 (全量预加载版) ---
+    // --- 1. 轮播逻辑 ---
     const imageData = [
         { src: '1.jpg', scale: 1.0 }, { src: '2.jpg', scale: 1.05 }, { src: '3.jpg', scale: 1.1 },
         { src: '4.jpg', scale: 1.0 }, { src: '5.jpg', scale: 1.05 }, { src: '6.jpg', scale: 1.1 },
@@ -207,7 +247,6 @@
         { src: '10.png', scale: 1.0 }, { src: '11.jpg', scale: 1.05 }, { src: '12.jpg', scale: 1.1 }
     ];
 
-    // ✨ 核心预加载：立即将所有图片下载到浏览器缓存
     const preCache = [];
     imageData.forEach(data => {
         const img = new Image();
@@ -215,111 +254,125 @@
         preCache.push(img);
     });
 
-    let currentIndex = 0;
+    let slideIdx = 0;
     const slide1 = document.getElementById('slide1');
     const slide2 = document.getElementById('slide2');
     let activeSlide = slide1;
 
-    // 移除了原有的 preloadImage 函数，改用上面的全量预加载
+    slide1.style.backgroundImage = `url('${imageData[0].src}')`;
+    slide1.style.transform = `scale(${imageData[0].scale})`;
+
     function changeSlide() {
-        currentIndex = (currentIndex + 1) % imageData.length;
-        const nextData = imageData[currentIndex];
+        slideIdx = (slideIdx + 1) % imageData.length;
         const nextSlide = (activeSlide === slide1) ? slide2 : slide1;
-        
-        // 此时图片已在缓存中，切换将不再产生白闪
-        nextSlide.style.backgroundImage = `url('${nextData.src}')`;
-        nextSlide.style.transform = `scale(${nextData.scale})`;
+        nextSlide.style.backgroundImage = `url('${imageData[slideIdx].src}')`;
+        nextSlide.style.transform = `scale(${imageData[slideIdx].scale})`;
         nextSlide.classList.add('active');
         activeSlide.classList.remove('active');
         activeSlide = nextSlide;
     }
-
-    // 初始化第一张图
-    slide1.style.backgroundImage = `url('${imageData[0].src}')`;
-    slide1.style.transform = `scale(${imageData[0].scale})`;
     setInterval(changeSlide, 4500);
 
-    // --- 2. 基础初始化 ---
-    document.getElementById('time').valueAsDate = new Date();
-
-    function addCell(type) {
-        const container = document.getElementById('cells-container');
-        const div = document.createElement('div');
-        div.className = `content-cell cell-${type}`;
-        div.setAttribute('data-type', type);
-        const label = type === 'material' ? '摘抄块' : '感想块';
-        div.innerHTML = `
-            <span class="cell-type-tag">${label}</span>
-            <textarea class="cell-textarea" placeholder="输入${label}内容..."></textarea>
-            <button class="btn btn-del" onclick="this.parentElement.remove()">删除</button>
-        `;
-        container.appendChild(div);
-        div.querySelector('textarea').focus();
-    }
-
-    function generateJSON() {
-        const cells = document.querySelectorAll('.content-cell');
-        let contents = [];
-        let currentGroup = null;
-
-        cells.forEach(cell => {
-            const type = cell.getAttribute('data-type');
-            const val = cell.querySelector('textarea').value;
-            if (type === 'material') {
-                currentGroup = { "material": val, "comments": [] };
-                contents.push(currentGroup);
-            } else if (type === 'comment') {
-                if (!currentGroup) {
-                    currentGroup = { "material": "", "comments": [] };
-                    contents.push(currentGroup);
-                }
-                currentGroup.comments.push(val);
-            }
-        });
-
-        const result = {
-            "KEY": {
-                "title": document.getElementById('title').value,
-                "author": document.getElementById('author').value,
-                "time": document.getElementById('time').value,
-                "source": document.getElementById('source').value,
-                "type": document.getElementById('type').value,
-                "detail": document.getElementById('detail').value,
-                "tag": document.getElementById('tag').value.split(',').map(s => s.trim()).filter(s => s),
-                "link": document.getElementById('link').value.split(',').map(s => s.trim()).filter(s => s),
-                "contents": contents
-            }
-        };
-
-        const str = JSON.stringify(result, null, 4);
-        const output = document.getElementById('output-area');
-        output.textContent = str.substring(1, str.length - 1).trim() + ",";
-        output.style.display = 'block';
-        output.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // --- 3. 音乐播放逻辑 ---
+    // --- 2. 音乐逻辑 ---
     const MUSIC_FILES = ['jazz.mp3', 'Over_Reprise.mp3', 'jazz2.mp3', 'jazz3.mp3'];
     let currentTrackIndex = 0;
     const audio = new Audio();
     audio.volume = 0.3;
     const musicToggleBtn = document.getElementById('music-toggle');
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
 
     function loadTrack(index) {
         currentTrackIndex = (index + MUSIC_FILES.length) % MUSIC_FILES.length;
         audio.src = MUSIC_FILES[currentTrackIndex];
         audio.load();
     }
-    function updateBtn() { musicToggleBtn.textContent = audio.paused ? '▶' : '⏸'; }
     musicToggleBtn.addEventListener('click', () => {
-        if (audio.paused) { if (!audio.src) loadTrack(0); audio.play().then(updateBtn); }
-        else { audio.pause(); updateBtn(); }
+        if (!audio.src) loadTrack(0);
+        if (audio.paused) { audio.play().then(() => musicToggleBtn.textContent = '⏸'); }
+        else { audio.pause(); musicToggleBtn.textContent = '▶'; }
     });
-    prevBtn.addEventListener('click', () => { loadTrack(currentTrackIndex - 1); audio.play().then(updateBtn); });
-    nextBtn.addEventListener('click', () => { loadTrack(currentTrackIndex + 1); audio.play().then(updateBtn); });
-    audio.addEventListener('ended', () => { loadTrack(currentTrackIndex + 1); audio.play().then(updateBtn); });
+    document.getElementById('prev-btn').onclick = () => { loadTrack(currentTrackIndex - 1); audio.play(); musicToggleBtn.textContent = '⏸'; };
+    document.getElementById('next-btn').onclick = () => { loadTrack(currentTrackIndex + 1); audio.play(); musicToggleBtn.textContent = '⏸'; };
+
+    // --- 3. 业务功能 ---
+    let currentMode = 'note';
+    function switchMode(mode, event) {
+        currentMode = mode;
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        if(event) event.target.classList.add('active');
+        document.getElementById('note-form').style.display = mode === 'note' ? 'block' : 'none';
+        document.getElementById('toread-form').style.display = mode === 'toread' ? 'block' : 'none';
+        document.getElementById('page-title').textContent = mode === 'note' ? '📝 笔记生成' : '📖 书单生成';
+    }
+
+    function addCell(type) {
+        const div = document.createElement('div');
+        div.className = `content-cell cell-${type}`;
+        div.setAttribute('data-type', type);
+        div.innerHTML = `<span class="cell-type-tag">${type==='material'?'摘抄':'感想'}</span><textarea class="cell-textarea"></textarea><button class="btn btn-del" onclick="this.parentElement.remove()">删除</button>`;
+        document.getElementById('cells-container').appendChild(div);
+    }
+
+    function generateData() {
+        let result = {};
+        const key = (currentMode === 'note' ? 'n_id' : 'tr_id');
+        
+        if (currentMode === 'note') {
+            const cells = document.querySelectorAll('.content-cell');
+            let contents = [];
+            let currentGroup = null;
+            cells.forEach(cell => {
+                const type = cell.getAttribute('data-type');
+                const val = cell.querySelector('textarea').value;
+                if (type === 'material') { 
+                    currentGroup = { "material": val, "comments": [] }; 
+                    contents.push(currentGroup); 
+                } else if (currentGroup) { 
+                    currentGroup.comments.push(val); 
+                }
+            });
+            result[key] = {
+                "title": document.getElementById('title').value,
+                "author": document.getElementById('author').value,
+                "time": document.getElementById('time').value,
+                "source": document.getElementById('source').value,
+                "type": document.getElementById('type').value,
+                "tag": document.getElementById('tag').value.split(',').map(s=>s.trim()).filter(s=>s),
+                "contents": contents
+            };
+        } else {
+            const readers = {}; const completeTime = {}; const score = {};
+            const statusCat = document.getElementById('tr-status-cat').value;
+            const statusMie = document.getElementById('tr-status-mie').value;
+            if (statusCat) {
+                readers["猫"] = statusCat;
+                completeTime["猫"] = document.getElementById('tr-date-cat').value;
+                score["猫"] = document.getElementById('tr-score-cat').value;
+            }
+            if (statusMie) {
+                readers["咩"] = statusMie;
+                completeTime["咩"] = document.getElementById('tr-date-mie').value;
+                score["咩"] = document.getElementById('tr-score-mie').value;
+            }
+            result[key] = {
+                "title": document.getElementById('tr-title').value,
+                "author": document.getElementById('tr-author').value,
+                "translator": document.getElementById('tr-translator').value,
+                "press": document.getElementById('tr-press').value,
+                "coverExt": document.getElementById('tr-ext').value,
+                "field": document.getElementById('tr-field').value,
+                "reason": document.getElementById('tr-reason').value,
+                "readers": readers, "complete_time": completeTime, "score": score
+            };
+        }
+
+        const str = JSON.stringify(result, null, 2);
+        const output = document.getElementById('output-area');
+        output.textContent = str.substring(1, str.length - 1).trim() + ",";
+        output.style.display = 'block';
+        output.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.getElementById('time').valueAsDate = new Date();
 </script>
 
 </body>

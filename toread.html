@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Read List</title>
+    <style>
+        :root {
+            --brand-color: #2d6a4f;
+            --brand-light: rgba(240, 249, 244, 0.9);
+            --brand-hover: rgba(220, 237, 226, 0.95);
+            --material-bg: #fffcf0;
+            --text-main: #1a202c;
+            --text-muted: #4a5568;
+            --nav-bg: rgba(255, 255, 255, 0.85);
+            --shadow-sm: 0 5px 15px rgba(0,0,0,0.05);
+            --shadow-lg: 0 20px 40px rgba(45, 106, 79, 0.15);
+        }
+
+        body { 
+            margin: 0; font-family: "Georgia", "PingFang SC", serif; 
+            background-image: url('sea.avif');
+            background-size: cover; background-position: center; background-attachment: fixed;
+            padding-top: 60px; color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* --- 导航栏 --- */
+        .top-nav {
+            position: fixed; top: 0; width: 100%; height: 60px;
+            background: var(--nav-bg); backdrop-filter: blur(12px);
+            z-index: 1000; display: flex; align-items: center; padding: 0 50px;
+            box-sizing: border-box; box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        }
+        .nav-item { cursor: pointer; font-weight: bold; color: var(--brand-color); text-decoration: none; font-size: 1.1rem; transition: 0.3s; }
+        .nav-item:hover { opacity: 0.7; }
+
+        .music-controls { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+        .music-btn {
+            width: 32px; height: 32px; background: none; border: none;
+            cursor: pointer; color: var(--brand-color); font-size: 1rem;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.2s; border-radius: 50%; padding: 0; opacity: 0.7;
+        }
+        .music-btn:hover { transform: scale(1.1); opacity: 1; }
+
+        /* --- 顶部 Banner --- */
+        .hero-banner {
+            height: 450px; width: 100%; position: relative;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+            -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+        }
+        .hero-slideshow {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            transition: opacity 1.5s ease-in-out, transform 4.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+            opacity: 0; z-index: 1;
+        }
+        .hero-slideshow.active { opacity: 1; z-index: 2; }
+
+        /* 修改部分：标题框及其悬停效果 */
+        .hero-title-box {
+            position: relative; z-index: 10; background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px); padding: 40px 60px; border-radius: 15px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.6s ease; /* 让过渡更丝滑 */
+            cursor: pointer;
+        }
+        /* 鼠标移上去变得彻底透明 */
+        .hero-title-box:hover {
+            background: rgba(0, 0, 0, 0);
+            backdrop-filter: blur(0px);
+            border-color: rgba(255, 255, 255, 0);
+        }
+
+        .hero-title { font-size: 2.4rem; color: white; letter-spacing: 3px; text-shadow: 0 2px 15px rgba(0,0,0,0.4); }
+
+        /* --- 动态波浪 --- */
+        .waves-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 120px; z-index: 5; }
+        .parallax > use { animation: move-forever 25s cubic-bezier(.55,.5,.45,.5) infinite; }
+        .parallax > use:nth-child(1) { animation-delay: -2s; fill: rgba(255,255,255,0.2); }
+        .parallax > use:nth-child(4) { animation-delay: -5s; fill: rgba(255,255,255,0.5); }
+        @keyframes move-forever { 0% { transform: translate3d(-90px,0,0); } 100% { transform: translate3d(85px,0,0); } }
+
+        /* --- 主内容布局 --- */
+        .main-container {
+            max-width: 1100px; margin: -30px auto 80px;
+            display: grid; grid-template-columns: 280px 1fr; gap: 30px; 
+            padding: 0 20px; position: relative; z-index: 20;
+        }
+
+        /* --- 筛选栏 --- */
+        .filter-section {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 10px;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 25px;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .filter-group { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; color: var(--text-muted); }
+        
+        .filter-group select {
+            appearance: none; background: #fff; border: 1.5px solid #e2e8f0;
+            padding: 6px 32px 6px 12px; border-radius: 8px; color: var(--brand-color);
+            cursor: pointer; outline: none; transition: 0.2s; font-weight: 500;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%232d6a4f'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
+        }
+        .filter-group select:hover { border-color: var(--brand-color); box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1); }
+
+        /* --- 侧边栏 --- */
+        .related-links {
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px);
+            padding: 25px; border-radius: 15px; position: sticky; top: 80px; height: fit-content;
+            box-shadow: var(--shadow-sm); border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .note-card { background: transparent; padding: 0; box-shadow: none; }
+
+        /* --- 书籍卡片 --- */
+        .book-card {
+            background: rgba(255,255,255,0.9) !important;
+            border-radius: 20px !important;
+            padding: 25px !important;
+            margin-bottom: 30px !important;
+            box-shadow: var(--shadow-sm) !important;
+            display: flex; gap: 25px; align-items: flex-start;
+            border: 1px solid rgba(255,255,255,0.6);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            will-change: transform;
+        }
+        .book-card:hover {
+            transform: translateY(-10px) scale(1.015);
+            background: #fff !important;
+            box-shadow: var(--shadow-lg) !important;
+            border-color: var(--brand-color);
+        }
+
+        .book-cover-wrapper {
+            flex: 0 0 auto; width: 130px; height: 190px;
+            border-radius: 10px; overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            cursor: zoom-in;
+            transition: transform 0.4s ease;
+        }
+        .book-card:hover .book-cover-wrapper { transform: rotate(-2deg) scale(1.05); }
+        .book-cover-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+
+        .book-info h3 { margin: 0 0 8px; font-size: 1.4rem; color: var(--brand-color); }
+        .reader-cat { color: #d946ef; font-weight: 500; margin-top: 5px;}
+        .reader-mee { color: #3b82f6; font-weight: 500; margin-top: 5px;}
+
+        /* --- 空状态样式 --- */
+        .empty-state {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px);
+            padding: 60px 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: var(--text-muted);
+            border: 2px dashed rgba(45, 106, 79, 0.2);
+            margin: 20px 0;
+            box-shadow: var(--shadow-sm);
+        }
+        .empty-icon { font-size: 3rem; margin-bottom: 15px; display: block; }
+
+        /* --- Lightbox --- */
+        #lightbox {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+            display: none; justify-content: center; align-items: center;
+            z-index: 2000; cursor: zoom-out;
+            animation: fadeIn 0.3s ease;
+        }
+        #lightbox img {
+            max-width: 90%; max-height: 85vh;
+            border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            transform: scale(0.9); animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.8); } to { transform: scale(1); } }
+
+        @media (max-width: 768px) {
+            .main-container { grid-template-columns: 1fr; }
+            .book-card { flex-direction: column; align-items: center; text-align: center; }
+            .filter-section { padding: 15px; flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="top-nav">
+    <a href="index.html" class="nav-item">🌊 返回首页</a>
+    <div class="music-controls">
+        <button class="music-btn" id="prev-btn">⏮</button>
+        <button class="music-btn" id="music-toggle">▶</button>
+        <button class="music-btn" id="next-btn">⏭</button>
+    </div>
+</nav>
+
+<header class="hero-banner">
+    <div id="slide1" class="hero-slideshow active"></div>
+    <div id="slide2" class="hero-slideshow"></div>
+    <div class="hero-title-box">
+        <h1 class="hero-title" id="display-title">📖 To Read List</h1>
+    </div>
+    <div class="waves-container">
+        <svg class="waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
+            <defs><path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" /></defs>
+            <g class="parallax">
+                <use href="#gentle-wave" x="48" y="0" />
+                <use href="#gentle-wave" x="48" y="7" />
+            </g>
+        </svg>
+    </div>
+</header>
+
+<main class="main-container">
+    <section class="filter-section" id="filter-bar">
+        <div class="filter-group">
+            <input type="checkbox" id="hide-template" checked>
+            <label for="hide-template" style="cursor:pointer">✨ 隐藏模板示例</label>
+        </div>
+        <div class="filter-group">
+            <span>🔍 筛选内容：</span>
+            <select id="filter-type">
+                <option value="all">全部书目</option>
+                <option value="both-want">共同心愿</option>
+                <option value="someone-completed">已阅存档</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <span>排序：</span>
+            <select id="sort-type">
+                <option value="default">默认排列</option>
+                <option value="score-desc">评分最高</option>
+            </select>
+        </div>
+    </section>
+
+    <aside class="related-links">
+        <h3 id="sidebar-title">👥 我们想看</h3>
+        <div id="related-box">
+            <p style="font-size:0.85rem; color:#888;">状态说明：<br>📚 待读 / 📖 在读 / ✅ 已读<br>⭐ 评分（零到五星）</p>
+        </div>
+    </aside>
+
+    <article class="note-card">
+        <div id="contents-container"></div>
+    </article>
+</main>
+
+<div id="lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="预览">
+</div>
+
+<script src="toreaddata.js"></script>
+
+<script>
+    // --- 1. 轮播图逻辑 ---
+    const imageData = [
+        { src: '1.jpg', scale: 1.0 }, { src: '2.jpg', scale: 1.05 }, { src: '3.jpg', scale: 1.1 },
+        { src: '4.jpg', scale: 1.0 }, { src: '5.jpg', scale: 1.05 }, { src: '6.jpg', scale: 1.1 }
+    ];
+    let currentIndex = 0;
+    const slide1 = document.getElementById('slide1');
+    const slide2 = document.getElementById('slide2');
+    let activeSlide = slide1;
+
+    function changeSlide() {
+        currentIndex = (currentIndex + 1) % imageData.length;
+        const nextData = imageData[currentIndex];
+        const nextSlide = (activeSlide === slide1) ? slide2 : slide1;
+        nextSlide.style.backgroundImage = `url('${nextData.src}')`;
+        nextSlide.style.transform = `scale(${nextData.scale})`;
+        nextSlide.classList.add('active');
+        activeSlide.classList.remove('active');
+        activeSlide = nextSlide;
+    }
+    slide1.style.backgroundImage = `url('${imageData[0].src}')`;
+    setInterval(changeSlide, 4500);
+
+    // --- 2. 大图预览逻辑 ---
+    function openLightbox(src) {
+        const lb = document.getElementById('lightbox');
+        const lbImg = document.getElementById('lightbox-img');
+        lbImg.src = src;
+        lb.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightbox').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    // --- 3. 核心渲染逻辑 ---
+    const STATUS_TEXT = { todo: '📚 待读', reading: '📖 在读', completed: '✅ 已读' };
+
+    function renderStars(score) {
+        if (!score) return '';
+        const s = parseFloat(score);
+        const fullStarsCount = Math.floor(s);
+        const hasHalfStar = (s % 1 >= 0.5);
+        const emptyStarsCount = 5 - Math.ceil(s);
+
+        let starsHtml = '★'.repeat(fullStarsCount);
+        if (hasHalfStar) starsHtml += '⯪';
+        starsHtml += '☆'.repeat(emptyStarsCount);
+
+        return `<span style="color:#e6af2e; margin-left:6px; letter-spacing:1px;">${starsHtml}</span>`;
+    }
+
+    function renderToReadBook(id, book) {
+        const coverUrl = book.coverExt ? `toread/${id}.${book.coverExt}` : null;
+        let readerHtml = '';
+        
+        for (const [name, status] of Object.entries(book.readers || {})) {
+            const emoji = name === '猫' ? '🐱' : '🐑';
+            const cls = name === '猫' ? 'reader-cat' : 'reader-mee';
+            
+            let statusDisplay = STATUS_TEXT[status];
+            
+            if (status === 'completed') {
+                const date = (book.complete_time && book.complete_time[name]) ? ` (${book.complete_time[name]})` : '';
+                const score = (book.score && book.score[name]) ? renderStars(book.score[name]) : '';
+                statusDisplay = `${STATUS_TEXT[status]}${date}${score}`;
+            }
+
+            readerHtml += `<div class="${cls}">${emoji} ${name}：${statusDisplay}</div>`;
+        }
+
+        return `
+            <div class="book-card">
+                ${coverUrl ? `
+                <div class="book-cover-wrapper" onclick="openLightbox('${coverUrl}')">
+                    <img src="${coverUrl}" alt="${book.title}" loading="lazy">
+                </div>` : ''}
+                <div class="book-info">
+                    <h3>${book.title}</h3>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin: 5px 0;">
+                        ${book.author} ${book.press ? `| ${book.press}` : ''}
+                    </p>
+                    ${book.field ? `<span style="font-size:0.8rem; background:#edf2f7; padding:2px 8px; border-radius:4px; color:#64748b;">${book.field}</span>` : ''}
+                    <p style="margin: 15px 0; line-height:1.6; color:#444;">${book.reason || ''}</p>
+                    <div style="border-top: 1px dashed #eee; padding-top: 12px; font-size: 0.9rem;">
+                        ${readerHtml}
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    function refreshToReadList() {
+        const container = document.getElementById('contents-container');
+        if (typeof TOREAD_NOTES === 'undefined') return;
+
+        const hideTemplate = document.getElementById('hide-template').checked;
+        const filterType = document.getElementById('filter-type').value;
+        const sortType = document.getElementById('sort-type').value;
+
+        let books = Object.entries(TOREAD_NOTES);
+
+        books = books.filter(([id, book]) => {
+            if (hideTemplate && (id === 'tr_demo' || book.isTemplate || id.includes('example'))) return false;
+            if (filterType === 'both-want') return Object.keys(book.readers || {}).length >= 2;
+            if (filterType === 'someone-completed') return Object.values(book.readers || {}).some(s => s === 'completed');
+            return true;
+        });
+
+        if (sortType === 'score-desc') {
+            books.sort((a, b) => {
+                const getScore = (bk) => bk.score ? Math.max(...Object.values(bk.score).map(parseFloat)) : 0;
+                return getScore(b[1]) - getScore(a[1]);
+            });
+        }
+
+        const emptyHtml = `
+            <div class="empty-state">
+                <span class="empty-icon">🍃</span>
+                <p style="margin:0; font-weight:bold; font-size:1.1rem;">此分类下暂无书目</p>
+                <p style="margin:10px 0 0; font-size:0.9rem; opacity:0.7;">换个筛选条件试试看吧~</p>
+            </div>`;
+
+        container.innerHTML = books.length > 0 ? 
+            books.map(([id, book]) => renderToReadBook(id, book)).join('') : 
+            emptyHtml;
+    }
+
+    ['hide-template', 'filter-type', 'sort-type'].forEach(id => {
+        document.getElementById(id).addEventListener('change', refreshToReadList);
+    });
+
+    const audio = new Audio();
+    audio.src = 'jazz.mp3';
+    document.getElementById('music-toggle').onclick = () => {
+        if (audio.paused) { audio.play(); document.getElementById('music-toggle').textContent = '⏸'; }
+        else { audio.pause(); document.getElementById('music-toggle').textContent = '▶'; }
+    };
+
+    window.onload = refreshToReadList;
+</script>
+
+</body>
+</html>

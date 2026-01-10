@@ -19,6 +19,7 @@
             background-image: url('sea.avif');
             background-size: cover; background-position: center; background-attachment: fixed;
             color: var(--text-main); padding-top: 70px;
+            overflow-x: hidden;
         }
 
         /* --- 导航栏 --- */
@@ -27,13 +28,14 @@
             background: var(--nav-bg); backdrop-filter: blur(12px);
             z-index: 1000; display: flex; align-items: center; justify-content: space-between; 
             padding: 0 40px; box-sizing: border-box; box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
         .nav-left { font-weight: bold; color: var(--brand-color); font-size: 1.2rem; cursor: pointer; text-decoration: none; flex-shrink: 0; }
         
         .nav-search-container {
             flex-grow: 1;
-            max-width: 500px;
-            margin: 0 30px;
+            max-width: 400px;
+            margin: 0 20px;
             position: relative;
             display: flex;
             align-items: center;
@@ -60,11 +62,10 @@
             opacity: 0.6;
         }
 
-        .nav-right { display: flex; gap: 20px; align-items: center; flex-shrink: 0; }
-        .nav-link { text-decoration: none; color: var(--text-main); font-size: 0.95rem; font-weight: 500; transition: 0.3s; }
+        .nav-right { display: flex; gap: 15px; align-items: center; flex-shrink: 0; }
+        .nav-link { text-decoration: none; color: var(--text-main); font-size: 0.95rem; font-weight: 500; transition: 0.3s; white-space: nowrap; }
         .nav-link:hover { color: var(--brand-color); }
         
-        /* 导航栏“添加”高亮样式 */
         .nav-link.add-btn { color: var(--brand-color); font-weight: bold; }
 
         .music-btn {
@@ -74,9 +75,31 @@
             justify-content: center; text-decoration: none; line-height: 1.2;
         }
         .music-btn:hover { color: var(--brand-color); }
-        .music-btn.playing { color: #e63946; }
 
-        #bg-music { position: absolute; left: -9999px; }
+        
+        .hero-cta-btn {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, var(--brand-color), #40916c);
+            color: white !important;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 15px rgba(45, 106, 79, 0.3);
+            transition: all 0.3s ease;
+            animation: breathe 3s infinite ease-in-out;
+        }
+        .hero-cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(45, 106, 79, 0.4);
+            filter: brightness(1.1);
+        }
+        @keyframes breathe {
+            0%, 100% { opacity: 0.9; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.03); }
+        }
 
         /* --- 悬浮添加按钮 --- */
         .float-add-btn {
@@ -93,7 +116,6 @@
         .float-add-btn:hover {
             transform: scale(1.1) rotate(90deg);
             background: #1e4d38;
-            box-shadow: 0 12px 30px rgba(45, 106, 79, 0.5);
         }
 
         /* --- 筛选面板 --- */
@@ -110,7 +132,6 @@
             padding: 8px 15px; border-radius: 8px; border: 1px solid #ddd;
             background: white; cursor: pointer; font-family: inherit; transition: 0.2s;
         }
-        .btn-sort:hover { background: var(--brand-light); border-color: var(--brand-color); }
 
         /* --- 笔记网格 --- */
         .note-grid {
@@ -148,11 +169,29 @@
         }
         .page-info { color: white; font-size: 0.9rem; background: rgba(0,0,0,0.4); padding: 5px 15px; border-radius: 20px; }
         .pagination button { background: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
 
+        /* --- 响应式适配修复 --- */
         @media (max-width: 768px) {
+            .top-nav { padding: 0 15px; height: 60px; }
+            .nav-left { font-size: 1rem; }
+            .nav-right { gap: 8px; }
+            .nav-link { font-size: 0.8rem; }
             .nav-search-container { display: none; }
-            .filter-panel { flex-direction: column; gap: 15px; margin: 20px; }
+            
+            body { padding-top: 60px; }
+            
+            /* 英雄区文字框适配 */
+            .hero-box { padding: 25px 20px !important; margin: 0 10px; }
+            .hero-box h1 { font-size: 2rem !important; margin-bottom: 15px !important; }
+            .hero-box p { font-size: 0.95rem !important; line-height: 1.6 !important; }
+            
+            .filter-panel { flex-direction: column; gap: 15px; margin: 20px; padding: 15px; }
+            .float-add-btn { bottom: 20px; right: 20px; width: 48px; height: 48px; }
+        }
+
+        @media (max-width: 480px) {
+            .nav-right .nav-link:nth-child(2), 
+            .nav-right .nav-link:nth-child(3) { display: none; } /* 极窄屏幕隐藏冗余链接 */
         }
     </style>
 </head>
@@ -167,7 +206,8 @@
     <a href="index.html" class="nav-left">🌊 猫猫咩咩阅览室</a>
     
     <div class="nav-right">
-        <a href="write.html" class="nav-link add-btn">➕ 添加笔记</a>
+        <a href="write.html" class="nav-link add-btn">➕ 添加</a>
+        <a href="toread.html" class="nav-link" style="color: #d62828; font-weight: bold;">📖 书单</a>
         <a href="showitem.html?type=book" class="nav-link">📚 书目</a>
         <a href="showitem.html?type=paper" class="nav-link">📝 论文</a>
         <button class="music-btn" id="music-toggle" title="播放/暂停背景音乐">🎵</button>
@@ -176,13 +216,15 @@
 
 <a href="write.html" class="float-add-btn" title="撰写新笔记">➕</a>
 
-<div style="display: flex; justify-content: center; align-items: center; padding: 100px 20px 40px; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 800px; width: 100%; padding: 40px 60px; background: rgba(20, 20, 20, 0.4); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3); text-align: center; color: #ffffff;">
-        <h1 style="font-size: 3rem; margin-bottom: 25px; text-shadow: 0 2px 8px rgba(0,0,0,0.4); letter-spacing: 4px;">阅读笔记</h1>
+<div style="display: flex; justify-content: center; align-items: center; padding: 80px 10px 40px; width: 100%; box-sizing: border-box;">
+    <div class="hero-box" style="max-width: 800px; width: 100%; padding: 40px 60px; background: rgba(20, 20, 20, 0.4); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3); text-align: center; color: #ffffff;">
+        <h1 style="font-size: 3rem; margin: 0 0 25px 0; text-shadow: 0 2px 8px rgba(0,0,0,0.4); letter-spacing: 4px;">阅读笔记</h1>
         <p style="font-size: 1.15rem; line-height: 1.9; letter-spacing: 1px; text-align: justify; text-shadow: 0 1px 4px rgba(0,0,0,0.3); font-weight: 400; margin: 0;">
             “我们已经无法向前推进并把否定从完全物化了的语言中挤出来：人们并非没有听到拒绝和指责，相反，他们早就注意到了，只是他们听到信息之后，就把它转译成了社会学、心理学和美学问题，把其余的当成了假装自我批判的政治宣传。” <br>
             <span style="display: block; text-align: right; margin-top: 15px; opacity: 0.8;">—— 马尔库塞</span>
         </p>
+        
+        <a href="toread.html" class="hero-cta-btn">Our Book List 📖</a>
     </div>
 </div>
 
@@ -195,18 +237,17 @@
     </div>
     <div class="nav-search-container">
         <span class="search-icon">🔍</span>
-        <input type="text" id="globalSearch" class="nav-search-input" placeholder="搜索标题、内容、来源、附注..." oninput="resetAndRender()">
+        <input type="text" id="globalSearch" class="nav-search-input" placeholder="搜索标题、内容、来源..." oninput="resetAndRender()">
     </div>
     <div id="statusLabel" style="font-size: 0.9rem; color: var(--brand-color); font-weight: bold;"></div>
     <div class="filter-group">
-        <span>时间排序:</span>
+        <span>排序:</span>
         <button class="btn-sort" onclick="sortNotes('desc')">倒序</button>
         <button class="btn-sort" onclick="sortNotes('asc')">正序</button>
     </div>
 </section>
 
 <div class="note-grid" id="noteGrid"></div>
-
 <div class="pagination" id="paginationBar"></div>
 
 <script src="notedata.js"></script>
@@ -219,7 +260,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         const audio = document.getElementById('bg-music');
         const btn = document.getElementById('music-toggle');
-
         audio.muted = true;
         audio.load();
 
@@ -230,7 +270,7 @@
                     btn.classList.add('playing');
                     btn.textContent = '⏸️';
                 }).catch(err => {
-                    alert('播放失败：请先与页面进行一次交互再尝试。');
+                    alert('播放失败：请点击页面任意位置后再试。');
                 });
             } else {
                 audio.pause();
@@ -292,12 +332,7 @@
                 const inTitle = (n.title || "").toLowerCase().includes(searchQuery);
                 const inSource = (n.source || "").toLowerCase().includes(searchQuery);
                 const inDetail = (n.detail || "").toLowerCase().includes(searchQuery);
-                const inContents = (n.contents || []).some(c => {
-                    const materialMatch = (c.material || "").toLowerCase().includes(searchQuery);
-                    const commentMatch = (c.comments || []).some(comm => comm.toLowerCase().includes(searchQuery));
-                    return materialMatch || commentMatch;
-                });
-                return inTitle || inSource || inDetail || inContents;
+                return inTitle || inSource || inDetail;
             });
             statusLabel.innerText = `找到 ${notesList.length} 条结果`;
         } else {

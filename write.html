@@ -199,8 +199,16 @@
                 <div class="input-group"><label>译者</label><input type="text" id="tr-translator"></div>
                 <div class="input-group"><label>出版社</label><input type="text" id="tr-press"></div>
                 <div class="input-group"><label>领域</label><input type="text" id="tr-field"></div>
-                <div class="input-group"><label>封面后缀</label><input type="text" id="tr-ext" value="jpg"></div>
+                <div class="input-group"><label>封面后缀(jpg,png等)</label><input type="text" id="tr-ext" value="jpg"></div>
                 <div class="input-group" style="grid-column: 1 / -1;"><label>简介/理由</label><textarea id="tr-reason" style="min-height: 60px;"></textarea></div>
+	<div class="input-group">
+    <label>媒介类型</label>
+    <select id="tr-media">
+        <option value="book">📖 书籍</option>
+        <option value="movie">🎬 影视作品</option>
+    </select>
+</div>
+
             </div>
             <div class="readers-container">
                 <div class="reader-box">
@@ -218,7 +226,7 @@
                     </div>
                     <div class="input-group">
                         <label>评分</label>
-                        <input type="number" step="0.5" id="tr-score-cat" value="5">
+                        <input type="number" step="0.5" id="tr-score-cat" value="">
                     </div>
                 </div>
                 <div class="reader-box">
@@ -236,7 +244,7 @@
                     </div>
                     <div class="input-group">
                         <label>评分</label>
-                        <input type="number" step="0.5" id="tr-score-mie" value="5">
+                        <input type="number" step="0.5" id="tr-score-mie" value="">
                     </div>
                 </div>
             </div>
@@ -356,8 +364,9 @@
                 completeTime["咩"] = document.getElementById('tr-date-mie').value;
                 score["咩"] = document.getElementById('tr-score-mie').value;
             }
-            const typeVal = document.getElementById('type').value;
-            const videoFlag = typeVal === '影视' ? true : false;
+            const mediaType = document.getElementById('tr-media').value;
+	    const videoFlag = mediaType === 'movie';
+
 
             result[key] = {
                 "video": videoFlag,

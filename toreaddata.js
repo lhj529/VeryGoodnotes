@@ -101,5 +101,68 @@ var TOREAD_NOTES = {
       "猫": ""
     }
   },
+  "tr533": {
+    "video": false,
+    "title": "量子霸权-量子计算机革命如何改变世界",
+    "author": "[美]加来道雄",
+    "translator": "苏京春",
+    "press": "中信出版集团",
+    "coverExt": "png",
+    "field": "科普，量子计算",
+    "reason": "专业需要。",
+    "readers": {
+      "猫": "reading"
+    },
+    "complete_time": {
+      "猫": ""
+    },
+    "score": {
+      "猫": ""
+    }
+  },
+  "tr534": {
+    "video": false,
+    "title": "我的骨头没有忘记",
+    "author": "[美] 斯蒂芬妮·胡",
+    "translator": "高语冰",
+    "press": "广东经济出版社",
+    "coverExt": "jpg",
+    "field": "心理，情感，成长，自我疗愈",
+    "reason": "",
+    "readers": {
+      "猫": "todo",
+      "咩": "todo"
+    },
+    "complete_time": {
+      "猫": "",
+      "咩": ""
+    },
+    "score": {
+      "猫": "",
+      "咩": ""
+    }
+  },
+  "tr535": {
+    "video": false,
+    "title": "刘擎现代西方思想讲义",
+    "author": "刘擎",
+    "translator": "",
+    "press": "新星出版社",
+    "coverExt": "jpg",
+    "field": "哲学，哲学知识读物",
+    "reason": "“邀请你穿越时空，与19位闪烁着光芒的思想家对话。来一次思想的碰撞、一场观念的探险。”",
+    "readers": {
+      "猫": "todo",
+      "咩": "todo"
+    },
+    "complete_time": {
+      "猫": "",
+      "咩": ""
+    },
+    "score": {
+      "猫": "",
+      "咩": ""
+    }
+  },
 }
     

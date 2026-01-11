@@ -446,8 +446,10 @@
                 <div class="book-info">
                     <h3>${book.title}</h3>
                     <p style="color: var(--text-muted); font-size: 0.95rem; margin: 5px 0;">
-                        ${book.author} ${book.press ? `| ${book.press}` : ''}
-                    </p>
+    ${book.author}
+    ${book.translator ? `| <span style="opacity:0.75; font-size:0.85rem;"> ${book.translator} 译 </span>` : ''}
+    ${book.press ? ` | ${book.press}` : ''}
+</p>
                     ${book.field ? `<span style="font-size:0.8rem; background:#edf2f7; padding:2px 8px; border-radius:4px; color:#64748b;">${book.field}</span>` : ''}
                     <p style="margin: 15px 0; line-height:1.6; color:#444;">${book.reason || ''}</p>
                     <div style="border-top: 1px dashed #eee; padding-top: 12px; font-size: 0.9rem;">

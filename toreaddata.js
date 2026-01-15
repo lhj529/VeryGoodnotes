@@ -38,7 +38,7 @@ var TOREAD_NOTES = {
       "咩": ""
     },
     "score": {
-      "咩": "5"
+      "咩": ""
     }
   },
   "tr530": {
@@ -111,13 +111,13 @@ var TOREAD_NOTES = {
     "field": "科普，量子计算",
     "reason": "专业需要。",
     "readers": {
-      "猫": "reading"
+      "猫": "completed"
     },
     "complete_time": {
       "猫": ""
     },
     "score": {
-      "猫": ""
+      "猫": "3"
     }
   },
   "tr534": {
@@ -285,6 +285,25 @@ var TOREAD_NOTES = {
     "score": {
       "猫": "",
       "咩": ""
+    }
+  },
+  "tr542": {
+    "video": false,
+    "title": "宗教的自然史",
+    "author": "大卫·休谟",
+    "translator": "曾晓平",
+    "press": "商务印书馆",
+    "coverExt": "jpg",
+    "field": "哲学，宗教",
+    "reason": "",
+    "readers": {
+      "猫": "todo"
+    },
+    "complete_time": {
+      "猫": ""
+    },
+    "score": {
+      "猫": ""
     }
   },
 }

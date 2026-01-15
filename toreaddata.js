@@ -201,7 +201,7 @@ var TOREAD_NOTES = {
     },
     "complete_time": {
       "猫": "",
-      "咩": ""
+      "咩": "3.5"
     },
     "score": {
       "猫": "",

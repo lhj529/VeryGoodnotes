@@ -265,5 +265,27 @@ var TOREAD_NOTES = {
       "猫": ""
     }
   },
+  "tr541": {
+    "video": true,
+    "title": "奥本海默",
+    "author": "",
+    "translator": "",
+    "press": "",
+    "coverExt": "jpg",
+    "field": "剧情；传记",
+    "reason": "",
+    "readers": {
+      "猫": "todo",
+      "咩": "completed"
+    },
+    "complete_time": {
+      "猫": "",
+      "咩": ""
+    },
+    "score": {
+      "猫": "",
+      "咩": ""
+    }
+  },
 }
     

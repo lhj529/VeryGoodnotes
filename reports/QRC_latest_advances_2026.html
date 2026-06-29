@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>量子储备池计算（QRC）最新进展综述 — 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  :root {
+    --bg: #fafafa; --text: #1a1a2e; --accent: #16213e; --accent2: #0f3460;
+    --highlight: #e94560; --card-bg: #ffffff; --border: #e0e0e0;
+    --table-stripe: #f4f6f9; --tag-bg: #e8f0fe; --tag-text: #1a73e8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Noto Sans SC", "Segoe UI", "Helvetica Neue", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.85;
+    counter-reset: section;
+  }
+  .cover {
+    background: linear-gradient(135deg, #0f0c29 0%, #16213e 40%, #0f3460 70%, #533483 100%);
+    color: #fff; text-align: center; padding: 120px 40px 100px;
+    position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle at 20% 80%, rgba(233,68,96,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(83,52,131,0.2) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(15,52,96,0.1) 0%, transparent 70%);
+    animation: pulse 8s ease-in-out infinite alternate;
+  }
+  @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+  .cover > * { position: relative; z-index: 1; }
+  .cover h1 { font-size: 2.8em; margin-bottom: 20px; letter-spacing: 0.03em; text-shadow: 0 2px 12px rgba(233,68,96,0.5); }
+  .cover .subtitle { font-size: 1.2em; opacity: .85; margin-bottom: 8px; }
+  .cover .meta { margin-top: 40px; font-size: .9em; opacity: .65; }
+  .cover .badge {
+    display: inline-block; background: var(--highlight); padding: 6px 18px; border-radius: 20px;
+    font-size: .85em; margin: 0 8px 12px;
+  }
+  nav.toc {
+    max-width: 900px; margin: 30px auto; background: var(--card-bg);
+    border-radius: 12px; padding: 28px 36px; box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+  nav.toc h2 { font-size: 1.3em; margin-bottom: 16px; color: var(--accent2); }
+  nav.toc ol { padding-left: 1.5em; }
+  nav.toc li { margin: 6px 0; }
+  nav.toc a { color: var(--accent2); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; color: var(--highlight); }
+  .container { max-width: 960px; margin: 0 auto; padding: 20px 30px; }
+  section { margin: 50px 0; }
+  h2.sec-title {
+    font-size: 1.7em; color: var(--accent); border-left: 5px solid var(--highlight);
+    padding-left: 16px; margin-bottom: 24px;
+  }
+  h3 { font-size: 1.25em; color: var(--accent2); margin: 28px 0 12px; }
+  h4 { font-size: 1.05em; color: #444; margin: 18px 0 8px; }
+  p { margin: 12px 0; text-align: justify; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 22px 28px; margin: 20px 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .card.highlight {
+    border-left: 4px solid var(--highlight);
+    background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+  }
+  .card.info {
+    border-left: 4px solid #1a73e8;
+    background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%);
+  }
+  .boxed {
+    border: 2px solid var(--accent2); border-radius: 8px;
+    padding: 18px 24px; margin: 18px 0; background: #f8faff;
+    text-align: center; font-size: 1.05em;
+  }
+  table {
+    width: 100%; border-collapse: collapse; margin: 18px 0;
+    font-size: 0.9em;
+  }
+  th {
+    background: var(--accent); color: #fff; padding: 10px 14px;
+    text-align: left; font-weight: 600;
+  }
+  td {
+    padding: 9px 14px; border-bottom: 1px solid var(--border);
+  }
+  tr:nth-child(even) td { background: var(--table-stripe); }
+  .tag {
+    display: inline-block; background: var(--tag-bg); color: var(--tag-text);
+    padding: 2px 10px; border-radius: 12px; font-size: 0.8em; margin: 2px 4px;
+  }
+  .ref-list { font-size: 0.88em; }
+  .ref-list li { margin: 8px 0; }
+  .abstract-box {
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+    border: 1px solid #c4d7f2; border-radius: 10px; padding: 24px 28px; margin: 20px 0;
+  }
+  @media (max-width: 768px) {
+    .cover h1 { font-size: 1.8em; }
+    .container { padding: 10px 15px; }
+    nav.toc { padding: 16px 20px; }
+    table { font-size: 0.78em; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ COVER ═══════════════════════ -->
+<div class="cover">
+  <div>
+    <span class="badge">综述报告</span><span class="badge">2026年6月</span>
+  </div>
+  <h1>量子储备池计算（QRC）最新进展综述</h1>
+  <p class="subtitle">从理论基础到实验突破：物理平台、架构优化与应用前景</p>
+  <p class="meta">基于 18 篇核心论文的系统梳理 &middot; 覆盖 2024–2026 年最新成果</p>
+</div>
+
+<!-- ═══════════════════════ TOC ═══════════════════════ -->
+<nav class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s0">摘要与核心发现</a></li>
+    <li><a href="#s1">QRC 基本原理与数学框架</a></li>
+    <li><a href="#s2">理论基础与性能边界</a>
+      <ol>
+        <li><a href="#s2.1">普适逼近定理与误差界</a></li>
+        <li><a href="#s2.2">表达力极限：编码瓶颈</a></li>
+        <li><a href="#s2.3">多体量子混沌边缘</a></li>
+        <li><a href="#s2.4">非马尔可夫性与记忆增强</a></li>
+      </ol>
+    </li>
+    <li><a href="#s3">物理平台全景</a>
+      <ol>
+        <li><a href="#s3.1">中性原子 / Rydberg 平台</a></li>
+        <li><a href="#s3.2">光子平台：GBS 与 PNR</a></li>
+        <li><a href="#s3.3">自旋系统 / 固态 NMR</a></li>
+        <li><a href="#s3.4">腔 QED 极简平台</a></li>
+        <li><a href="#s3.5">分布式与混合架构</a></li>
+      </ol>
+    </li>
+    <li><a href="#s4">架构选择与关键优化</a>
+      <ol>
+        <li><a href="#s4.1">SS-QRC vs MS-QRC</a></li>
+        <li><a href="#s4.2">核优化测量算子</a></li>
+        <li><a href="#s4.3">反馈增强与多项式读出</a></li>
+        <li><a href="#s4.4">图像识别核心技术栈</a></li>
+      </ol>
+    </li>
+    <li><a href="#s5">实验性能对标</a></li>
+    <li><a href="#s6">挑战与未来方向</a></li>
+    <li><a href="#refs">参考文献</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════ §0: ABSTRACT ═══════════════════════ -->
+<section id="s0">
+  <h2 class="sec-title">摘要与核心发现</h2>
+  <div class="abstract-box">
+    <p>量子储备池计算（Quantum Reservoir Computing, QRC）是量子机器学习中一个快速崛起的范式。它继承了经典储备池计算（Echo State Networks）的核心思想——利用固定高维动力学系统将输入非线性地映射到高维特征空间，仅训练线性读出层——但将储备池替换为由量子多体系统驱动的动力学演化。这一范式天然适合含噪中等规模量子（NISQ）设备：量子部分无需梯度优化，仅需执行固定的酉演化和测量。</p>
+    <p>2024–2026年是 QRC 研究的关键转折期。本报告基于 18 篇核心论文和最新网上调研，系统梳理以下<strong>十大核心发现</strong>：</p>
+    <ol>
+      <li><strong>理论上</strong>：QRC 仅需 \(O(\varepsilon^{-2})\) 权重和 \(O(\log_2(\varepsilon^{-1}))\) 量子比特即可逼近任意连续函数，且误差界不受输入维度诅咒。</li>
+      <li><strong>瓶颈</strong>：表达力上限由输入编码门数线性决定（\(C_T^{\max} = 2r+1\)），而非希尔伯特空间大小——这颠覆了"指数希尔伯特空间 = 指数计算能力"的直觉。</li>
+      <li><strong>混沌边缘</strong>：QRC 性能在量子混沌起始处达到最优，SYK 模型的 Thouless 时间和能级间距比可作为诊断工具。</li>
+      <li><strong>平台成熟</strong>：中性原子（108 qubit）、GBS 光子（>400 模式）、自旋 NMR、腔 QED（5 原子）四大平台均已实现实验验证。</li>
+      <li><strong>SS-QRC 实用优先</strong>：单步 QRC 对噪声和参数选择极为鲁棒，是 NISQ 部署的首选架构。</li>
+      <li><strong>噪声即资源</strong>：硬件噪声可充当隐式正则化，提升泛化能力——NISQ 的"缺陷"成为优势。</li>
+      <li><strong>记忆突破</strong>：非马尔可夫动力学可打破马尔可夫 QRC 的指数记忆衰减壁垒。</li>
+      <li><strong>图像识别</strong>：MNIST ~97%（光子）、~93.5%（中性原子），逼近经典方法的同时展现出对抗鲁棒性优势。</li>
+      <li><strong>商业起步</strong>：FirstQFM + NVIDIA 已在金融预测中部署设备感知的量子基础模型。</li>
+      <li><strong>极简硬件</strong>：仅 5 原子 + 一个腔即可实现有效 QRC，反馈和多项式回归是核心引擎。</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══════════════════════ §1: FUNDAMENTALS ═══════════════════════ -->
+<section id="s1">
+  <h2 class="sec-title">一、QRC 基本原理与数学框架</h2>
+
+  <h3>1.1 核心思想</h3>
+  <p>量子储备池计算将经典 Echo State Network 的哲学移植到量子领域。设输入序列为 \(\{u^{(k)}\}_{k=1}^{T}\)，QRC 的处理流程为：</p>
+  <ol>
+    <li><strong>编码</strong>：将经典输入 \(u^{(k)}\) 通过 CPTP 映射编码为量子态 \(\rho_{\text{in}}^{(k)}\)。</li>
+    <li><strong>演化</strong>：让量子系统在固定哈密顿量 \(H\) 下演化，\(\rho^{(k)} = e^{-iH\Delta t} \rho_{\text{in}}^{(k)} e^{iH\Delta t}\)。</li>
+    <li><strong>测量</strong>：提取一组观测量期望值作为特征向量 \(\mathbf{v}^{(k)} = (\langle O_1 \rangle, \ldots, \langle O_M \rangle)^T\)。</li>
+    <li><strong>读出</strong>：线性模型 \(\hat{y}^{(k)} = \mathbf{w}^T \mathbf{v}^{(k)}\)，权重 \(\mathbf{w}\) 通过岭回归训练。</li>
+  </ol>
+
+  <div class="boxed">
+    \[
+    \hat{y}^{(k)} = \mathbf{w}^T \cdot \text{Tr}\{\rho^{(k)} \mathbf{O}\}, \quad
+    \mathbf{w} = (\mathbf{V}^T \mathbf{V} + \eta \mathbf{I})^{-1} \mathbf{V}^T \mathbf{y}
+    \]
+  </div>
+
+  <p>QRC 的核心优势在于：量子储备池的参数（哈密顿量、耦合强度、演化时间）<strong>随机初始化后保持不变</strong>，仅线性读出权重需要训练。这完全规避了量子电路中的"梯度消失"（barren plateaus）和量子反向传播的不可微问题。</p>
+
+  <h3>1.2 与经典 RC 的对应关系</h3>
+  <div class="card">
+    <table>
+      <tr><th>组件</th><th>经典 RC (ESN)</th><th>量子 RC</th></tr>
+      <tr><td>储备池</td><td>随机递归神经网络 \(\mathbf{x}_{k+1} = f(W\mathbf{x}_k + W_{\text{in}}u_k)\)</td><td>量子多体动力学 \(\rho_{k+1} = e^{\mathcal{L}(u_k)\Delta t}[\rho_k]\)</td></tr>
+      <tr><td>高维映射</td><td>N 个神经元 → N 维隐藏态</td><td>N 个量子比特 → \(2^N\) 维希尔伯特空间</td></tr>
+      <tr><td>非线性</td><td>激活函数 (tanh, ReLU)</td><td>量子纠缠 + 相互作用 (\(\sigma^z\sigma^z\), Rydberg 阻塞)</td></tr>
+      <tr><td>记忆</td><td>递归连接提供回声状态属性</td><td>幺正演化 + 耗散（或非马尔可夫环境）</td></tr>
+      <tr><td>读出训练</td><td>线性回归 (伪逆)</td><td>岭回归 / 量子核岭回归</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════ §2: THEORY ═══════════════════════ -->
+<section id="s2">
+  <h2 class="sec-title">二、理论基础与性能边界</h2>
+
+  <!-- §2.1 Universal Approximation -->
+  <h3 id="s2.1">2.1 普适逼近定理与误差界</h3>
+  <p><strong>来源：</strong>Gonon & Jacquier (2025), arXiv:2307.12904 — <em>Universal Approximation Theorem and Error Bounds for Quantum Neural Networks and Quantum Reservoirs</em></p>
+
+  <div class="card highlight">
+    <h4>核心定理 (Theorem II.4)</h4>
+    <p>对任意 \(R > 0\)，\(f \in \mathcal{F}_R\)（Fourier 积分有界且连续可积的函数类），以及任意 \(n \in \mathbb{N}\)，存在参数 \(\theta\) 使得：</p>
+    <div class="boxed">
+      \[
+      \left( \int_{\mathbb{R}^d} |f(x) - f_n^{R,\theta}(x)|^2 \mu(dx) \right)^{1/2}
+      \leq \frac{\mathcal{L}_1[f]}{\sqrt{n}}, \quad
+      \mathcal{L}_1[f] := \int_{\mathbb{R}^d} |\hat{f}(\xi)| d\xi
+      \]
+    </div>
+    <p><strong>直接推论：</strong>要达到逼近误差 \(\varepsilon\)，需要 <strong>\(n = \mathcal{L}_1[f]^2 / \varepsilon^2 = O(\varepsilon^{-2})\)</strong> 个可训练权重，但仅需 <strong>\(\bar{n} = \log_2(4n) = O(\log_2(\varepsilon^{-1}))\)</strong> 个量子比特。</p>
+  </div>
+
+  <p><strong>关键意义：</strong></p>
+  <ul>
+    <li>✅ <strong>无维度诅咒</strong>：误差界不随输入数据维度 \(d\) 增大而退化。对比之下，量子特征映射方法的误差界为 \(O(\varepsilon^{-d})\)。</li>
+    <li>✅ <strong>QRC 比 QNN 更高效</strong>：QRC 仅训练线性读出层（\(O(\varepsilon^{-2})\) 参数），而 QNN 需要训练参数化量子电路的全部参数。</li>
+    <li>✅ <strong>测量 shot 噪声</strong>：考虑有限采样 \(S\) 次测量时，总误差界为 \(\frac{\mathcal{L}_1[f]}{\sqrt{n}} + \frac{4R}{\sqrt{S}}\)。</li>
+    <li>✅ <strong>L∞ 误差界</strong>：在紧集 \([-M, M]^d\) 上的均匀逼近误差也以 \(O(n^{-1/2})\) 速率收敛。</li>
+  </ul>
+
+  <p>该定理首次为 QRC 提供了严格的定量逼近保证，是 QRC 理论体系的基石。</p>
+
+  <!-- §2.2 Expressivity -->
+  <h3 id="s2.2">2.2 表达力极限：编码瓶颈</h3>
+  <p><strong>来源：</strong>Schütte et al. (2025), arXiv:2501.15528 — <em>Expressivity Limits of Quantum Reservoir Computing</em></p>
+
+  <div class="card highlight">
+    <h4>核心结论：表达力上限公式</h4>
+    <div class="boxed">
+      \[
+      \boxed{C_T^{\max} = 2r + 1}
+      \]
+    </div>
+    <p>其中 \(r\) 是输入编码中使用的 Pauli 旋转门数量，\(C_T\) 是"可分辨表达容量"（Resolvable Expressive Capacity, REC）——系统能表达的线性无关函数个数。</p>
+  </div>
+
+  <p><strong>推导路径：</strong></p>
+  <ol>
+    <li>编码哈密顿量 \(G = \frac{1}{2}(n_x \sigma_x + n_y \sigma_y + n_z \sigma_z)\) 的特征值 \(\pm 1/2\) 唯一确定了输出函数的频率谱 \(\Omega\)。</li>
+    <li>单量子比特旋转编码 \(R_n(u) = e^{-iuG}\) 产生的 QRC 输出是<strong>偏傅里叶级数</strong>：
+      \[
+      f(u) = \sum_{\omega \in \Omega} c(\omega) e^{i\omega u}
+      \]
+    </li>
+    <li>\(r\) 次 Pauli 旋转产生频率谱 \(\Omega = \{-r, -r+1, \ldots, r-1, r\}\)，共 \(2r+1\) 个独立频率。</li>
+    <li>因此 QRC 最多可表达 \(2r+1\) 个正交函数——<strong>与储备池的希尔伯特空间维度完全无关</strong>。</li>
+  </ol>
+
+  <div class="card info">
+    <h4>重要启示</h4>
+    <ul>
+      <li>🔴 <strong>"指数希尔伯特空间 = 指数计算能力"是错误直觉</strong>——表达力瓶颈在于编码而非储备池。</li>
+      <li>🔴 单纯增加量子比特数量或纠缠深度<strong>不能</strong>提升表达力上限。</li>
+      <li>🟢 突破路径：(a) 多量子比特纠缠编码方案；(b) 量子原生数据直接输入；(c) 反馈增强机制（见 §4.3）。</li>
+      <li>🟢 数值验证：横场 Ising 模型的 REC 值精确匹配 \(2r+1\) 上界。</li>
+    </ul>
+  </div>
+
+  <!-- §2.3 Chaos Edge -->
+  <h3 id="s2.3">2.3 多体量子混沌边缘</h3>
+  <p><strong>来源：</strong>Kobayashi & Motome (2025), PRL, arXiv:2506.17547 — <em>Edge of Many-Body Quantum Chaos in QRC</em></p>
+
+  <div class="card highlight">
+    <h4>SYK 模型哈密顿量</h4>
+    <div class="boxed">
+      \[
+      H = \sum_{i,j,k,l=1}^{N} J_{ijkl} c_i^\dagger c_j^\dagger c_k c_l
+          + \sum_{i,j=1}^{N} \mu_{ij} c_i^\dagger c_j
+      \]
+    </div>
+    <p>SYK₄ 项（全连接四费米子相互作用）：\(J_{ijkl}\) 为零均值复高斯随机变量，方差 \(\overline{|J_{ijkl}|^2} = J_4^2 / N^3\)。<br>
+    SYK₂ 项（可积极限）：\(\mu_{ij}\) 方差 \(\overline{|\mu_{ij}|^2} = \mu_2^2 / (2N)\)。<br>
+    调节 \(\mu_2/J_4\) 可实现从量子混沌 (SYK₄) 到可积 (SYK₂) 的平滑过渡。</p>
+  </div>
+
+  <p><strong>两类"边缘"：</strong></p>
+  <ol>
+    <li><strong>时序边界 — Thouless 时间 \(t_{\text{Th}} \approx 4.5\)：</strong>
+      当演化时间 \(t < t_{\text{Th}}\) 时，系统动力学携带丰富的结构信息；当 \(t > t_{\text{Th}}\) 时，动力学由随机矩阵理论 (RMT) 描述，信息被完全置乱。QRC 性能在 <strong>\(t \approx t_{\text{Th}}\)</strong> 处达到峰值。
+    </li>
+    <li><strong>参数边界 — 量子混沌起始处：</strong>
+      调节 \(\mu_2/J_4\) 使系统恰好进入量子混沌区域（能级间距比 \(\langle r \rangle\) 从 Poisson ~0.386 过渡到 WD ~0.600），NARMA 任务的 NMSE 在此处取得最小值。
+    </li>
+  </ol>
+
+  <div class="card">
+    <h4>诊断工具：能级间距比</h4>
+    <p>定义邻域能隙比：</p>
+    \[
+    r_n = \min\left(\frac{\delta_n}{\delta_{n+1}}, \frac{\delta_{n+1}}{\delta_n}\right), \quad \delta_n = E_{n+1} - E_n
+    \]
+    <table>
+      <tr><th>分布</th><th>\(\langle r \rangle\)</th><th>物理意义</th></tr>
+      <tr><td>Poisson</td><td>~0.386</td><td>可积系统 / 多体局域化 (MBL)</td></tr>
+      <tr><td>GOE (Wigner-Dyson, β=1)</td><td>~0.531</td><td>量子混沌 / 遍历相</td></tr>
+      <tr><td>GUE (β=2)</td><td>~0.600</td><td>最大量子混沌 (时间反演对称性破缺)</td></tr>
+    </table>
+    <p>QRC 最优性能出现在 <strong>GOE 与 Poisson 之间的过渡区域</strong>——即"混沌边缘"。</p>
+  </div>
+
+  <p><strong>补充：EoC-GEP 超参数选择策略</strong>（Li et al., 2026）：基于横场 Ising 模型的能级间距比热力图，可以可视化地识别超参数最优区域。该方法在 Lorenz63、Lorenz96、Rössler 和四翼超混沌等多维非线性系统中一致有效。</p>
+
+  <!-- §2.4 Non-Markovian -->
+  <h3 id="s2.4">2.4 非马尔可夫性与记忆增强</h3>
+  <p><strong>来源：</strong>Sannia et al. (2026), <em>npj Quantum Information</em> — <em>Non-Markovianity and Memory Enhancement in QRC</em></p>
+
+  <div class="card highlight">
+    <h4>核心定理：马尔可夫 QRC 的指数记忆衰减</h4>
+    <div class="boxed">
+      \[
+      C[\hat{y}^{(\tau)}] = O(e^{-a\tau})
+      \]
+    </div>
+    <p>对于延迟 \(\tau\) 步的记忆任务，任何满足 GKLS 主方程的马尔可夫储备池的记忆容量必然指数衰减。原因：Volterra 级数的第 \(n\) 阶泛函 \(|f_n(s_{k-\tau_1}, \ldots, s_{k-\tau_n})| = O(e^{-an})\)，信息在重复的 CPTP 映射下被指数稀释。</p>
+  </div>
+
+  <p><strong>突破路径 — 两种非马尔可夫架构：</strong></p>
+  <ol>
+    <li><strong>量子残差储备池模型</strong>：
+      \[
+      \rho_{k+1} = e^{\mathcal{L}(s_{k+1})\Delta t} [\alpha \rho_k + (1-\alpha) \rho_{k-E}]
+      \]
+      其中 \(\alpha \in [0,1)\)，\(E\) 为非马尔可夫时间尺度。当 \(\alpha < 1\) 时，延迟 \(E\) 步的记忆被人工恢复。
+    </li>
+    <li><strong>嵌入式非马尔可夫储备池</strong>：
+      通过部分 Swap 操作 \(\hat{P}^i(\phi) = \cos\phi \cdot \mathbb{I} + i\sin\phi \cdot \hat{S}^i\) 将系统与辅助量子比特耦合，辅助比特的去极化通道强度 \(\epsilon\) 可调：\(\epsilon = 1\) 为完全马尔可夫，\(\epsilon = 0\) 为最大非马尔可夫。
+    </li>
+  </ol>
+
+  <p><strong>实验验证（Mackey-Glass 混沌预测）：</strong></p>
+  <ul>
+    <li>\(\epsilon = 1\)（马尔可夫）：MSE = \(1.8 \times 10^{-2}\)</li>
+    <li>\(\epsilon = 0.5\)（最优非马尔可夫）：MSE = \(6.8 \times 10^{-3}\) — <strong>性能提升 2.6 倍</strong></li>
+    <li>\(\epsilon = 0\)（极限非马尔可夫）：MSE = \(2 \times 10^{-2}\) — 记忆恢复过于分散，性能退化</li>
+  </ul>
+  <p><strong>关键洞察：</strong>最优非马尔可夫程度是任务依赖的，找到"恰到好处"的非马尔可夫性是一门工程艺术。</p>
+</section>
+
+<!-- ═══════════════════════ §3: PLATFORMS ═══════════════════════ -->
+<section id="s3">
+  <h2 class="sec-title">三、物理平台全景</h2>
+
+  <!-- §3.1 Neutral Atoms -->
+  <h3 id="s3.1">3.1 中性原子 / Rydberg 平台 ⭐ 主力</h3>
+  <p><strong>代表工作：</strong>Kornjača et al. (2024, QuEra, 108 qubit), Batista et al. (2025, QGARS), Antoncich et al. (2026, 医学数据集)</p>
+
+  <div class="card">
+    <h4>Rydberg 哈密顿量</h4>
+    <div class="boxed">
+      \[
+      H(t) = \frac{\Omega(t)}{2} \sum_j \left(|g_j\rangle\langle r_j| + \text{h.c.}\right)
+             + \sum_{j<k} \frac{C_6}{R_{jk}^6} n_j n_k
+             - \sum_j (\Delta_g + \varepsilon_j \Delta_l) n_j
+      \]
+    </div>
+    <p>其中 \(\Omega\) 为 Rabi 频率（~2π × 5 MHz），\(C_6\) = 5,420,503 µm⁶·rad/µs 为范德瓦尔斯系数，\(n_j = |r_j\rangle\langle r_j|\) 为 Rydberg 态投影算符。Rydberg 阻塞效应提供了天然的非线性。</p>
+  </div>
+
+  <table>
+    <tr><th>编码方案</th><th>原理</th><th>容量</th><th>噪声敏感性</th></tr>
+    <tr><td>全局脉冲编码</td><td>数据映射到失谐脉冲时间轮廓</td><td>与系统大小无关</td><td>高（后期时间步信息丢失）</td></tr>
+    <tr><td>位置编码</td><td>原子间距调制 Rydberg 相互作用</td><td>N−1 特征</td><td>中（原子位置抖动）</td></tr>
+    <tr><td>局域脉冲编码</td><td>位点依赖局域失谐 \(\varepsilon_j\Delta_l\)</td><td>N 特征</td><td>低</td></tr>
+  </table>
+
+  <p><strong>核心成就：</strong></p>
+  <ul>
+    <li>最大 QML 实验规模：<strong>108 量子比特</strong></li>
+    <li>MNIST 手写数字（10 类）：~93.5%（2D 阵列，220 shots/样本）</li>
+    <li>发现<strong>通用参数区间</strong>：\(\Omega \sim V \sim \Delta\)（三个能标相当时性能最优且鲁棒）</li>
+    <li>量子核与经典核存在可验证的几何差异（基于合成数据集）</li>
+  </ul>
+
+  <!-- §3.2 Photonic -->
+  <h3 id="s3.2">3.2 光子平台</h3>
+
+  <h4>3.2.1 Gaussian Boson Sampler (GBS) QRC</h4>
+  <p><strong>来源：</strong>Cimini et al. (2026), <em>npj Quantum Information</em> — <em>Large-scale QRC using a Gaussian Boson Sampler</em></p>
+
+  <div class="card">
+    <p><strong>系统规模：</strong>>400 频率模式，频率域可编程分束器实现幺正演化。</p>
+    <p><strong>量子优势的直接证据：</strong></p>
+    <ul>
+      <li>仅用平均光子数（单体可观测量）→ 基线性能</li>
+      <li>加入<strong>光子数协方差矩阵（两体关联）</strong>→ 准确率提升 <strong>>20 个百分点</strong></li>
+    </ul>
+    <p><strong>光源对比：</strong>挤压真空（量子）> 相干光（经典激光）> 热光（ASE）> 超连续谱光，量子光源的优越性一致存在。</p>
+    <table>
+      <tr><th>任务</th><th>最佳准确率</th><th>光源</th></tr>
+      <tr><td>MNIST 手写数字</td><td>~97%</td><td>挤压光 + 协方差特征</td></tr>
+      <tr><td>元音分类</td><td>>97%</td><td>挤压光</td></tr>
+    </table>
+  </div>
+
+  <h4>3.2.2 光子数分辨 QRC (Photon-QuaRC)</h4>
+  <p><strong>来源：</strong>Nerenberg et al. (2025), arXiv:2402.06339</p>
+  <p>核心创新在于利用光子数分辨（PNR）探测访问组合级数增长的希尔伯特空间。输出空间维度为：</p>
+  <div class="boxed">
+    \[
+    \Gamma = \binom{M + N_p - 1}{N_p}
+    \]
+  </div>
+  <p>其中 \(M\) 为模式数，\(N_p\) 为光子数。无需增加物理模式即可实现输出空间的组合爆炸式增长，推理复杂度 O(1)（核方法为 O(N_train)），室温即可运行。</p>
+
+  <!-- §3.3 Spin -->
+  <h3 id="s3.3">3.3 自旋系统 / 固态 NMR 平台</h3>
+  <p><strong>来源：</strong>Hou et al. (2026), arXiv:2508.12383 — <em>High-Accuracy Temporal Prediction via Experimental QRC in Correlated Spins</em></p>
+
+  <div class="card highlight">
+    <p><strong>历史性突破：首次实验证明量子机器学习在真实世界任务上超越大规模经典网络。</strong></p>
+    <ul>
+      <li>两大创新：(1) 利用自然 T₁ 弛豫作为计算资源（化弊为利）；(2) 时间复用测量扩展有效读出容量。</li>
+      <li>NARMA 任务：预测误差比此前 QRC 实验<strong>降低 1–2 个数量级</strong></li>
+      <li>天气预测：<strong>9 自旋 QRC 超越数千节点的经典储备池</strong></li>
+    </ul>
+  </div>
+
+  <!-- §3.4 Cavity QED -->
+  <h3 id="s3.4">3.4 腔 QED 极简平台</h3>
+  <p><strong>来源：</strong>Zhu et al. (2025), <em>npj Quantum Information</em> — <em>Minimalistic and Scalable QRC Enhanced with Feedback</em></p>
+
+  <p><strong>极致简约：仅需 5 个原子 + 单模光学腔。</strong>新原子自动通过共享腔场耦合，天然可扩展。两大核心引擎：</p>
+  <ol>
+    <li><strong>连续量子测量</strong>：腔场提供 2 个正交光电流读出（Q, P），每个原子提供 2 个自旋通道（\(\sigma^x, \sigma^y\)），无需态层析。</li>
+    <li><strong>反馈机制</strong>：\(\tilde{f}_k = f_k + \sum_n V_n \cdot x_n^f\)，将部分读出反馈回输入，仅修改动力学而不改变硬件。</li>
+  </ol>
+  <p>5 原子相比 3 原子性能显著提升，验证了天然可扩展性。Mackey-Glass 混沌预测中反馈 + 多项式回归显著缩小误差。</p>
+
+  <!-- §3.5 Distributed -->
+  <h3 id="s3.5">3.5 分布式与混合架构</h3>
+  <p><strong>来源：</strong>Liliopoulos et al. (2026), arXiv:2605.04991 — <em>Scalable QRC over Distributed Quantum Architectures</em></p>
+
+  <p>提出四种架构方案 (SRSR/MRSR/SRMR/MRMR)，支持异构量子硬件（IBM 超导 + IonQ 离子阱）混合使用。量子增强配置：MAE 降低 <strong>78.8%</strong>，RMSE 降低 <strong>72.3%</strong>。</p>
+
+  <p><strong>商业进展（2026）：</strong>FirstQFM + NVIDIA 推出量子基础模型 (QFM)，在 41 个金融预测任务上实现 56.1% 的零样本胜率（vs 经典时序模型）。部署于 Rigetti 超导 QPU + NVIDIA cuQuantum，支持设备感知的动态重调。</p>
+</section>
+
+<!-- ═══════════════════════ §4: ARCHITECTURE ═══════════════════════ -->
+<section id="s4">
+  <h2 class="sec-title">四、架构选择与关键优化</h2>
+
+  <!-- §4.1 SS vs MS -->
+  <h3 id="s4.1">4.1 SS-QRC vs MS-QRC：NISQ 时代的架构选择</h3>
+  <p><strong>来源：</strong>Liu et al. (2026), arXiv:2602.00610 — <em>Practical QRC in Rydberg Atom Arrays</em></p>
+
+  <div class="card highlight">
+    <table>
+      <tr><th>特性</th><th>SS-QRC（单步）</th><th>MS-QRC（多步）</th></tr>
+      <tr><td>演化方式</td><td>每个样本独立单步 CPTP 映射</td><td>序列输入经多步 CPTP 演化</td></tr>
+      <tr><td>记忆来源</td><td>时间延迟嵌入（滑动窗口）</td><td>固有递归动力学</td></tr>
+      <tr><td>对物态的敏感性</td><td><strong>低</strong></td><td>高（峰值在相变边界）</td></tr>
+      <tr><td>对退相干的鲁棒性</td><td><strong>高</strong></td><td>低</td></tr>
+      <tr><td>采样噪声的影响</td><td><strong>轻微</strong></td><td>严重 — IPC 急剧下降</td></tr>
+      <tr><td>NISQ 实用推荐度</td><td>⭐⭐⭐ <strong>首选</strong></td><td>⭐</td></tr>
+    </table>
+  </div>
+
+  <p><strong>核心结论：SS-QRC 对系统配置和统计噪声都具有更强的鲁棒性，是 NISQ 时代实用化部署的首选架构。</strong></p>
+
+  <p><strong>诊断工具 — OTOC（Out-of-Time-Order Correlator）：</strong></p>
+  <div class="boxed">
+    \[
+    F(\tau) = \frac{1}{N-1} \sum_{i=2}^{N}
+    \langle \hat{\sigma}_1^z(\tau) \hat{\sigma}_i^z(0) \hat{\sigma}_1^z(\tau) \hat{\sigma}_i^z(0) \rangle
+    \]
+  </div>
+  <p>\(F(\tau)\) 衰减到 1/2 的时刻标志信息已充分置乱，可作为最优演化时间的选择依据。在 Rydberg 阵列中，\(\tau_{\text{opt}} \approx 10/\Omega\)。</p>
+
+  <!-- §4.2 Kernel Opt -->
+  <h3 id="s4.2">4.2 基于核的最优测量算子</h3>
+  <p><strong>来源：</strong>Gross & Rieser (2026), arXiv:2602.14677</p>
+
+  <p>将 QRC 训练表述为核岭回归对偶问题，在历史空间上构造精确的 Hilbert-Schmidt 核表示，从而<strong>闭式求解最优测量算子</strong>：</p>
+  <div class="boxed">
+    \[
+    M^* = \sum_{i,j} \alpha_{ij} \, \rho(x_i) \rho(x_j)
+    \]
+  </div>
+  <p>三种训练范式：(A) 约束原问题（传统 QRC）；(B) 无约束原问题（可训练任意测量算子）；(C) <strong>对偶空间（新提出）</strong>——在大量子比特数下比传统 QRC 训练更高效。</p>
+
+  <!-- §4.3 Feedback -->
+  <h3 id="s4.3">4.3 反馈增强与多项式读出</h3>
+  <p>反馈机制（Zhu et al., 2025）将部分观测量读出作为附加输入引回储备池：</p>
+  <div class="boxed">
+    \[
+    \tilde{f}_k = f_k + \sum_n V_n \cdot x_n^f
+    \]
+  </div>
+  <p>这等同于部分隐藏态的自循环，但读出来自量子非线性系统的高维希尔伯特空间。配合多项式回归（引入二次项 \(x_i x_j\)），读出维度从 \(O(N)\) 扩展到 \(O(N^2)\)，在极小硬件（5 原子）上实现高表达力。</p>
+
+  <!-- §4.4 Image Pipeline -->
+  <h3 id="s4.4">4.4 图像识别核心技术栈</h3>
+  <p><strong>端到端 Pipeline：</strong></p>
+  <div class="boxed">
+    维度约简 (AE/PCA) → 量子储备池编码 (Rydberg/光子) → 量子动力学演化 (哈密顿量) → 观测量提取 (\(\langle Z \rangle\)/协方差) → 线性分类 (SVM/LR)
+  </div>
+
+  <div class="card info">
+    <h4>QGARS：量子引导自编码器 + 代理模型训练</h4>
+    <p><strong>来源：</strong>Batista et al. (2025), IEEE QAI</p>
+    <p><strong>核心痛点：</strong>量子测量不可微分 → 无法反向传播。</p>
+    <p><strong>方案：</strong>经典神经网络代理 \(f_{\text{sur}}(z; \theta_{\text{sur}})\) 模拟量子储备池的输入-输出映射，每 N 个 epoch 用真实量子嵌入更新代理模型。训练完成后，真实量子储备池用于推理。</p>
+    <p><strong>联合损失：</strong>\(L = (1-\alpha) \cdot L_R + \alpha \cdot L_C\)，\(L_R = \|x - \hat{x}\|^2\)（重建），\(L_C = -\sum y_i \log(\hat{y}_i)\)（分类交叉熵）。</p>
+  </div>
+
+  <div class="card highlight">
+    <h4>硬件正则化效应 — NISQ 噪声的隐性优势</h4>
+    <p><strong>来源：</strong>Antoncich et al. (2026), arXiv:2602.14641</p>
+    <p><strong>关键发现：</strong>在真实 Rydberg 硬件上执行 QRC 时，由于硬件施加的结构化时间变换（均值压缩 + 互信息随时间递减），量子特征比无噪声模拟<strong>更鲁棒、泛化能力统计显著提升</strong>。NISQ 噪声不是敌人而是资源——免费的隐式正则化。</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════ §5: BENCHMARKS ═══════════════════════ -->
+<section id="s5">
+  <h2 class="sec-title">五、实验性能对标</h2>
+
+  <h3>5.1 图像分类任务</h3>
+  <table>
+    <tr><th>任务</th><th>平台</th><th>方法</th><th>最佳准确率</th><th>备注</th></tr>
+    <tr><td>MNIST 3/8 二分类</td><td>中性原子 (Aquila, 108 qubit)</td><td>QRC + 位置编码</td><td>93.5%</td><td>220 shots/样本</td></tr>
+    <tr><td>MNIST 10 类</td><td>中性原子 (Aquila)</td><td>QRC + 位置编码</td><td>~90%</td><td>受 shots 数限制</td></tr>
+    <tr><td>MNIST 手写数字</td><td>GBS 光子 (>400 模)</td><td>QRC + SVM</td><td>~97%</td><td>协方差特征</td></tr>
+    <tr><td>元音分类</td><td>GBS 光子</td><td>QRC + SVM</td><td>>97%</td><td>挤压光</td></tr>
+    <tr><td>番茄叶片病害 3 类</td><td>中性原子</td><td>QRC + 2D 位置编码</td><td>随 qubit 增长</td><td>108 qubit</td></tr>
+    <tr><td>结肠镜息肉检测</td><td>中性原子 (Rydberg)</td><td>QGARS 代理训练</td><td>优于 PCA</td><td>医学图像首个 QRC</td></tr>
+    <tr><td>对抗鲁棒性</td><td>Rydberg (8 qubit)</td><td>QRC+MLP</td><td>显著优于纯经典</td><td>FGSM/PGD/DeepFool</td></tr>
+  </table>
+
+  <h3>5.2 时序预测任务</h3>
+  <table>
+    <tr><th>任务</th><th>平台</th><th>性能</th><th>对比基准</th></tr>
+    <tr><td>NARMA</td><td>自旋系统 (NMR)</td><td>NMSE 降 1–2 数量级</td><td>vs 此前 QRC 实验 (SOTA)</td></tr>
+    <tr><td>天气预测</td><td>自旋系统 (9 自旋)</td><td><strong>超越经典 RC</strong></td><td>vs 数千节点经典储备池</td></tr>
+    <tr><td>Santa Fe 激光</td><td>中性原子</td><td>局域编码最优</td><td>三种编码方案对比</td></tr>
+    <tr><td>电力负荷预测</td><td>分布式 QRC</td><td>MAE 降 78.8%</td><td>vs 经典 RC</td></tr>
+    <tr><td>Mackey-Glass 混沌</td><td>腔 QED (5 原子)</td><td>反馈+多项式显著缩小误差</td><td>极简硬件</td></tr>
+    <tr><td>Lorenz63/96/Rössler</td><td>Ising 模型 (8 qubit)</td><td>EoC-GEP 指导超参数</td><td>多维非线性动力学</td></tr>
+    <tr><td>金融时序 (41 任务)</td><td>超导 QPU + NVIDIA</td><td>56.1% 零样本胜率</td><td>vs 经典时序模型</td></tr>
+  </table>
+
+  <h3>5.3 经典 vs 量子对标</h3>
+  <table>
+    <tr><th>指标</th><th>经典 RC</th><th>QRC (当前 SOTA)</th></tr>
+    <tr><td>最大规模</td><td>数千节点</td><td>108 qubit（中性原子）/ >400 模（光子）</td></tr>
+    <tr><td>训练方式</td><td>线性读出</td><td>线性读出（相同）</td></tr>
+    <tr><td>维度优势</td><td>线性增长</td><td>理论指数增长（受编码限制）</td></tr>
+    <tr><td>NISQ 兼容性</td><td>N/A</td><td><strong>噪声可能有益</strong>（正则化效应）</td></tr>
+    <tr><td>图像任务 SOTA</td><td>>99% (CNN)</td><td>~97%（GBS 光子）差距缩小中</td></tr>
+    <tr><td>时序任务优势</td><td>基准</td><td>9 自旋 > 数千经典节点（天气预测）</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════ §6: CHALLENGES ═══════════════════════ -->
+<section id="s6">
+  <h2 class="sec-title">六、挑战与未来方向</h2>
+
+  <h3>6.1 当前主要挑战</h3>
+  <div class="card">
+    <ol>
+      <li><strong>⚠️ 输入编码瓶颈（最高优先级）</strong><br>
+      表达力上界 \(C_T^{\max} = 2r+1\) 由编码门数线性约束。需要多量子比特纠缠编码方案突破此瓶颈。反馈机制 (Zhu et al.) 提供了不改变硬件的替代路径。</li>
+
+      <li><strong>架构选择与噪声权衡</strong><br>
+      MS-QRC 虽具固有递归记忆，但在采样噪声下 IPC 严重退化。SS-QRC 更鲁棒但需滑动窗口补偿记忆。实用化应优先选择 SS-QRC 架构。</li>
+
+      <li><strong>读出效率</strong><br>
+      局域测量仅捕捉少数自由度，完整态层析代价指数增长。连续量子测量 (Zhu) + 随机测量工具箱 (Liu) 是缓解开销的有前景方案。</li>
+
+      <li><strong>测量 shots 限制</strong><br>
+      有限采样引入统计噪声，当前 ~220–500 shots/样本限制了高维嵌入的实际效果。</li>
+
+      <li><strong>多维非线性建模</strong><br>
+      多数 QRC 研究限于 1 维基准 (NARMA)，真实系统多为多维。EoC-GEP 已验证在多维系统中有效，但超参数空间更大。</li>
+
+      <li><strong>量子优势的严格证明</strong><br>
+      当前最优结果是"优于经典版自己"或"在某些任务上超越特定经典方法"，但尚未有严格不可近似性证明。</li>
+    </ol>
+  </div>
+
+  <h3>6.2 前沿方向</h3>
+  <div class="card info">
+    <ol>
+      <li><strong>🔬 量子原生数据</strong> — 直接处理量子态输入，绕过编码瓶颈。</li>
+      <li><strong>🔧 NISQ 噪声工程化</strong> — 主动利用硬件噪声作为正则化/计算资源。</li>
+      <li><strong>🔗 多量子比特纠缠编码</strong> — 超越单量子比特旋转，利用纠缠编码提升表达力。</li>
+      <li><strong>🔄 反馈驱动 QRC</strong> — 反馈在不改变硬件的条件下提升表达力，可推广至其他平台。</li>
+      <li><strong>📡 SS-QRC 实用化路径</strong> — 比 MS-QRC 更鲁棒，优先在 NISQ 设备上部署。</li>
+      <li><strong>🧬 极小化硬件方案</strong> — 腔 QED 5 原子证明"少即是多"，探索其他极简平台。</li>
+      <li><strong>🌐 多维复杂系统建模</strong> — 从 1 维基准扩展到真实多维应用（气候、金融、生物）。</li>
+      <li><strong>💡 光子平台实用化</strong> — GBS、PNR 探测向大规模商用迈进。</li>
+      <li><strong>🤝 混合量子-经典协同</strong> — 代理模型、分布式架构、核方法的深度融合。</li>
+      <li><strong>🎯 EoC-GEP 自动化</strong> — 将超参数选择标准化，减少人工调参。</li>
+    </ol>
+  </div>
+
+  <h3>6.3 关键时间线</h3>
+  <table>
+    <tr><th>时间</th><th>里程碑</th></tr>
+    <tr><td>2021</td><td>Mujal et al. 发表首篇 QRC 综述，确立范式框架</td></tr>
+    <tr><td>2024</td><td>Kornjača et al. 在 108 qubit Rydberg 阵列上实现最大规模 QRC 实验</td></tr>
+    <tr><td>2025</td><td>表达力极限定理 (Schütte)、普适逼近定理 (Gonon)、量子混沌边缘 (Kobayashi) 三篇理论突破</td></tr>
+    <tr><td>2025</td><td>腔 QED 极简 QRC (Zhu)、QGARS 代理训练 (Batista)、光子数分辨 QRC (Nerenberg)</td></tr>
+    <tr><td>2026</td><td>GBS 光子 >400 模实验 (Cimini, npj QI)；9 自旋超越经典 RC (Hou)；非马尔可夫记忆增强 (Sannia)</td></tr>
+    <tr><td>2026</td><td>SS-QRC 实用化分析 (Liu)；核优化测量 (Gross)；分布式架构 (Liliopoulos)；EoC-GEP (Li)</td></tr>
+    <tr><td>2026</td><td>FirstQFM + NVIDIA 量子基础模型商业化，金融预测首批企业部署</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════ REFERENCES ═══════════════════════ -->
+<section id="refs">
+  <h2 class="sec-title">参考文献</h2>
+
+  <ol class="ref-list">
+    <li><strong>[Gonon & Jacquier 2025]</strong> L. Gonon and A. Jacquier, "Universal Approximation Theorem and Error Bounds for Quantum Neural Networks and Quantum Reservoirs," arXiv:2307.12904v2, Feb 2025. <span class="tag">🔵 理论</span></li>
+    <li><strong>[Schütte et al. 2025]</strong> N.-E. Schütte, N. Götting, H. Muntinga, M. List, D. Brunner, C. Gies, "Expressivity Limits of Quantum Reservoir Computing," arXiv:2501.15528v2, May 2025. <span class="tag">🔵 理论</span></li>
+    <li><strong>[Kobayashi & Motome 2025]</strong> K. Kobayashi and Y. Motome, "Edge of Many-Body Quantum Chaos in Quantum Reservoir Computing," Phys. Rev. Lett., arXiv:2506.17547v3, Dec 2025. <span class="tag">🔵 理论</span></li>
+    <li><strong>[Kornjača et al. 2024]</strong> M. Kornjača et al., "Large-scale quantum reservoir learning with an analog quantum computer," arXiv:2407.02553, 2024. <span class="tag">🔴 图像</span></li>
+    <li><strong>[Batista et al. 2025]</strong> C. Batista et al., "Medical Imaging Classification with Cold-Atom Reservoir Computing Using Auto-Encoders and Surrogate-Driven Training," IEEE QAI, 2025. <span class="tag">🔴 图像</span></li>
+    <li><strong>[Antoncich et al. 2026]</strong> J. Antoncich et al., "Quantum Reservoir Computing with Neutral Atoms on a Small, Complex, Medical Dataset," arXiv:2602.14641, 2026. <span class="tag">🔴 图像</span></li>
+    <li><strong>[Cimini et al. 2026]</strong> V. Cimini et al., "Large-scale quantum reservoir computing using a Gaussian Boson Sampler," npj Quantum Information, DOI:10.1038/s41534-026-01251-w, 2026. <span class="tag">🔴 图像</span></li>
+    <li><strong>[Nerenberg et al. 2025]</strong> J. Nerenberg et al., "Photon Number-Resolving Quantum Reservoir Computing," arXiv:2402.06339, 2025. <span class="tag">🟡 光子</span></li>
+    <li><strong>[Hou et al. 2026]</strong> Y. Hou et al., "High-Accuracy Temporal Prediction via Experimental QRC in Correlated Spins," arXiv:2508.12383, 2026. <span class="tag">🟡 时序</span></li>
+    <li><strong>[Liliopoulos et al. 2026]</strong> D. Liliopoulos et al., "Scalable Quantum Reservoir Computing over Distributed Quantum Architectures," arXiv:2605.04991, 2026. <span class="tag">🟢 架构</span></li>
+    <li><strong>[Gross & Rieser 2026]</strong> J. Gross and K. Rieser, "Kernel-based Optimization of Measurement Operators for Quantum Reservoir Computers," arXiv:2602.14677, 2026. <span class="tag">🟢 优化</span></li>
+    <li><strong>[Sannia et al. 2026]</strong> A. Sannia, R. R. Rodriguez, G. L. Giorgi, R. Zambrini, "Non-Markovianity and Memory Enhancement in Quantum Reservoir Computing," npj Quantum Information, DOI:10.1038/s41534-026-01257-4, 2026. <span class="tag">🟢 优化</span></li>
+    <li><strong>[Zhang et al. 2024]</strong> J. Zhang et al., "Quantum Fourier Transformation Using Quantum Reservoir Computing Network," Adv. Quantum Technol., 2024. <span class="tag">🟡 应用</span></li>
+    <li><strong>[Mujal et al. 2021]</strong> P. Mujal et al., "Opportunities in Quantum Reservoir Computing and Extreme Learning Machines," Adv. Quantum Technol., 2021. <span class="tag">📋 综述</span></li>
+    <li><strong>[Liu et al. 2026]</strong> D.-S. Liu, Q.-X. Jie, C.-L. Zou, X.-F. Ren, G.-C. Guo, "Practical Quantum Reservoir Computing in Rydberg Atom Arrays," arXiv:2602.00610, 2026. <span class="tag">🟢 架构</span></li>
+    <li><strong>[Zhu et al. 2025]</strong> Z. Zhu et al., "Minimalistic and Scalable Quantum Reservoir Computing Enhanced with Feedback," npj Quantum Information, 2025. <span class="tag">🟢 优化</span></li>
+    <li><strong>[Li et al. 2026]</strong> S. Li et al., "Quantum Reservoir Computing for Modeling Nonlinear Complex Dynamics," IITI 2025, 2026. <span class="tag">🟡 动力学</span></li>
+    <li><strong>[Tariq et al. 2025]</strong> T. Tariq et al., "Towards Quantum Enhanced Adversarial Robustness with Rydberg Reservoir Learning," arXiv:2510.13473, 2025. <span class="tag">🔴 图像</span></li>
+    <li><strong>[Paparelle et al. 2026]</strong> I. Paparelle et al., "Experimental memory control in continuous-variable optical quantum reservoir computing," Nature Photonics, 2026. <span class="tag">💡 光子</span></li>
+    <li><strong>[FirstQFM 2026]</strong> FirstQFM & NVIDIA, "Deploy Machine Learning Foundation Models to Accelerate Quantum Reservoir Computing," ISC 2026, Quantum Computing Report. <span class="tag">🏭 商业</span></li>
+  </ol>
+
+  <p style="text-align:center; margin: 40px 0 20px; color: #999; font-size: 0.85em;">
+    📝 报告基于 20 篇文献 + 网上调研 &middot; 生成日期：2026年6月29日 &middot; 猫猫咩咩阅览室
+  </p>
+</section>
+
+</div>
+
+</body>
+</html>

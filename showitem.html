@@ -88,7 +88,21 @@
 
         .item-card h2 { margin: 0 0 10px 0; font-size: 1.3rem; color: #333; line-height: 1.4; }
         .item-author { color: var(--brand-color); font-weight: bold; margin-bottom: 15px; font-size: 0.9rem; }
-        
+
+        /* --- AI 调研笔记卡片样式 --- */
+        .report-card { cursor: pointer; text-decoration: none; color: inherit; }
+        .report-date { font-size: 0.85rem; color: #777; margin-bottom: 12px; }
+        .report-abstract {
+            font-size: 0.9rem; line-height: 1.7; color: #444;
+            flex-grow: 1; margin-bottom: 15px;
+        }
+        .report-tag {
+            display: inline-block; font-size: 0.75rem;
+            background: #eef5f1; padding: 2px 8px; border-radius: 4px;
+            color: var(--brand-color); font-weight: bold; margin-right: 5px; margin-bottom: 5px;
+        }
+        .report-tags-row { margin-top: auto; padding-top: 12px; border-top: 1px dashed #ddd; }
+
         .notes-list {
             margin-top: auto; 
             padding-top: 15px;
@@ -142,12 +156,14 @@
         <a href="?type=all" class="filter-btn" id="btn-all">全部内容</a>
         <a href="?type=book" class="filter-btn" id="btn-book">📖 仅书单</a>
         <a href="?type=movie" class="filter-btn" id="btn-movie">🎬 仅影单</a>
+        <a href="?type=report" class="filter-btn" id="btn-report">📝 AI 调研</a>
     </div>
 
     <div class="item-grid" id="itemGrid"></div>
 </div>
 
 <script src="notedata.js"></script>
+<script src="reportdata.js"></script>
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const typeParam = urlParams.get('type') || 'all';
@@ -156,7 +172,8 @@
     const config = {
         'all': { title: '📚 Watch & Read Notes', dataKeys: ['书', '影视'] },
         'book': { title: '📖 Books', dataKeys: ['书'] },
-        'movie': { title: '🎬 Videos', dataKeys: ['影视'] }
+        'movie': { title: '🎬 Videos', dataKeys: ['影视'] },
+        'report': { title: '📝 AI 调研笔记', dataKeys: ['report'] }
     };
 
     const currentConfig = config[typeParam] || config['all'];
@@ -168,6 +185,36 @@
 
     function renderItems() {
         const grid = document.getElementById('itemGrid');
+
+        // ---- AI 调研笔记：卡片网格 ----
+        if (typeParam === 'report') {
+            if (typeof REPORT_NOTES === 'undefined') {
+                grid.innerHTML = `<div class="empty-tip">数据加载失败</div>`;
+                return;
+            }
+            const reports = Object.entries(REPORT_NOTES);
+            if (reports.length === 0) {
+                grid.innerHTML = `<div class="empty-tip">暂无 AI 调研笔记</div>`;
+                return;
+            }
+            // 按日期倒序
+            reports.sort((a, b) => new Date(b[1].date) - new Date(a[1].date));
+            grid.innerHTML = reports.map(([id, r]) => {
+                const tagsHtml = (r.tags || []).map(t =>
+                    `<span class="report-tag">#${t}</span>`
+                ).join('');
+                return `
+                    <a href="note.html?type=report&id=${id}" class="item-card report-card">
+                        <h2>${r.title || '无标题'}</h2>
+                        <div class="report-date">📅 ${r.date || '未知日期'}</div>
+                        <p class="report-abstract">${(r.abstract || '暂无摘要').substring(0, 150)}${(r.abstract || '').length > 150 ? '...' : ''}</p>
+                        <div class="report-tags-row">${tagsHtml}</div>
+                    </a>
+                `;
+            }).join('');
+            return;
+        }
+
         const collections = {};
 
         if (typeof ALL_NOTES === 'undefined') {
@@ -177,18 +224,18 @@
 
         Object.keys(ALL_NOTES).forEach(id => {
             const note = ALL_NOTES[id];
-            
+
             // 匹配逻辑：判断 note.type 是否在当前配置的 dataKeys 数组中
             if (currentConfig.dataKeys.includes(note.type)) {
                 const sourceName = note.source || '未命名来源';
-                
+
                 if (!collections[sourceName]) {
                     collections[sourceName] = {
                         authors: new Set(),
                         notes: []
                     };
                 }
-                
+
                 const author = note.author || '佚名';
                 collections[sourceName].authors.add(author);
                 collections[sourceName].notes.push({ id: id, title: note.title });
@@ -205,7 +252,7 @@
         grid.innerHTML = sourceNames.map(sourceName => {
             const item = collections[sourceName];
             const authorList = Array.from(item.authors).join('、');
-            
+
             return `
                 <div class="item-card">
                     <div class="item-author">👤 ${authorList}</div>

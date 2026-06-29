@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中性原子量子计算机工作原理 — 基于光镊的量子计算综述</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  :root {
+    --bg: #fafafa;
+    --text: #1a1a2e;
+    --accent: #16213e;
+    --accent2: #0f3460;
+    --highlight: #e94560;
+    --card-bg: #ffffff;
+    --border: #e0e0e0;
+    --table-stripe: #f4f6f9;
+    --code-bg: #f0f2f5;
+    --tag-bg: #e8f0fe;
+    --tag-text: #1a73e8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Noto Sans SC", "Segoe UI", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.85;
+    counter-reset: section;
+  }
+  /* ── Cover ── */
+  .cover {
+    background: linear-gradient(135deg, #0f0c29 0%, #16213e 40%, #0f3460 70%, #533483 100%);
+    color: #fff;
+    text-align: center;
+    padding: 100px 40px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle at 20% 80%, rgba(233,68,96,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(83,52,131,0.2) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(15,52,96,0.1) 0%, transparent 70%);
+    animation: pulse 8s ease-in-out infinite alternate;
+  }
+  @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+  .cover > * { position: relative; z-index: 1; }
+  .cover h1 { font-size: 2.6em; margin-bottom: 20px; letter-spacing: 0.03em; text-shadow: 0 2px 12px rgba(233,68,96,0.5); }
+  .cover .subtitle { font-size: 1.2em; opacity: .85; margin-bottom: 8px; }
+  .cover .meta { margin-top: 40px; font-size: .9em; opacity: .65; }
+  .cover .badge {
+    display: inline-block; background: var(--highlight); padding: 6px 18px; border-radius: 20px;
+    font-size: .85em; margin: 0 8px 12px;
+  }
+  /* ── Nav ── */
+  nav.toc {
+    max-width: 900px; margin: 30px auto; background: var(--card-bg);
+    border-radius: 12px; padding: 28px 36px; box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+  nav.toc h2 { font-size: 1.3em; margin-bottom: 16px; color: var(--accent2); }
+  nav.toc ol { padding-left: 1.5em; }
+  nav.toc li { margin: 6px 0; }
+  nav.toc a { color: var(--accent2); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; color: var(--highlight); }
+  /* ── Sections ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 20px 30px; }
+  section { margin: 50px 0; }
+  h2.sec-title {
+    font-size: 1.7em; color: var(--accent); border-left: 5px solid var(--highlight);
+    padding-left: 16px; margin-bottom: 24px;
+  }
+  h3 { font-size: 1.25em; color: var(--accent2); margin: 28px 0 12px; }
+  h4 { font-size: 1.05em; color: #444; margin: 18px 0 8px; }
+  p { margin: 12px 0; text-align: justify; }
+  /* ── Cards ── */
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 22px 28px; margin: 20px 0;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+  }
+  .card.tip { border-left: 4px solid #4caf50; }
+  .card.warn { border-left: 4px solid #ff9800; }
+  .card.note { border-left: 4px solid #2196f3; }
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: .95em; }
+  thead th {
+    background: var(--accent2); color: #fff; padding: 10px 14px;
+    text-align: left; font-weight: 600;
+  }
+  tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+  tbody tr:nth-child(even) { background: var(--table-stripe); }
+  /* ── Figure ── */
+  .figure-box {
+    background: var(--card-bg); border: 1px dashed var(--border);
+    border-radius: 10px; padding: 30px; margin: 24px 0; text-align: center;
+  }
+  .figure-box .fig-title { font-weight: bold; color: var(--accent2); margin-bottom: 12px; }
+  .diagram { font-family: "Courier New", monospace; font-size: .82em; line-height: 1.5; color: #333; white-space: pre; display: inline-block; text-align: left; }
+  /* ── Gate box ── */
+  .gate-seq {
+    background: var(--code-bg); border-radius: 8px; padding: 16px 22px;
+    font-family: "Courier New", monospace; font-size: .9em; overflow-x: auto;
+    margin: 12px 0; white-space: pre; line-height: 1.6;
+  }
+  /* ── Tag ── */
+  .tag {
+    display: inline-block; background: var(--tag-bg); color: var(--tag-text);
+    padding: 2px 10px; border-radius: 12px; font-size: .8em; margin-right: 6px;
+  }
+  .tag.oa { background: #e8f5e9; color: #2e7d32; }
+  .tag.pw { background: #fff3e0; color: #e65100; }
+  /* ── Reference ── */
+  .ref-list { counter-reset: ref; }
+  .ref-list li { margin: 10px 0; list-style: none; }
+  .ref-list li::before { counter-increment: ref; content: "[" counter(ref) "] "; font-weight: bold; color: var(--accent2); }
+  .ref-list a { color: var(--accent2); word-break: break-all; }
+  /* ── Footer ── */
+  footer { text-align: center; padding: 30px; color: #999; font-size: .85em; }
+  /* ── Responsive ── */
+  @media (max-width: 700px) {
+    .cover h1 { font-size: 1.6em; }
+    .container { padding: 10px 16px; }
+    nav.toc { padding: 18px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ COVER ═══════════════ -->
+<div class="cover">
+  <h1>中性原子量子计算机工作原理</h1>
+  <div class="subtitle">基于光镊的中性原子量子计算综述</div>
+  <div class="subtitle">从单量子比特门到里德伯阻塞纠缠门的完整操作原理</div>
+  <div class="meta">
+    <span class="badge">文献调研报告</span>
+    <span class="badge">2026年6月</span><br>
+    项目目录：NeutralAtomQC/ ｜ 附带已下载论文 PDF 共 6 篇
+  </div>
+</div>
+
+<!-- ═══════════════ TOC ═══════════════ -->
+<nav class="toc">
+<h2>📑 目录</h2>
+<ol>
+  <li><a href="#s1">引言：为什么选择中性原子？</a></li>
+  <li><a href="#s2">核心物理架构</a>
+    <ol>
+      <li><a href="#s2.1">原子捕获：光学偶极阱与光镊</a></li>
+      <li><a href="#s2.2">激光冷却与单原子加载</a></li>
+      <li><a href="#s2.3">量子比特编码</a></li>
+      <li><a href="#s2.4">阵列生成：SLM 与 AOD</a></li>
+    </ol>
+  </li>
+  <li><a href="#s3">单量子比特门操作</a>
+    <ol>
+      <li><a href="#s3.1">微波/拉曼跃迁</a></li>
+      <li><a href="#s3.2">相位调制方案</a></li>
+      <li><a href="#s3.3">全局与局域寻址</a></li>
+    </ol>
+  </li>
+  <li><a href="#s4">双量子比特门：里德伯阻塞机制</a>
+    <ol>
+      <li><a href="#s4.1">里德伯原子与相互作用</a></li>
+      <li><a href="#s4.2">里德伯阻塞原理</a></li>
+      <li><a href="#s4.3">CZ 门方案 I：Levine/Fromonteil 全局脉冲</a></li>
+      <li><a href="#s4.4">CZ 门方案 II：Jaksch 原始方案</a></li>
+      <li><a href="#s4.5">CZ 门方案 III：动态粒子数抑制 (DPS)</a></li>
+      <li><a href="#s4.6">CZ 门方案 IV：Floquet 几何纠缠门</a></li>
+      <li><a href="#s4.7">误差源与缓解策略</a></li>
+    </ol>
+  </li>
+  <li><a href="#s5">原子传输与重排</a></li>
+  <li><a href="#s6">量子态读出与测量</a></li>
+  <li><a href="#s7">近期里程碑与前沿进展</a></li>
+  <li><a href="#s8">平台对比</a></li>
+  <li><a href="#s9">参考文献与论文清单</a></li>
+</ol>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════ S1 ═══════════════ -->
+<section id="s1">
+<h2 class="sec-title">1. 引言：为什么选择中性原子？</h2>
+<p>
+中性原子量子计算是当前最具竞争力的量子计算平台之一。与超导量子比特（需要毫开尔文低温）和离子阱（串扰受限）相比，
+中性原子平台具有几个<strong>独有的优势</strong>：
+</p>
+
+<div class="card note">
+<strong>🔑 六大核心优势：</strong>
+<ul style="margin-top:10px; padding-left:1.5em;">
+  <li><strong>全同性</strong>——同种原子的所有量子比特天然完全相同，无制造差异性</li>
+  <li><strong>可扩展性</strong>——无需低温制冷，可在室温运行；2025年已实现6100+原子的阵列</li>
+  <li><strong>长相干时间</strong>——超精细基态编码的相干时间可达秒级（记录：12.6秒）</li>
+  <li><strong>动态可重构</strong>——光镊可通过AOD移动，实现任意量子比特间的连接</li>
+  <li><strong>高保真度</strong>——单量子比特门 &gt;99.98%，双量子比特门 &gt;99.5%</li>
+  <li><strong>室温操作</strong>——无需稀释制冷机，大幅降低基础设施复杂度</li>
+</ul>
+</div>
+
+<p>
+2024年底，哈佛大学 Bluvstein 等人用 280 个物理量子比特编码 48 个逻辑量子比特，首次展示了
+<strong>纠错逻辑量子比特在算法层面超越物理量子比特</strong>，被 Physics World 评为 2024 年度突破。
+2025年，Caltech Endres 组进一步将光镊阵列扩展至 <strong>6100+ 原子、12,000 个光镊位点</strong>，
+标志着该平台已进入大规模扩展阶段。
+</p>
+</section>
+
+<!-- ═══════════════ S2 ═══════════════ -->
+<section id="s2">
+<h2 class="sec-title">2. 核心物理架构</h2>
+
+<!-- 2.1 -->
+<h3 id="s2.1">2.1 原子捕获：光学偶极阱与光镊</h3>
+<p>
+光镊的核心物理原理是<strong>AC Stark 效应（光学偶极势）</strong>。一束强聚焦的远失谐激光照射中性原子时，
+交变电场会在原子上感生振荡偶极矩，产生保守势能：
+</p>
+
+<div class="card">
+\[
+U_{\text{dip}}(\mathbf{r}) = -\frac{1}{2\epsilon_0 c}\,\mathrm{Re}(\alpha)\, I(\mathbf{r})
+\]
+<p style="margin-top:8px;">
+其中 \(\alpha\) 是原子极化率，\(I(\mathbf{r})\) 是位置 \(\mathbf{r}\) 处的激光强度。
+当激光频率 <strong>红失谐</strong>（低于原子共振频率）时，\(\mathrm{Re}(\alpha)>0\)，
+光强最大处形成<strong>势阱最小值</strong>，原子被吸入并囚禁。
+</p>
+</div>
+
+<div class="figure-box">
+<div class="fig-title">图 2.1：光镊阵列产生原理示意</div>
+<div class="diagram">
+                        SLM 全息图
+  ┌──────┐        ┌──────────────┐        ┌───────────┐
+  │ 高功率 │ ────→ │  空间光调制器  │ ────→  │ 高NA物镜   │ ──→ 焦平面光镊阵列
+  │ 激光器 │        │  (SLM)        │        │ (NA~0.5)  │     •  •  •  •  •
+  └──────┘        └──────────────┘        └───────────┘     •  •  •  •  •
+       λ~1064nm                                            •  •  •  •  •
+    (对Cs/Rb 远失谐)                                       (1-3μm间距)
+
+  AOD 辅助：通过在SLM前加入声光偏转器(AOD)，可独立移动每个光镊的位置
+</div>
+</div>
+
+<p>
+典型实验参数（以铯-133为例）：
+</p>
+<table>
+<thead><tr><th>参数</th><th>典型值</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>光镊波长</td><td>1055/1061 nm</td><td>对铯原子的"魔幻波长"附近，使基态和激发态AC Stark位移相等</td></tr>
+<tr><td>光镊束腰</td><td>~0.7–1.0 μm</td><td>衍射极限聚焦</td></tr>
+<tr><td>阱深</td><td>~1 mK</td><td>足以囚禁μK温度的原子</td></tr>
+<tr><td>光子散射率</td><td>~1 photon/s</td><td>远失谐使散射极低，保护相干性</td></tr>
+<tr><td>囚禁寿命</td><td>~23分钟</td><td>室温下真空极限 (Manetsch 2025)</td></tr>
+<tr><td>碰撞阻塞</td><td>每个光镊最多1个原子</td><td>光辅助碰撞确保单原子占据</td></tr>
+</tbody>
+</table>
+
+<div class="card tip">
+<strong>💡 关键洞见：</strong>所谓"魔幻光镊"指选择特定波长使量子比特的两个基态|0⟩和|1⟩感受到相同的AC Stark位移，
+从而在囚禁期间不会引入差分相位噪声。这对实现长相干时间至关重要。
+</div>
+
+<!-- 2.2 -->
+<h3 id="s2.2">2.2 激光冷却与单原子加载</h3>
+<p>
+原子首先需要从室温蒸汽（~300 K，速度~240 m/s）冷却至 μK 量级，才能被浅光镊（~1 mK）捕获。
+冷却过程分两步：
+</p>
+
+<h4>步骤 1：磁光阱 (MOT) 冷却</h4>
+<p>
+六束圆偏振激光对射，配合四极磁场，利用<strong>多普勒效应</strong>：
+原子向光束运动时，感受到激光蓝移（更接近共振）→ 吸收更多反向光子 → 减速。
+三维MOT可将原子云温度降至约<strong>100 μK</strong>。
+</p>
+
+<div class="gate-seq">
+MOT 原理（一维简化）：
+              ← 光束₁ (σ⁺, 红失谐 δ&lt;0)
+        原子 → v
+              ← 光束₂ (σ⁻, 红失谐 δ&lt;0)
+多普勒效应：f_atom = f₀(1 ± v/c) →
+    逆光运动的原子吸收更多光子，受到减速力 F = ℏk·Γ·(散射率差)
+</div>
+
+<h4>步骤 2：偏振梯度冷却 (PGC)</h4>
+<p>
+关闭磁场后，利用偏振梯度进一步冷却至<strong>~10 μK</strong>（亚多普勒冷却）。
+原子在空间中感受到周期性偏振变化，每爬升一个光势"山丘"消耗动能。
+</p>
+
+<h4>步骤 3：单原子加载</h4>
+<p>
+将光镊阵列置于冷原子云中，原子随机落入阱中。由于<strong>光辅助碰撞（碰撞阻塞效应）</strong>，
+一旦一个原子进入微米级光镊，第二个原子进入时会发生非弹性碰撞导致两者被弹出——保证了<strong>每个光镊最多一个原子</strong>。
+初始加载概率约 50%，通过多次加载和重排可达>99%填充率。
+</p>
+
+<!-- 2.3 -->
+<h3 id="s2.3">2.3 量子比特编码</h3>
+<p>
+量子比特编码在碱金属原子（如Cs-133, Rb-87）的<strong>超精细基态能级</strong>中。
+以铯-133为例：
+</p>
+
+<div class="card">
+\[
+|0\rangle = |F=3,\; m_F=0\rangle,\qquad
+|1\rangle = |F=4,\; m_F=0\rangle
+\]
+<p style="margin-top:8px;">
+两个能级之间的频率差为 <strong>~9.2 GHz</strong>（铯原子钟跃迁）。
+选择 \(m_F=0\) 态是因为它对磁场涨落的一阶灵敏度为零（线性塞曼效应消失），
+二阶塞曼效应主导→超长相干时间。
+</p>
+</div>
+
+<p>其他可选的编码方案：</p>
+<table>
+<thead><tr><th>编码方案</th><th>原子种类</th><th>特点</th></tr></thead>
+<tbody>
+<tr><td>超精细基态</td><td><sup>133</sup>Cs, <sup>87</sup>Rb</td><td>最成熟；相干时间~12.6s (Cs, 2025)</td></tr>
+<tr><td>核自旋态</td><td><sup>171</sup>Yb</td><td>核自旋 I=1/2，极长T₂；魔幻光镊兼容里德伯态</td></tr>
+<tr><td>光学钟态</td><td><sup>88</sup>Sr</td><td>窄光学跃迁；天然适用于光晶格钟技术</td></tr>
+</tbody>
+</table>
+
+<!-- 2.4 -->
+<h3 id="s2.4">2.4 阵列生成：SLM 与 AOD</h3>
+<p>
+现代中性原子量子计算机使用<strong>空间光调制器 (SLM)</strong> 将单一激光束分束为数百至数千个独立光镊，
+而<strong>声光偏转器 (AOD)</strong> 用于动态横向移动光镊。2025年的最新方案还引入了
+<strong>声光透镜 (AOL)</strong> 实现三维传输。
+</p>
+
+<div class="card">
+<strong>核心器件对比：</strong>
+<table>
+<thead><tr><th>器件</th><th>功能</th><th>限制</th></tr></thead>
+<tbody>
+<tr><td>SLM</td><td>全息生成静态光镊阵列（~数千点）</td><td>像素密度有限；更新速率慢(~kHz)</td></tr>
+<tr><td>AOD</td><td>射频驱动快速偏转光束→2D移动光镊</td><td>仅横向(2D)；RF斜坡导致柱面透镜效应</td></tr>
+<tr><td>AOL</td><td>双通AOD配置→3D任意轨迹移动</td><td>~30%光功率损失；2025年提案</td></tr>
+<tr><td>超表面</td><td>无源生成~百万光镊 (Fang et al., 2025)</td><td>不可重构；静态图案</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- ═══════════════ S3 ═══════════════ -->
+<section id="s3">
+<h2 class="sec-title">3. 单量子比特门操作</h2>
+
+<h3 id="s3.1">3.1 微波/拉曼跃迁原理</h3>
+<p>
+在Bloch球表示中，单量子比特门是绕任意轴的旋转。实现方式是
+<strong>共振微波或拉曼激光驱动超精细态之间的跃迁</strong>。
+两能级哈密顿量在相互作用表象中为：
+</p>
+
+<div class="card">
+\[
+H_{\text{1q}} = \frac{\hbar\Omega_R}{2} \big( e^{i\varphi}|\hspace{-1pt}0\rangle\langle1\hspace{-1pt}| + e^{-i\varphi}|\hspace{-1pt}1\rangle\langle0\hspace{-1pt}| \big) + \frac{\hbar\delta}{2}\big( |1\rangle\langle1| - |0\rangle\langle0| \big)
+\]
+<p style="margin-top:8px;">
+其中 \(\Omega_R\) 为拉比频率（正比于驱动场振幅），\(\varphi\) 为驱动场相位（决定旋转轴），
+\(\delta\) 为失谐（决定绕Z轴的旋转分量）。
+</p>
+</div>
+
+<h4>任意单量子比特门构造</h4>
+<p>
+在共振条件 (\(\delta=0\)) 下，一个持续时间为 \(t\) 的脉冲产生绕轴
+\(\mathbf{\hat{n}} = (\cos\varphi,\sin\varphi,0)\) 的旋转：
+</p>
+
+<div class="gate-seq">
+Rₓ(θ) = exp(-i θ σₓ/2)：驱动相位 φ=0 的脉冲，持续 t = θ/Ω_R
+R_y(θ) = exp(-i θ σ_y/2)：驱动相位 φ=π/2 的脉冲，持续 t = θ/Ω_R
+R_z(θ) = exp(-i θ σ_z/2)：通过虚拟Z旋转（相位累积）实现，无需实际脉冲
+
+任意SU(2)门可分解为：
+    U(α,β,γ) = R_z(α) · R_y(β) · R_z(γ)
+（Euler角分解）
+</div>
+
+<h3 id="s3.2">3.2 相位调制低串扰方案</h3>
+<p>
+Wang等人 (arXiv:2310.19741) 提出了<strong>相位调制连续驱动</strong>方案，解决传统方案中
+高功率激光寻址导致的邻位串扰问题：
+</p>
+
+<div class="card note">
+<strong>工作原理：</strong>
+<ul style="padding-left:1.5em; margin-top:8px;">
+  <li>目标量子比特感受到特定的拉比频率 \(\Omega_{\text{target}}\)</li>
+  <li>驱动场被相位调制，使驱动频率仅在 \(\Omega_{\text{target}}\) 处共振</li>
+  <li>旁观者量子比特（具有不同 \(\Omega\)）对驱动场是远失谐的→一阶抑制</li>
+  <li>传统光移位方案仅提供二阶抑制→本方案串扰显著更低</li>
+  <li>通过调谐调制参数可实现绕<strong>任意轴</strong>旋转</li>
+</ul>
+</div>
+
+<h3 id="s3.3">3.3 全局与局域寻址策略</h3>
+<table>
+<thead><tr><th>策略</th><th>实现方式</th><th>优缺点</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>全局寻址</strong></td>
+  <td>单一大口径微波/拉曼光束覆盖整个阵列</td>
+  <td>✅ 简单、低噪声 ❌ 所有量子比特做同一操作</td>
+</tr>
+<tr>
+  <td><strong>传输寻址</strong></td>
+  <td>AOD将目标原子移至独立"门操作区"，施加全局光→移回</td>
+  <td>✅ 无光学串扰 ❌ 传输时间随系统规模线性增长</td>
+</tr>
+<tr>
+  <td><strong>局域光移位</strong></td>
+  <td>寻址束仅照射目标原子产生AC Stark移位→选择共振</td>
+  <td>✅ 无需移动原子 ❌ 高功率要求、残余串扰</td>
+</tr>
+<tr>
+  <td><strong>相位调制</strong></td>
+  <td>调制驱动场使驱动条件对Ω值有选择性</td>
+  <td>✅ 低串扰（一阶抑制）、可并行 ❌ 调制复杂度</td>
+</tr>
+</tbody>
+</table>
+
+<div class="card tip">
+<strong>📊 实验基准：</strong>2025年Caltech团队的铯原子系统中，
+<strong>单量子比特门保真度达到 99.9834(2)%</strong>（通过全局随机基准测试测量）。
+Atom Computing的¹⁷¹Yb系统也达到>99.99%的单量子比特门保真度。
+</div>
+</section>
+
+<!-- ═══════════════ S4 ═══════════════ -->
+<section id="s4">
+<h2 class="sec-title">4. 双量子比特门：里德伯阻塞机制</h2>
+
+<p>
+双量子比特纠缠门是中性原子量子计算的核心——也是最具技术深度的环节。
+所有主流方案均基于<strong>里德伯阻塞 (Rydberg Blockade)</strong> 机制。
+</p>
+
+<!-- 4.1 -->
+<h3 id="s4.1">4.1 里德伯原子与相互作用</h3>
+<p>
+<strong>里德伯原子</strong>是指价电子被激发到极高主量子数 \(n\)（典型值 \(n\sim50-100\)）的原子。
+在此状态下：
+</p>
+
+<div class="card">
+<ul style="padding-left:1.5em;">
+  <li>轨道半径 \(\propto n^2 a_0\) → 对 \(n=70\)，\[r \approx 70^2 \times 0.053\,\text{nm} \approx 260\,\text{nm}\]</li>
+  <li>偶极矩 \(\propto n^2\) → 巨大的电偶极矩</li>
+  <li><strong>范德华相互作用</strong> \(V(R) \propto n^{11}/R^{6}\)（非共振情况）</li>
+  <li><strong>共振偶极-偶极相互作用</strong> \(V(R) \propto n^{4}/R^{3}\)（Förster共振情况）</li>
+  <li>辐射寿命 \(\tau \propto n^{3}\)（对 \(n=70\)，约100 μs）</li>
+</ul>
+</div>
+
+<p>
+以铷-87的 \(n=70\) 里德伯态为例，在间距 \(R=3\,\mu\text{m}\) 时，
+范德华相互作用能量约为 <strong>\(V/h \sim 2\pi \times 200\,\text{MHz}\)</strong>，
+远超典型拉比频率 \(\Omega/2\pi \sim 2-5\,\text{MHz}\)。
+</p>
+
+<!-- 4.2 -->
+<h3 id="s4.2">4.2 里德伯阻塞原理</h3>
+<p>
+这是理解所有双量子比特门方案的<strong>核心物理图像</strong>：
+</p>
+
+<div class="figure-box">
+<div class="fig-title">图 4.2：里德伯阻塞的能级结构</div>
+<div class="diagram">
+  原子A                          原子B
+  |r⟩                            |r⟩
+   ↑  Ω              V(R) ≫ Ω     ↑  ✗ 被阻塞！
+   |           ═══════════════     |
+  |1⟩                            |1⟩
+                                   (由于|rr⟩态能移巨大，
+                                    双激发跃迁严重失谐)
+  ---------------------------------------------------------
+  哈密顿量（相互作用绘景）：
+  H = ℏ Σᵢ [ Ω/2 (|1⟩ᵢ⟨r|ᵢ + h.c.) ] + V |rr⟩⟨rr|
+
+  其中 V/h ~ 200 MHz（间距3μm时）≫ Ω/2π ~ 2-5 MHz
+</div>
+</div>
+
+<div class="card note">
+<strong>🔬 阻塞条件的物理实现：</strong>
+<p>
+当两个原子距离足够近（\(R \sim 2-5\,\mu\text{m}\)）时，里德伯-里德伯相互作用
+\(V\) 远大于激发激光的拉比频率 \(\Omega\) 和线宽 \(\Gamma\)。
+此时，即使两个原子都处于 \(|1\rangle\) 态且被激光同时照射，
+<strong>双激发态 \(|rr\rangle\) 因巨大的相互作用能移而远离共振</strong>，
+系统只能在对称叠加态 \(|\Psi_+\rangle = (|1r\rangle + |r1\rangle)/\sqrt{2}\)
+和基态 \(|11\rangle\) 之间相干演化。
+</p>
+<p>
+演化频率从单原子的 \(\Omega\) 变为<strong>集体增强的 \(\sqrt{2}\,\Omega\)</strong> →
+这就是实现受控相位门的物理基础。
+</p>
+</div>
+
+<!-- 4.3 -->
+<h3 id="s4.3">4.3 CZ 门方案 I：全局脉冲 π–2π–π（Levine/Fromonteil方案）</h3>
+<p>
+这是<strong>目前实验上最广泛采用</strong>的受控相位门（CZ）方案。
+由 Levine 等人 (2019, PRL) 提出，Fromonteil 等人 (2023, PRX Quantum)
+系统推导了全系列鲁棒变体。
+核心创新：<strong>所有脉冲都是全局的（覆盖两个原子），无需单原子寻址</strong>。
+</p>
+
+<h4>方案 I（5脉冲序列）</h4>
+<div class="gate-seq">
+CZ = Uₓ(π/(2√2)) · U_y(π) · Uₓ(π/√2) · U_y(π) · Uₓ(π/(2√2))
+
+总门时间：T_gate ≈ 10.73 / Ω
+（对于 Ω/2π = 2 MHz → T_gate ≈ 850 ns）
+</div>
+
+<h4>方案 II（5脉冲序列，增强鲁棒性）</h4>
+<div class="gate-seq">
+CZ = Uₓ(π/2) · U_y(π/√2) · Uₓ(π) · U_y(π/√2) · Uₓ(π/2)
+
+总门时间：T_gate ≈ 21.45 / Ω
+对拉比频率准静态误差的灵敏度：ε⁴（二阶零敏感度）
+</div>
+
+<div class="card">
+<strong>🔍 单次脉冲的定义：</strong>
+<p>
+\(U_x(\theta) = \exp(-i\theta\sigma_x/2)\) 是相位 \(\varphi=0\) 的共振里德伯激发脉冲，
+作用在跃迁 \(|1\rangle \leftrightarrow |r\rangle\) 上。
+\(U_y(\theta)\) 是相位 \(\varphi=\pi/2\) 的对应脉冲。
+</p>
+<p>
+<strong>关键</strong>：脉冲仅在 \(|1\rangle\) ↔ \(|r\rangle\) 之间耦合，
+\(|0\rangle\) 态完全不受影响（态选择性）。由于 \(|r\rangle\) 的阻塞效应，
+\(|11\rangle\) 分量的演化路径与 \(|01\rangle, |10\rangle\) 不同 → 累积出 \(\pi\) 的条件相位。
+</p>
+</div>
+
+<h4>里德伯阻塞CZ门的演化详述</h4>
+<p>对于四个计算基态，门的效应如下：</p>
+<table>
+<thead><tr><th>初始态 |AB⟩</th><th>演化过程</th><th>最终态</th></tr></thead>
+<tbody>
+<tr><td>|00⟩</td><td>两个原子均处于|0⟩，不与激光耦合→无演化</td><td>|00⟩</td></tr>
+<tr><td>|01⟩</td><td>仅原子B参与|1⟩↔|r⟩跃迁，经历完整脉冲序列积累相位π</td><td>-|01⟩ (全局相位)</td></tr>
+<tr><td>|10⟩</td><td>仅原子A参与|1⟩↔|r⟩跃迁，同上</td><td>-|10⟩</td></tr>
+<tr><td>|11⟩</td><td>两原子同时参与|1⟩↔|r⟩，但因阻塞效应，系统在{|11⟩, |W⟩=(|1r⟩+|r1⟩)/√2}子空间中演化→累积条件相位</td><td>-|11⟩</td></tr>
+</tbody>
+</table>
+
+<p>对于|01⟩和|10⟩：单原子拉比频率Ω使其在脉冲序列中经历循环回到|1⟩并累积π相位→得到因子e^{iπ}=-1。</p>
+<p>对于|11⟩：阻塞条件下集体拉比频率为√2 Ω，循环路径不同但同样累积π相位→得到因子e^{iπ}=-1。因此整体矩阵为-diag(1,1,1,-1)≅CZ（忽略全局相位）。</p>
+
+<h4>从 CZ 到 CΦ（任意受控相位门）</h4>
+<div class="gate-seq">
+Cϕ 门构造：将方案II后半段脉冲的激光相位偏移 Δφ = ϕ/2
+→ 产生条件相位 ϕ 而非 π
+→ Cϕ = diag(1, 1, 1, e^{iϕ})
+</div>
+
+<!-- 4.4 -->
+<h3 id="s4.4">4.4 CZ 门方案 II：Jaksch 原始方案</h3>
+<p>
+2000年由 Jaksch 等人（PRL 2000）提出，是里德伯阻塞门的<strong>理论基础</strong>，
+但需要<strong>局部寻址</strong>。
+</p>
+<div class="gate-seq">
+┌─ 原子A（控制比特）─┐  ┌─ 原子B（目标比特）─┐
+|1⟩_A → π脉冲→ |r⟩_A  （激发至里德伯态）
+          ↓
+|0⟩_B → 2π脉冲→ |0⟩_B  （仅在A不处于|r⟩时共振；若A在|r⟩则被阻塞→相位累积π）
+          ↓
+|r⟩_A → π脉冲→ |1⟩_A  （退激发回基态）
+
+总门时间：~12.57/Ω，保真度灵敏度：ε² 级别（不如Fromonteil方案的ε⁴）
+</div>
+
+<div class="card warn">
+<strong>⚠️ 为什么现代实验改用全局方案：</strong>
+Jaksch方案需要对两个原子分别寻址（独立的控制光和目标光），实现复杂度高且容易引入串扰。
+Fromonteil的全局方案无需区分控制/目标比特——仅需两个原子足够近（满足阻塞条件），
+对两者施加完全相同的脉冲序列即可，大幅简化实验实现。
+</div>
+
+<!-- 4.5 -->
+<h3 id="s4.5">4.5 CZ 门方案 III：动态粒子数抑制 (DPS)</h3>
+<p>
+Carrasco 等人于2025/2026年提出 (arXiv:2512.07656)，突破了传统方案
+对 \(V \gg \Omega\) 的严格依赖。
+</p>
+<div class="card note">
+<strong>核心思想：</strong>
+<p>
+使用<strong>零面积调制光脉冲</strong>动态抑制里德伯态的粒子数占据，
+同时通过相互作用能积累纠缠相位。
+</p>
+<ul style="padding-left:1.5em; margin-top:8px;">
+  <li>脉冲的零面积特性保证操作结束后里德伯态粒子数为零→避免自发辐射退相干</li>
+  <li><strong>在任意相互作用强度下有效</strong>——不要求 \(V \gg \Omega\)</li>
+  <li>结合了共振门的速度优势与绝热控制的鲁棒性</li>
+  <li>纳秒级操作中实现约<strong>10⁻³ 的噪声平均非保真度</strong></li>
+</ul>
+</div>
+
+<!-- 4.6 -->
+<h3 id="s4.6">4.6 CZ 门方案 IV：Floquet 几何纠缠门</h3>
+<p>
+孙浩文等人 (Physica Scripta, 2024; arXiv:2405.00471) 提出了一个完全不同的视角：
+利用 Floquet 工程构造纯几何纠缠门。
+</p>
+<div class="card">
+<strong>工作原理：</strong>
+<ul style="padding-left:1.5em; margin-top:8px;">
+  <li>周期性调制基态↔里德伯态跃迁的拉比频率 \(\Omega(t) = \Omega_0 + \Omega_m\cos(\omega_m t)\)</li>
+  <li>在扩展Floquet空间中定义准能级，利用准能级间的<strong>非阿贝尔几何相位</strong>（非绝热和乐量子门）</li>
+  <li>门操作仅依赖于演化路径的几何性质→<strong>对动力学噪声天然免疫</strong></li>
+  <li>因为编码在基态子流形中→受环境干扰影响小</li>
+</ul>
+</div>
+
+<!-- 4.7 -->
+<h3 id="s4.7">4.7 误差源与缓解策略</h3>
+<table>
+<thead><tr><th>误差源</th><th>物理机制</th><th>缓解策略</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>有限阻塞强度</strong></td>
+  <td>\(V\) 不满足 \(V\gg\Omega\)→双激发分量残留</td>
+  <td>DPS方案天然兼容；优化脉冲设计；使用更高n的里德伯态</td>
+</tr>
+<tr>
+  <td><strong>里德伯态自发辐射</strong></td>
+  <td>\(\tau_{\text{Ryd}}\propto n^3\)，对n=70约100μs→ns门中仍累积概率误差</td>
+  <td>更快门操作（<100 ns）；更高n值；门序列设计使里德伯分量净为零</td>
+</tr>
+<tr>
+  <td><strong>拉比频率涨落</strong></td>
+  <td>激光强度噪声→Ω波动→旋转角度误差</td>
+  <td>Fromonteil方案II将敏感度降至ε⁴；最优控制脉冲整形</td>
+</tr>
+<tr>
+  <td><strong>多普勒退相</strong></td>
+  <td>原子残余热运动→多普勒频移δω</td>
+  <td>自旋回波序列嵌入门操作；鲁棒脉冲设计</td>
+</tr>
+<tr>
+  <td><strong>Förster共振串扰</strong></td>
+  <td>近简并里德伯对态间共振偶极-偶极交换</td>
+  <td>参数优化（避开共振）；电场调控能级</td>
+</tr>
+<tr>
+  <td><strong>范德华串扰</strong></td>
+  <td>非目标原子对间残余相互作用（∝1/R⁶）</td>
+  <td>原子间距优化；最优控制（GRAPE）脉冲设计</td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════ S5 ═══════════════ -->
+<section id="s5">
+<h2 class="sec-title">5. 原子传输与重排</h2>
+
+<p>
+中性原子平台区别于其他量子计算平台（超导、离子阱、光子）的最显著特性是
+<strong>量子比特的物理可移动性</strong>——电路运行时可将原子在光镊阵列中动态传输。
+</p>
+
+<h3>5.1 传输原理与实现</h3>
+<div class="card">
+<strong>AOD 驱动的相干传输：</strong>
+<p>
+声光偏转器 (AOD) 通过改变射频驱动频率来偏转激光束→光镊及其携带的原子沿横向移动。
+原子在移动过程中始终处于光镊的保守势阱中→<strong>传输本身是相干的</strong>。
+</p>
+<p>
+关键参数（Manetsch et al., 2025）：
+</p>
+<ul style="padding-left:1.5em;">
+  <li>传输距离：610 μm（已演示）</li>
+  <li>传输保真度：~99.95%</li>
+  <li>光镊间转移保真度：99.81(3)%</li>
+  <li>传输速度：~0.5–1 μm/μs</li>
+</ul>
+</div>
+
+<h3>5.2 分区架构 (Zoned Architecture)</h3>
+
+<div class="figure-box">
+<div class="fig-title">图 5.2：三分区量子计算架构 (Bluvstein et al., 2024)</div>
+<div class="diagram">
+  ┌──────────────────┐   ┌──────────────────────┐   ┌──────────────────┐
+  │   存储区          │   │   纠缠/门操作区        │   │    读出区         │
+  │  (Storage Zone)  │   │  (Entangling Zone)   │   │  (Readout Zone)  │
+  │                  │   │                      │   │                  │
+  │  •  •  •  •      │   │  •──•               │   │  [成像检测]       │
+  │  •  •  •  •      │ ←→│  •──•  (量子比特对)    │ ←→│  [态判别]        │
+  │  •  •  •  •      │   │  •──•               │   │  [原子回收/替换]  │
+  │                  │   │                      │   │                  │
+  │  高密度存储      │   │  执行CZ门操作        │   │  电路中间测量    │
+  │  无门操作→无误差 │   │  AOD来回搬运原子    │   │  及辅助操作      │
+  └──────────────────┘   └──────────────────────┘   └──────────────────┘
+</div>
+</div>
+
+<p>
+分区架构的关键优势：
+</p>
+<ul style="padding-left:1.5em;">
+  <li><strong>存储区无门操作→量子比特在等待期间不退化</strong></li>
+  <li>仅需在执行CZ门时将目标原子对移至纠缠区→<strong>门操作误差不累积到旁观者</strong></li>
+  <li>读出区可进行电路中间测量而不干扰活跃计算</li>
+  <li>与量子纠错码天然匹配——稳定子测量需要特定物理连接</li>
+</ul>
+
+<h3>5.3 三维传输（2025年突破）</h3>
+<p>
+Eindhoven 团队 (Guo et al., arXiv:2510.09398, 2025年10月) 提出了
+<strong>声光透镜 (AOL)</strong> 方案，通过双通AOD配置实现三维任意轨迹的原子传输：
+</p>
+<div class="card note">
+<ul style="padding-left:1.5em;">
+  <li>使用两个交叉的AOD实现横向偏转 (x,y)</li>
+  <li>第三个AOD双通配置实现纵向聚焦调谐 (z)→<strong>原子可移出焦平面</strong></li>
+  <li>仅使用市售AOD和标准光学元件→<strong>~30%功率损失</strong></li>
+  <li>克服了传统AOD快速RF斜坡时的<strong>柱面透镜效应</strong></li>
+  <li>使<strong>三维任意连接</strong>成为可能</li>
+</ul>
+</div>
+</section>
+
+<!-- ═══════════════ S6 ═══════════════ -->
+<section id="s6">
+<h2 class="sec-title">6. 量子态读出与测量</h2>
+
+<h3>6.1 荧光成像</h3>
+<p>
+量子比特状态的读出基于<strong>态选择性荧光检测</strong>：
+</p>
+<div class="card">
+<strong>步骤：</strong>
+<ol style="padding-left:1.5em; margin-top:8px;">
+ <li>照射共振冷却光——处于|1⟩（或特定超精细能级）的原子散射大量光子→在CCD上为<strong>亮点</strong></li>
+ <li>处于|0⟩的原子不与冷却光共振→不散射光子→呈<strong>暗点</strong></li>
+ <li>每个原子散射约10³–10⁴个光子→信号远高于噪声阈值</li>
+ <li>成像后原子可能被加热→需要重新冷却或替换</li>
+</ol>
+</div>
+
+<h3>6.2 当前性能</h3>
+<table>
+<thead><tr><th>指标</th><th>当前纪录</th><th>来源</th></tr></thead>
+<tbody>
+<tr><td>成像存活率</td><td>99.98952(1)%</td><td>Manetsch et al. (2025)</td></tr>
+<tr><td>成像保真度</td><td>>99.99%</td><td>Manetsch et al. (2025)</td></tr>
+<tr><td>读出区分度</td><td>>98.6%</td><td>Henriet et al. (2020)</td></tr>
+</tbody>
+</table>
+
+<h3>6.3 电路中间测量 (Mid-Circuit Measurement)</h3>
+<p>
+分区架构允许在不干扰计算区量子比特的同时，将辅助比特移至读出区进行测量。
+测量结果通过经典反馈控制电路用于：
+</p>
+<ul style="padding-left:1.5em;">
+  <li><strong>量子纠错</strong>——稳定子测量与纠错操作</li>
+  <li><strong>预示型门</strong>——通过测量辅助比特预示门是否成功（heralded gate）</li>
+  <li><strong>原子替换</strong>——测量后丢失的原子可重新加载</li>
+</ul>
+</section>
+
+<!-- ═══════════════ S7 ═══════════════ -->
+<section id="s7">
+<h2 class="sec-title">7. 近期里程碑与前沿进展</h2>
+
+<h3>7.1 关键里程碑时间线</h3>
+<table>
+<thead><tr><th>年份</th><th>里程碑</th><th>团队</th><th>意义</th></tr></thead>
+<tbody>
+<tr><td>2000</td><td>里德伯阻塞CZ门理论方案</td><td>Jaksch et al. (PRL)</td><td>奠基性理论</td></tr>
+<tr><td>2016</td><td>中性原子量子计算综述</td><td>Saffman (J. Phys. B)</td><td>确立研究方向</td></tr>
+<tr><td>2019</td><td>全局脉冲CZ门实验演示</td><td>Levine et al. (PRL)</td><td>实验突破</td></tr>
+<tr><td>2020</td><td>中性原子量子计算全栈综述</td><td>Henriet et al., Pasqal</td><td>工业路线图</td></tr>
+<tr><td>2023</td><td>鲁棒里德伯门协议族</td><td>Fromonteil et al. (PRX Quantum)</td><td>ε⁴噪声抑制</td></tr>
+<tr><td>2023.12</td><td>48逻辑量子比特处理器</td><td>Bluvstein et al., Harvard (Nature)</td><td>📍 纠错超越物理门</td></tr>
+<tr><td>2025</td><td>6100+ 原子阵列 / 12.6s 相干</td><td>Manetsch et al., Caltech (Nature)</td><td>📍 最大规模量子比特阵列</td></tr>
+<tr><td>2025</td><td>3D AOL原子传输方案</td><td>Guo et al., Eindhoven (arXiv)</td><td>三维任意连接</td></tr>
+<tr><td>2025</td><td>超表面捕获百万光镊方案</td><td>Fang, Saffman, Kats (arXiv)</td><td>终极扩展方案</td></tr>
+<tr><td>2025</td><td>Yb-171 核自旋量子比特通用门</td><td>Muniz et al., Atom Computing (PRX Quantum)</td><td>CZ保真度99.72%</td></tr>
+</tbody>
+</table>
+
+<h3>7.2 Bluvstein et al. (2024) — 48个逻辑量子比特处理器</h3>
+<div class="card note">
+<strong>🏆 Physics World 2024年度突破（与Google Willow共享）</strong>
+<table style="margin-top:12px;">
+<tbody>
+<tr><td>物理量子比特数</td><td>最多<strong>280</strong>个 ⁸⁷Rb原子</td></tr>
+<tr><td>逻辑量子比特数</td><td>最多<strong>48</strong>个（3D [[8,3,2]]码块），40色码量子比特</td></tr>
+<tr><td>架构</td><td>三分区架构（存储-纠缠-读出）</td></tr>
+<tr><td>表面码距离</td><td>d=3→7，逻辑门保真度随距离提升</td></tr>
+<tr><td>逻辑操作</td><td>228个逻辑双量子比特门 + 48个逻辑CCZ门</td></tr>
+<tr><td>关键结果</td><td>逻辑编码在交叉熵基准和快速置乱模拟中<strong>超越物理量子比特</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>7.3 Manetsch et al. (2025) — 6100+ 原子阵列</h3>
+<div class="card note">
+<strong>🔬 当前最大规模的中性原子量子比特阵列</strong>
+<table style="margin-top:12px;">
+<tbody>
+<tr><td>光镊位点</td><td><strong>11,998</strong>个</td></tr>
+<tr><td>囚禁原子数</td><td><strong>6,100+</strong>个 ¹³³Cs原子</td></tr>
+<tr><td>超精细相干时间</td><td><strong>12.6(1)秒</strong>（光镊阵列纪录，较此前提升~10倍）</td></tr>
+<tr><td>真空囚禁寿命</td><td><strong>~23分钟</strong>（室温）</td></tr>
+<tr><td>单量子比特门</td><td>99.9834(2)%</td></tr>
+<tr><td>成像存活率</td><td>99.98952(1)%</td></tr>
+<tr><td>传输保真度</td><td>~99.95%（距离610 μm）</td></tr>
+</tbody>
+</table>
+<p style="margin-top:12px;">该工作表明<strong>数万物理量子比特级别的通用量子计算已进入近期展望范围</strong>。</p>
+</div>
+
+<h3>7.4 混合架构：中性原子+离子阱</h3>
+<p>
+Kotochigova 等人 (Phys. Rev. Research, 2025) 提出了创新架构：
+光镊中的中性原子作为<strong>"信使量子比特"</strong>在离子链之间传输量子信息，
+执行<strong>原子-离子纠缠门</strong>（碰撞门或里德伯辅助门）。
+理想系统为 Ba⁺–Li，纠缠生成速率 10³–10⁴ s⁻¹，
+比光子互联方案<strong>快100倍</strong>，单芯片可达<strong>600量子比特</strong>。
+</p>
+</section>
+
+<!-- ═══════════════ S8 ═══════════════ -->
+<section id="s8">
+<h2 class="sec-title">8. 平台对比</h2>
+
+<table>
+<thead>
+<tr><th>指标</th><th>中性原子（光镊）</th><th>超导电路</th><th>离子阱</th><th>光子</th></tr>
+</thead>
+<tbody>
+<tr><td>工作温度</td><td>室温</td><td>~10 mK ❄️</td><td>室温~低温</td><td>室温</td></tr>
+<tr><td>最大量子比特数（演示）</td><td><strong>6,100+</strong></td><td>~1,000</td><td>~50</td><td>~100</td></tr>
+<tr><td>单量子比特门保真度</td><td><strong>99.983%</strong></td><td>99.9%</td><td>99.99%</td><td>~99%</td></tr>
+<tr><td>双量子比特门保真度</td><td>99.5–99.7%</td><td>99.5–99.9%</td><td><strong>99.9%</strong></td><td>~95%</td></tr>
+<tr><td>相干时间</td><td><strong>秒级 (12.6s)</strong></td><td>~100 μs</td><td>秒级</td><td>无限</td></tr>
+<tr><td>连接性</td><td><strong>全连接</strong>（通过传输）</td><td>仅近邻</td><td>全连接（通过声子总线）</td><td>概率性</td></tr>
+<tr><td>门速度</td><td>~0.1–1 μs</td><td>~10–100 ns</td><td>~10–100 μs</td><td>飞秒~皮秒</td></tr>
+<tr><td>量子比特全同性</td><td><strong>完美</strong></td><td>需要校准</td><td><strong>完美</strong></td><td><strong>完美</strong></td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════ S9 ═══════════════ -->
+<section id="s9">
+<h2 class="sec-title">9. 参考文献与论文清单</h2>
+
+<h3>📄 已下载论文（位于 papers/ 文件夹）</h3>
+
+<ol class="ref-list">
+  <li><strong>Quantum computing with neutral atoms</strong> [综述]<br>
+    Henriet L, Beguin L, Signoles A, Lahaye T, Browaeys A, et al.<br>
+    <em>Quantum</em> <strong>4</strong>, 327 (2020). DOI: <a href="https://doi.org/10.22331/q-2020-09-21-327">10.22331/q-2020-09-21-327</a><br>
+    arXiv: <a href="https://arxiv.org/abs/2006.12326">2006.12326</a>
+    <span class="tag oa">Open Access</span><br>
+    📥 文件: <code>papers/2006.12326_Henriet_Quantum_Computing_Neutral_Atoms.pdf</code>
+  </li>
+
+  <li><strong>Quantum computing with atomic qubits and Rydberg interactions: Progress and challenges</strong> [综述]<br>
+    Saffman M.<br>
+    <em>J. Phys. B: At. Mol. Opt. Phys.</em> <strong>49</strong>, 202001 (2016). DOI: <a href="https://doi.org/10.1088/0953-4075/49/20/202001">10.1088/0953-4075/49/20/202001</a><br>
+    arXiv: <a href="https://arxiv.org/abs/1605.05207">1605.05207</a>
+    <span class="tag oa">Open Access</span><br>
+    📥 文件: <code>papers/1605.05207_Saffman_Rydberg_Progress_Challenges.pdf</code>
+  </li>
+
+  <li><strong>Protocols for Rydberg Entangling Gates Featuring Robustness against Quasistatic Errors</strong> [门方案]<br>
+    Fromonteil C, Bluvstein D, Pichler H.<br>
+    <em>PRX Quantum</em> <strong>4</strong>, 020335 (2023). DOI: <a href="https://doi.org/10.1103/PRXQuantum.4.020335">10.1103/PRXQuantum.4.020335</a><br>
+    arXiv: <a href="https://arxiv.org/abs/2210.08824">2210.08824</a>
+    <span class="tag oa">Open Access</span><br>
+    📥 文件: <code>papers/2210.08824_Fromonteil_Rydberg_Entangling_Gates.pdf</code>
+  </li>
+
+  <li><strong>A tweezer array with 6100 highly coherent atomic qubits</strong> [最大阵列]<br>
+    Manetsch HJ, Nomura G, Bataille E, Lv X, Leung KH, Endres M.<br>
+    <em>Nature</em> <strong>647</strong>, 60–67 (2025). DOI: <a href="https://doi.org/10.1038/s41586-025-09641-4">10.1038/s41586-025-09641-4</a><br>
+    arXiv: <a href="https://arxiv.org/abs/2403.12021">2403.12021</a>
+    <span class="tag oa">Open Access (arXiv)</span><br>
+    📥 文件: <code>papers/2403.12021_Manetsch_6100_Atom_Tweezer_Array.pdf</code>
+  </li>
+
+  <li><strong>Logical quantum processor based on reconfigurable atom arrays</strong> [纠错里程碑]<br>
+    Bluvstein D, Evered SJ, Geim AA, Li SH, Zhou H, Manovitz T, et al.<br>
+    <em>Nature</em> <strong>626</strong>, 58–65 (2024). DOI: <a href="https://doi.org/10.1038/s41586-023-06927-3">10.1038/s41586-023-06927-3</a><br>
+    arXiv: <a href="https://arxiv.org/abs/2312.03982">2312.03982</a>
+    <span class="tag oa">Open Access (arXiv)</span><br>
+    📥 文件: <code>papers/2312.03982_Bluvstein_Logical_Quantum_Processor.pdf</code>
+  </li>
+
+  <li><strong>Fast and Coherent Transfer of Atomic Qubits in Optical Tweezers using Fiber Array Architecture</strong> [相干传输]<br>
+    arXiv: <a href="https://arxiv.org/abs/2604.07862">2604.07862</a>
+    <span class="tag oa">Open Access</span><br>
+    📥 文件: <code>papers/2604.07862_Coherent_Transfer_Optical_Tweezers.pdf</code>
+  </li>
+</ol>
+
+<h3>📚 其他重要参考文献（未下载）</h3>
+
+<ol class="ref-list" start="7">
+  <li><strong>High-fidelity entanglement and detection of alkaline-earth Rydberg atoms</strong><br>
+    Levine et al.<br>
+    <em>Phys. Rev. Lett.</em> (2019). DOI: <a href="https://doi.org/10.1103/PhysRevLett.125.123601">10.1103/PhysRevLett.125.123601</a></li>
+
+  <li><strong>Optimizing Rydberg Gates for Logical-Qubit Performance</strong><br>
+    Jandura S, Thompson JD, Pupillo G.<br>
+    <em>PRX Quantum</em> <strong>4</strong>, 020336 (2023). DOI: <a href="https://doi.org/10.1103/PRXQuantum.4.020336">10.1103/PRXQuantum.4.020336</a></li>
+
+  <li><strong>High-Fidelity Universal Gates in the ¹⁷¹Yb Ground-State Nuclear-Spin Qubit</strong><br>
+    Muniz et al., Atom Computing.<br>
+    <em>PRX Quantum</em> <strong>6</strong>, 020334 (2025). DOI: <a href="https://doi.org/10.1103/PRXQuantum.6.020334">10.1103/PRXQuantum.6.020334</a></li>
+
+  <li><strong>Floquet geometric entangling gates in ground-state manifolds of Rydberg atoms</strong><br>
+    Sun H et al.<br>
+    <em>Physica Scripta</em> <strong>99</strong>, 085122 (2024). arXiv: <a href="https://arxiv.org/abs/2405.00471">2405.00471</a></li>
+
+  <li><strong>Acousto-optic lens for 3D shuttling of atoms</strong><br>
+    Guo et al., Eindhoven.<br>
+    arXiv: <a href="https://arxiv.org/abs/2510.09398">2510.09398</a> (2025)</li>
+
+  <li><strong>Single-Operation Rydberg Phase Gates via Dynamic Population Suppression</strong><br>
+    Carrasco et al.<br>
+    arXiv: <a href="https://arxiv.org/abs/2512.07656">2512.07656</a> (2025)</li>
+
+  <li><strong>Neutral atoms in optical tweezers as messenger qubits for scaling up a trapped ion quantum computer</strong><br>
+    Kotochigova et al.<br>
+    <em>Phys. Rev. Research</em> <strong>7</strong>, 033212 (2025). DOI: <a href="https://doi.org/10.1103/PhysRevResearch.7.033212">10.1103/PhysRevResearch.7.033212</a></li>
+
+  <li><strong>Metasurfaces for neutral-atom trapping</strong><br>
+    Fang C, Saffman M, Kats MA.<br>
+    arXiv: <a href="https://arxiv.org/abs/2605.30498">2605.30498</a> (2025)</li>
+
+  <li><strong>Entanglement of neutral-atom qubits with long-range Rydberg interactions</strong><br>
+    Wilk T, Gaëtan A, Evellin C, Wolters J, Miroshnychenko Y, Grangier P, Browaeys A.<br>
+    <em>Phys. Rev. Lett.</em> <strong>104</strong>, 010502 (2010). DOI: <a href="https://doi.org/10.1103/PhysRevLett.104.010502">10.1103/PhysRevLett.104.010502</a></li>
+</ol>
+</section>
+
+</div><!-- container -->
+
+<footer>
+  中性原子量子计算机工作原理 · 文献调研报告 · 2026年6月<br>
+  本报告为学术文献综述，所有引用论文的版权归原作者和出版商所有。<br>
+  已下载论文均来自 arXiv 等开放获取平台。
+</footer>
+
+</body>
+</html>

@@ -160,6 +160,7 @@
     <div class="mode-tabs">
         <div class="tab-btn active" onclick="switchMode('note', event)">读书笔记</div>
         <div class="tab-btn" onclick="switchMode('toread', event)">书单&影单</div>
+        <div class="tab-btn" onclick="switchMode('report', event)">AI调研报告</div>
     </div>
 
     <div class="write-card">
@@ -250,6 +251,17 @@
             </div>
         </div>
 
+        <div id="report-form" style="display: none;">
+            <div class="meta-grid">
+                <div class="input-group"><label>ID (如 r002)</label><input type="text" id="rp-id" placeholder="r002"></div>
+                <div class="input-group"><label>日期</label><input type="date" id="rp-date"></div>
+                <div class="input-group" style="grid-column: 1 / -1;"><label>标题</label><input type="text" id="rp-title" placeholder="AI 调研报告标题"></div>
+                <div class="input-group" style="grid-column: 1 / -1;"><label>标签 (逗号隔开)</label><input type="text" id="rp-tags" placeholder="AI, 量子计算, 综述"></div>
+                <div class="input-group" style="grid-column: 1 / -1;"><label>摘要</label><textarea id="rp-abstract" style="min-height: 60px;" placeholder="一两句话描述报告内容..."></textarea></div>
+                <div class="input-group" style="grid-column: 1 / -1;"><label>HTML 文件路径</label><input type="text" id="rp-htmlfile" placeholder="reports/你的文件名.html"></div>
+            </div>
+        </div>
+
         <button class="btn btn-gen" style="margin-top: 20px;" onclick="generateData()">✨ 生成 JSON 代码</button>
         <pre id="output-area"></pre>
     </div>
@@ -312,7 +324,9 @@
         if(event) event.target.classList.add('active');
         document.getElementById('note-form').style.display = mode === 'note' ? 'block' : 'none';
         document.getElementById('toread-form').style.display = mode === 'toread' ? 'block' : 'none';
-        document.getElementById('page-title').textContent = mode === 'note' ? '📝 笔记生成' : '📖 书单&影单';
+        document.getElementById('report-form').style.display = mode === 'report' ? 'block' : 'none';
+        const titles = { note: '📝 笔记生成', toread: '📖 书单&影单', report: '📝 AI 调研报告' };
+        document.getElementById('page-title').textContent = titles[mode] || '📝 笔记生成';
     }
 
     function addCell(type) {
@@ -325,9 +339,18 @@
 
     function generateData() {
         let result = {};
-        const key = (currentMode === 'note' ? 'n_id' : 'tr_id');
-        
-        if (currentMode === 'note') {
+        const key = (currentMode === 'note' ? 'n_id' : (currentMode === 'report' ? 'r_id' : 'tr_id'));
+
+        if (currentMode === 'report') {
+            const reportId = document.getElementById('rp-id').value || 'r_xxx';
+            result[reportId] = {
+                "title": document.getElementById('rp-title').value,
+                "date": document.getElementById('rp-date').value,
+                "tags": document.getElementById('rp-tags').value.split(',').map(s=>s.trim()).filter(s=>s),
+                "abstract": document.getElementById('rp-abstract').value,
+                "htmlFile": document.getElementById('rp-htmlfile').value
+            };
+        } else if (currentMode === 'note') {
             const cells = document.querySelectorAll('.content-cell');
             let contents = [];
             let currentGroup = null;
@@ -391,6 +414,7 @@
     }
 
     document.getElementById('time').valueAsDate = new Date();
+    document.getElementById('rp-date').valueAsDate = new Date();
 </script>
 
 </body>

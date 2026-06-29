@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中性原子量子计算机纠错方案调研报告</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #79c0ff;
+    --green: #3fb950;
+    --orange: #d2991d;
+    --purple: #a371f7;
+    --red: #f85149;
+    --cyan: #39c5cf;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+  }
+  .container { max-width:1200px; margin:0 auto; padding:2rem; }
+
+  /* Header */
+  .hero {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 40%, #1a1f35 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 4rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(88,166,255,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(163,113,247,0.08) 0%, transparent 50%);
+    animation: heroGlow 8s ease-in-out infinite;
+  }
+  @keyframes heroGlow {
+    0%,100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(2%,1%) scale(1.05); }
+  }
+  .hero h1 {
+    font-size: 2.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent2), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    z-index: 1;
+  }
+  .hero .subtitle {
+    font-size: 1.1rem;
+    color: var(--text2);
+    margin-top: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  .hero .meta {
+    font-size: 0.85rem;
+    color: var(--text2);
+    margin-top: 0.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Section */
+  .section { margin: 3rem 0; }
+  .section h2 {
+    font-size: 1.8rem;
+    color: var(--accent2);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .section h2 .icon { font-size: 1.5rem; }
+  .section h3 {
+    font-size: 1.3rem;
+    color: var(--green);
+    margin: 1.5rem 0 0.8rem;
+  }
+  .section h4 {
+    font-size: 1.1rem;
+    color: var(--orange);
+    margin: 1.2rem 0 0.6rem;
+  }
+  .section p { margin-bottom: 0.8rem; }
+  .section ul, .section ol { margin: 0.8rem 0 0.8rem 1.5rem; }
+  .section li { margin-bottom: 0.3rem; }
+
+  /* Cards */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(88,166,255,0.1);
+  }
+  .card h4 { margin-top: 0; color: var(--accent2); font-size: 1.15rem; }
+  .card .tag {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    margin: 0.3rem 0.2rem;
+    font-weight: 500;
+  }
+  .tag-theory  { background: rgba(163,113,247,0.2); color: var(--purple); }
+  .tag-exp     { background: rgba(63,185,80,0.2); color: var(--green); }
+  .tag-arch    { background: rgba(57,197,207,0.2); color: var(--cyan); }
+  .tag-code    { background: rgba(210,153,29,0.2); color: var(--orange); }
+
+  /* Timeline */
+  .timeline { position: relative; margin: 2rem 0; padding-left: 2rem; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--purple));
+  }
+  .tl-item {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -2.35rem; top: 1.3rem;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+  }
+  .tl-year {
+    font-size: 0.85rem;
+    color: var(--accent2);
+    font-weight: 600;
+  }
+  .tl-title {
+    font-weight: 600;
+    margin: 0.2rem 0;
+  }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.2rem 0;
+    font-size: 0.92rem;
+  }
+  th, td {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: var(--surface2);
+    color: var(--accent2);
+    font-weight: 600;
+  }
+  tr:hover td { background: rgba(88,166,255,0.04); }
+
+  /* Comparison Box */
+  .compare-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .compare-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+  }
+  .compare-col.header {
+    background: var(--surface2);
+    font-weight: 700;
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--accent2);
+  }
+
+  /* Highlight */
+  .highlight {
+    background: var(--surface2);
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.5rem;
+    border-radius: 0 8px 8px 0;
+    margin: 1rem 0;
+    font-size: 0.95rem;
+  }
+  .highlight.warn { border-left-color: var(--orange); }
+  .highlight.good { border-left-color: var(--green); }
+
+  /* Architecture diagram */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+  .arch-box {
+    display: inline-block;
+    padding: 0.8rem 1.2rem;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    margin: 0.4rem;
+    background: rgba(88,166,255,0.06);
+    font-size: 0.85rem;
+    min-width: 100px;
+  }
+  .arch-arrow {
+    display: inline-block;
+    color: var(--accent);
+    margin: 0 0.3rem;
+    font-size: 1.2rem;
+  }
+  .arch-row { margin: 0.8rem 0; }
+
+  /* References */
+  .ref-list { font-size: 0.9rem; }
+  .ref-list li { margin-bottom: 0.6rem; }
+  .ref-list a { color: var(--accent); text-decoration: none; }
+  .ref-list a:hover { text-decoration: underline; }
+
+  /* TOC */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+    margin: 2rem 0;
+  }
+  .toc h3 { margin-top:0; color: var(--accent2); }
+  .toc ol { columns: 2; margin-left: 1.5rem; }
+  .toc li { margin-bottom: 0.3rem; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover { color: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.8rem; }
+    .compare-box { grid-template-columns: 1fr; }
+    .toc ol { columns: 1; }
+    .card-grid { grid-template-columns: 1fr; }
+  }
+
+  footer {
+    text-align: center;
+    color: var(--text2);
+    font-size: 0.85rem;
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+    margin-top: 3rem;
+  }
+
+  .back-to-top {
+    position: fixed;
+    bottom: 2rem; right: 2rem;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.3s;
+    z-index: 100;
+  }
+  .back-to-top:hover { background: var(--accent2); transform: translateY(-2px); }
+</style>
+</head>
+<body>
+
+<!-- ==================== HERO ==================== -->
+<div class="hero">
+  <h1>中性原子量子计算机纠错方案调研报告</h1>
+  <div class="subtitle">从光镊架构特性出发，探索量子纠错（qLDPC）适配方案与实现路径</div>
+  <div class="meta">调研日期：2026年6月29日 &nbsp;|&nbsp; 覆盖文献：2023–2026</div>
+</div>
+
+<div class="container">
+
+<!-- ==================== 摘要 ==================== -->
+<div class="section" id="abstract">
+  <h2><span class="icon">📋</span> 摘要</h2>
+  <p>
+    中性原子量子计算平台凭借<strong>光镊阵列的可重构性</strong>、<strong>长相干时间</strong>和<strong>Rydberg 阻塞效应下的高保真度量子门</strong>，已成为容错量子计算最具竞争力的物理实现方案之一。
+    本报告从中性原子平台的核心物理特性出发，系统调研了量子低密度奇偶校验（qLDPC）码在该平台上的实现方案，
+    包括基于原子输运的 shuttling 方案、基于多色 Rydberg 激光的静态方案、擦除转换（erasure conversion）技术、
+    以及近期实验演示的里程碑成果。分析表明，光镊架构的<strong>动态可重构性</strong>与 qLDPC 码的<strong>非局域连通性需求</strong>之间
+    存在天然的协同效应，而碱土金属原子的<strong>擦除错误模型</strong>进一步赋予该平台独特的纠错优势。
+  </p>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<div class="toc">
+  <h3>📑 目录</h3>
+  <ol>
+    <li><a href="#sec1">中性原子量子计算架构概览</a></li>
+    <li><a href="#sec2">光镊架构与纠错需求的适配分析</a></li>
+    <li><a href="#sec3">qLDPC 码在中性原子平台上的实现方案</a></li>
+    <li><a href="#sec4">擦除转换：中性原子独有的纠错优势</a></li>
+    <li><a href="#sec5">关键实验里程碑</a></li>
+    <li><a href="#sec6">技术路线对比与展望</a></li>
+    <li><a href="#sec7">参考文献</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 第一章 ==================== -->
+<div class="section" id="sec1">
+  <h2><span class="icon">🔬</span> 一、中性原子量子计算架构概览</h2>
+
+  <h3>1.1 光镊阵列基本原理</h3>
+  <p>
+    中性原子量子计算的核心硬件是<strong>光镊（optical tweezers）阵列</strong>——通过高数值孔径物镜将激光聚焦至衍射极限，
+    形成周期性的三维势阱阵列。每个势阱中可捕获单个中性原子（碱金属如 <sup>87</sup>Rb、<sup>133</sup>Cs，或碱土金属如 <sup>171</sup>Yb、<sup>87</sup>Sr），
+    利用原子的两个长寿命内态编码量子比特。
+  </p>
+
+  <div class="arch-diagram">
+    <div style="font-size:0.9rem; color:var(--text2); margin-bottom:1rem;">▼ 中性原子量子计算架构层次</div>
+    <div class="arch-row">
+      <span class="arch-box">🔬 光镊阵列<br><small>原子捕获与排列</small></span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-box">⚛️ 量子比特编码<br><small>超精细能级 / 核自旋</small></span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-box">⚡ Rydberg 门<br><small>激发态介导纠缠</small></span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-box">📡 读出与测量<br><small>荧光成像 / 态选择性电离</small></span>
+    </div>
+    <div style="margin-top:1.5rem;">
+      <span class="arch-box" style="border-color:var(--purple);">🔄 AOD 原子输运<br><small>声光偏转器动态移动</small></span>
+      <span class="arch-box" style="border-color:var(--green);">🛡️ 擦除检测<br><small>碱土金属离子上转换</small></span>
+      <span class="arch-box" style="border-color:var(--orange);">🔁 原子重装填<br><small>中电路原子替换</small></span>
+    </div>
+  </div>
+
+  <h3>1.2 核心物理特性</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>🎯 Rydberg 阻塞效应</h4>
+      <span class="tag tag-theory">物理机制</span>
+      <p>当原子被激发到高主量子数 Rydberg 态时，其巨大的电偶极矩在 ~10 μm 范围内产生强 van der Waals 相互作用，
+      阻止邻近原子的同步激发，是实现高保真度两比特受控 Z（CZ）门的物理基础。</p>
+    </div>
+    <div class="card">
+      <h4>⏱️ 长相干时间</h4>
+      <span class="tag tag-exp">实验验证</span>
+      <p>最新实验（Manetsch et al., Nature 2025）在 6,100 原子阵列中测得超精细相干时间 T₂ = 12.6 s（XY16 动态解耦），
+      真空寿命约 23 分钟，远超量子纠错周期的时间尺度需求。</p>
+    </div>
+    <div class="card">
+      <h4>🔧 动态可重构性</h4>
+      <span class="tag tag-arch">架构优势</span>
+      <p>通过声光偏转器（AOD）可独立操控每个光镊的位置，实现原子的相干输运。
+      这意味着量子比特的连接图可以在计算过程中<strong>动态改变</strong>，突破了固态平台固定连接的限制。</p>
+    </div>
+    <div class="card">
+      <h4>📐 可扩展性</h4>
+      <span class="tag tag-exp">实验验证</span>
+      <p>AI 驱动的并行组装技术在 60 ms 内可组装 2,024 个无缺陷原子阵列（Lin et al., PRL 2025）。
+      区划式架构（zoned architecture）将存储区与门操作区分离，支持连续运行超过 2 小时。</p>
+    </div>
+  </div>
+
+  <h3>1.3 主流实验平台对比</h3>
+  <table>
+    <thead>
+      <tr><th>平台</th><th>原子种类</th><th>阵列规模</th><th>2Q 门保真度</th><th>代表机构</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Rb 光镊阵列</td><td><sup>87</sup>Rb</td><td>~3,000</td><td>99.5%</td><td>Harvard / QuEra / MIT</td></tr>
+      <tr><td>Cs 光镊阵列</td><td><sup>133</sup>Cs</td><td>6,100</td><td>99.7%</td><td>Caltech (Endres)</td></tr>
+      <tr><td>Yb 光镊阵列</td><td><sup>171</sup>Yb</td><td>~100–1,000</td><td>98–99%</td><td>Princeton (Thompson) / Atom Computing</td></tr>
+      <tr><td>Sr 光镊阵列</td><td><sup>87</sup>Sr</td><td>~200</td><td>99.5%</td><td>JILA / Munich / Innsbruck</td></tr>
+      <tr><td>异核阵列 (Rb-Cs)</td><td>Rb + Cs</td><td>~100+100</td><td>~99%</td><td>中科院精密测量院</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ==================== 第二章 ==================== -->
+<div class="section" id="sec2">
+  <h2><span class="icon">🔗</span> 二、光镊架构与纠错需求的适配分析</h2>
+
+  <h3>2.1 量子纠错对硬件的核心需求</h3>
+  <p>实现容错量子纠错编码，硬件平台需满足以下关键需求：</p>
+  <ol>
+    <li><strong>非局域连通性（Nonlocal Connectivity）</strong>：大多数高性能 qLDPC 码需要远距离比特间的稳定子测量，超出近邻相互作用范围。</li>
+    <li><strong>高保真度量子门</strong>：物理错误率需低于纠错码的阈值（典型值 ~0.1%–1%）。</li>
+    <li><strong>快速症候提取</strong>：纠错周期需远短于量子比特的退相干时间。</li>
+    <li><strong>中电路测量与重置</strong>：支持在不破坏数据比特的条件下读取辅助比特并进行实时反馈。</li>
+    <li><strong>错误模型结构化</strong>：擦除（erasure）等可预知错误类型能显著提高纠错阈值。</li>
+  </ol>
+
+  <h3>2.2 光镊架构的适配特性矩阵</h3>
+  <table>
+    <thead>
+      <tr><th>纠错需求</th><th>光镊架构能力</th><th>适配度</th><th>关键文献</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>非局域连通性</td>
+        <td>AOD 输运实现 ~610 μm 相干输运 (>99.95%)<br>或多色 Rydberg 激光实现静态远距门 (~7 晶格常数)</td>
+        <td style="color:var(--green);">★★★★★</td>
+        <td>Bluvstein et al. Nature 2024; Pecorari et al. Nat. Commun. 2025</td>
+      </tr>
+      <tr>
+        <td>高保真度 2Q 门</td>
+        <td>Rydberg CZ 门 99.5%–99.9%，已接近 qLDPC 阈值</td>
+        <td style="color:var(--green);">★★★★☆</td>
+        <td>Evered et al. Nature 2023; Poole et al. arXiv 2024</td>
+      </tr>
+      <tr>
+        <td>快速症候提取</td>
+        <td>静态方案 ~1.2 ms/周期，输运方案 ~10 ms/周期</td>
+        <td style="color:var(--orange);">★★★☆☆</td>
+        <td>Xu et al. Nat. Phys. 2024; Pecorari et al. 2025</td>
+      </tr>
+      <tr>
+        <td>中电路测量</td>
+        <td>碱土金属原子支持擦除转换检测，破坏率仅 0.5%/轮</td>
+        <td style="color:var(--green);">★★★★★</td>
+        <td>Ma et al. Nature 2023; PRX 2025</td>
+      </tr>
+      <tr>
+        <td>结构化错误</td>
+        <td>Rydberg 衰减→擦除转换率高达 98%，纠错阈值从 0.94% 升至 4.15%</td>
+        <td style="color:var(--green);">★★★★★</td>
+        <td>Wu et al. arXiv 2022/2024; Pecorari & Pupillo PRA 2025</td>
+      </tr>
+      <tr>
+        <td>原子损耗恢复</td>
+        <td>原子束重装填 + 保持量子比特相干性</td>
+        <td style="color:var(--green);">★★★★☆</td>
+        <td>PRX 2025 (Kobayashi et al.)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 光镊架构的独特优势</h3>
+  <div class="highlight good">
+    <strong>⚡ 核心洞察：</strong>光镊架构与纠错之间存在三个维度的"天然适配"——<br>
+    (1) <strong>空间可重构性</strong> → 满足 qLDPC 非局域稳定子测量需求，避免固定耦合图中的 SWAP 开销；<br>
+    (2) <strong>碱土金属原子能级结构</strong> → 提供擦除错误模型，将不可知的泡利错误转化为位置已知的擦除，显著提升纠错阈值；<br>
+    (3) <strong>原子可替换性</strong> → 损耗原子可通过重装填恢复，解决了固态平台中物理比特永久损耗的根本性挑战。
+  </div>
+
+  <h3>2.4 面临的关键挑战</h3>
+  <div class="highlight warn">
+    <strong>⚠️ 当前瓶颈：</strong><br>
+    (1) <strong>输运速度 vs 纠错周期</strong>——原子在光镊间的相干移动时间（~100 μs/次）是 shuttling 方案纠错周期的主要瓶颈；<br>
+    (2) <strong>串扰误差</strong>——在大规模阵列中，Rydberg 激光照射目标原子时对邻近原子的非共振激发产生 ~1%–4% 的串扰误差；<br>
+    (3) <strong>Rydberg 激发跳跃</strong>——快速纠错周期中残余 Rydberg 激发在相邻原子间跳跃，引入非马尔可夫关联错误。
+  </div>
+</div>
+
+<!-- ==================== 第三章 ==================== -->
+<div class="section" id="sec3">
+  <h2><span class="icon">🧩</span> 三、qLDPC 码在中性原子平台上的实现方案</h2>
+
+  <p>
+    qLDPC（量子低密度奇偶校验）码是近年容错量子计算最重要的理论突破之一。与传统的表面码（surface code）相比，
+    qLDPC 码能以<strong>常数级物理-逻辑比特比</strong>实现编码，在中性原子平台上已出现两条主要的实现路线。
+  </p>
+
+  <!-- 3.1 两条技术路线 -->
+  <h3>3.1 主要技术路线对比</h3>
+  <table>
+    <thead>
+      <tr><th>特性</th><th>🔄 Shuttling 路线 (输运式)</th><th>📡 静态多色 Rydberg 路线</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>核心机制</strong></td><td>AOD 移动光镊，将远距离比特物理靠近后执行近邻门</td><td>不同波长激光激发不同主量子数 Rydberg 态，实现可变距离门</td></tr>
+      <tr><td><strong>连通性</strong></td><td>原则上任意比特对（全连通）</td><td>~7 晶格常数（Rydberg 相互作用物理极限）</td></tr>
+      <tr><td><strong>纠错周期</strong></td><td>~10 ms</td><td>~1.2 ms</td></tr>
+      <tr><td><strong>典型代码</strong></td><td>Bivariate Bicycle [[144,12,12]]<br>HGP 乘积码 [[1152,580,≤12]]</td><td>La-cross 码 [[65,9,4]]<br>优化 Bivariate Bicycle 码</td></tr>
+      <tr><td><strong>代表工作</strong></td><td>Xu et al. Nat. Phys. 2024<br>Bluvstein et al. Nature 2024<br>QuEra 2:1 演示 2025-2026</td><td>Pecorari et al. Nat. Commun. 2025<br>Poole/Saffman et al. arXiv 2024</td></tr>
+      <tr><td><strong>硬件复杂度</strong></td><td>需 AOD + 高精度移动控制</td><td>需多波长激光系统 + 串扰管理</td></tr>
+      <tr><td><strong>输运损耗</strong></td><td>有（~0.05%/次输运）</td><td>无</td></tr>
+      <tr><td><strong>并行化潜力</strong></td><td>受 AOD 通道数限制</td><td>受激光分束与串扰限制</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 3.2 Shuttling 路线 -->
+  <h3>3.2 Shuttling 路线：利用光镊重构实现常数时间开销</h3>
+
+  <div class="card-grid">
+    <div class="card">
+      <h4>🏗️ 常数开销容错量子计算</h4>
+      <span class="tag tag-arch">Xu et al. Nature Physics 2024</span>
+      <p><strong>核心思想：</strong>利用 qLDPC 码的乘积结构，将稳定子分为可并行执行的多组。
+      通过 AOD 阵列将属于同一稳定子的比特<strong>并行移动</strong>至相互作用区域，
+      执行 Rydberg CZ 门后移回原位。所有稳定子的症候提取可在常数时间内完成。</p>
+      <p><strong>关键指标：</strong></p>
+      <ul>
+        <li>数百物理比特即可超越等规模表面码性能</li>
+        <li>&lt;10⁵ 物理比特支持数千逻辑比特的算法</li>
+        <li>已证明容错性，兼容当前实验能力</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>🎯 2:1 物理-逻辑比特比</h4>
+      <span class="tag tag-exp">QuEra / Harvard / MIT 2025–2026</span>
+      <p><strong>突破性成果：</strong>使用专为可重构中性原子硬件协同设计的 qLDPC 码</p>
+      <ul>
+        <li><code>[[1152, 580, ≤12]]</code>：1,152 物理比特 → 580 逻辑比特（编码率 50.3%）</li>
+        <li><code>[[2304, 1156, ≤14]]</code>：2,304 物理比特 → 1,156 逻辑比特（编码率 50.2%）</li>
+        <li>0.1% 电路级噪声下，逻辑错误率 ~1.3×10<sup>−13</sup>/轮</li>
+        <li>进入 <strong>Teraquop</strong> 级别运算能力</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>⚡ Bivariate Bicycle 码的硬件优化</h4>
+      <span class="tag tag-code">Poole, Saffman et al. 2024</span>
+      <p><strong>布局折叠算法：</strong>将 Tanner 图嵌入二维平面时，
+      通过二分匹配和分层折叠将最大通信距离从 23 压缩至 7.21（压缩 ~3×），
+      使其落入 Rydberg 相互作用范围。</p>
+      <p><strong>整形 Rydberg 脉冲：</strong>使用时间最优控制协议，
+      在 12 μm 门距离上实现 CZ 保真度 >99.9%，纠错周期 ~1.2 ms。</p>
+    </div>
+  </div>
+
+  <h3>3.3 静态多色 Rydberg 路线：La-cross 码方案</h3>
+
+  <div class="card-grid">
+    <div class="card">
+      <h4>🧬 La-cross 码结构</h4>
+      <span class="tag tag-code">Pecorari et al. Nature Communications 2025</span>
+      <p><strong>构造方法：</strong>由两个经典循环种子码的超图积（HGP）构造 CSS 码。
+      稳定子权值为 6，其中 4 个为近邻作用、<strong>2 个为长程作用</strong>。
+      命名源于稳定子图案类似于"长臂十字绣"。</p>
+      <p><strong>编码优势：</strong>k=2 编码 4 逻辑比特（表面码仅 1 个），
+      k=3 编码 9 逻辑比特，k=4 编码 16 逻辑比特。</p>
+    </div>
+
+    <div class="card">
+      <h4>🌈 多色 Rydberg 门实现</h4>
+      <span class="tag tag-arch">物理实现</span>
+      <p>不同激光波长激发不同主量子数 nⱼ 的 Rydberg 态，
+      利用 van der Waals 相互作用 Bⱼ ~ nⱼ¹¹/(jR)⁶ 的标度律
+      在距离 j×R 处实现高保真度 CZ 门：</p>
+      <ul>
+        <li>j=7 长程门时间 ~1 μs（假设 j=1 近邻门 250 ns）</li>
+        <li><strong>比原子输运方案快 20× 以上</strong></li>
+        <li>采用时间最优控制协议抑制散射误差</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>📊 纠错性能</h4>
+      <span class="tag tag-theory">数值模拟结果</span>
+      <p><strong>阈值（电路级退极化噪声）：</strong></p>
+      <ul>
+        <li>k=2 La-cross：~0.22%</li>
+        <li>k=3 La-cross：~0.20%</li>
+        <li>k=4 La-cross：~0.17%</li>
+      </ul>
+      <p><strong>关键结论：</strong>当近邻 2Q 门错误率 <strong>&lt;0.1%</strong> 时，
+      La-cross 码在所有方面超越等规模表面码，逻辑错误率可降低<strong>一个数量级以上</strong>。</p>
+    </div>
+  </div>
+
+  <!-- 3.4 其他新兴码族 -->
+  <h3>3.4 面向中性原子的新兴 qLDPC 码族</h3>
+  <table>
+    <thead>
+      <tr><th>码族</th><th>核心特征</th><th>对光镊架构的意义</th><th>文献</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>ZSZ 码</strong></td>
+        <td>基于群 Z 的 bivariate bicycle 非阿贝尔推广；症候提取仅需简单全局阵列移动</td>
+        <td>症候提取运动模式简单，适合 AOD 批量操控</td>
+        <td>Guo, Hong, Kaufman & Lucas, 2025</td>
+      </tr>
+      <tr>
+        <td><strong>层码（Layer Codes）</strong></td>
+        <td>基于量子 Tanner 码的三维推广，部分自纠错</td>
+        <td>利用 3D 光镊阵列实现<strong>拓扑保护</strong>，降低主动纠错频率</td>
+        <td>Williamson, 2025</td>
+      </tr>
+      <tr>
+        <td><strong>扩散码（Diffusion Codes）</strong></td>
+        <td>从小集展开构造的自纠错码，可调非局域度</td>
+        <td>通过 AOD 调控实现不同程度的非局域连接</td>
+        <td>Sriram, Khemani, Placke, 2025</td>
+      </tr>
+      <tr>
+        <td><strong>多变量多循环码（MM Codes）</strong></td>
+        <td>统一 bivariate bicycle、toric code 等框架</td>
+        <td>提供灵活的码设计空间以适配硬件约束</td>
+        <td>2025</td>
+      </tr>
+      <tr>
+        <td><strong>Loss-biased 容错码</strong></td>
+        <td>针对快速纠错中 Rydberg 跳跃的损耗偏置策略</td>
+        <td>亚毫秒纠错周期，碱土金属离子自电离转换</td>
+        <td>Pecorari, Brennen, Kondov & Pupillo, 2025</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ==================== 第四章 ==================== -->
+<div class="section" id="sec4">
+  <h2><span class="icon">🛡️</span> 四、擦除转换：中性原子独有的纠错优势</h2>
+
+  <p>
+    擦除错误（erasure error）——即<strong>已知位置但未知错误类型</strong>的错误——相比完全未知的泡利错误，
+    可将量子纠错阈值提高数倍。中性原子（特别是碱土金属原子）因其独特的能级结构，
+    能够以极高效率将主要错误机制转换为擦除错误，这是固态平台难以实现的独特优势。
+  </p>
+
+  <h3>4.1 物理机制</h3>
+  <div class="arch-diagram">
+    <div style="font-size:0.9rem; color:var(--text2); margin-bottom:1rem;">▼ Rydberg 衰减→擦除转换路径</div>
+    <div class="arch-row">
+      <span class="arch-box" style="border-color:var(--red);">💥 Rydberg 态<br>自发辐射/黑体辐射</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-box" style="border-color:var(--orange);">📉 衰变至基态<br><sup>1</sup>S₀ (与计算子空间正交)</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-box" style="border-color:var(--green);">🔍 荧光检测<br>399 nm 激发 <sup>1</sup>P₁</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-box" style="border-color:var(--accent);">✅ 擦除标记<br>位置已知，可纠正</span>
+    </div>
+  </div>
+
+  <p>
+    <strong>关键原理：</strong>在 <sup>171</sup>Yb 中，量子比特编码在亚稳态 <sup>3</sup>P₀ 的核自旋态上。
+    Rydberg 激发态的自发辐射（包括黑体辐射诱导的跃迁）约 <strong>95%</strong> 的概率分支比落到
+    基态 <sup>1</sup>S₀ 或其附近态——这些态与计算子空间<strong>完全正交</strong>，
+    可通过荧光成像检测而不干扰正常的计算量子比特（<strong>保真度损失 &lt;10⁻⁵</strong>）。
+    剩余 ~5% 的 Rydberg 残余可通过<strong>自电离</strong>（autoionization）
+    在皮秒级时间尺度上转化为可检测的离子信号。
+  </p>
+
+  <h3>4.2 纠错性能提升</h3>
+  <table>
+    <thead>
+      <tr><th>指标</th><th>无擦除转换</th><th>有擦除转换</th><th>提升倍数</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>表面码阈值（退极化模型）</td><td>~0.94%</td><td>~4.15%</td><td><strong>4.4×</strong></td></tr>
+      <tr><td>1Q 门错误→擦除转换率</td><td>—</td><td>56%</td><td>—</td></tr>
+      <tr><td>2Q 门错误→擦除转换率</td><td>—</td><td>33%</td><td>—</td></tr>
+      <tr><td>理论最大转换率 (n=75 Rydberg)</td><td>—</td><td>98%</td><td>—</td></tr>
+      <tr><td>擦除去偏 La-cross 码逻辑错误压制</td><td>—</td><td>数量级降低</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 擦除容错方案在中性原子上的实现</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>🔄 k-Shift 擦除恢复协议</h4>
+      <span class="tag tag-code">Kobayashi & Nagayama, IEEE TQE 2025</span>
+      <p>通过代码形变（code deformation）将逻辑量子比特从不完美的、
+      积累了大量擦除原子的阵列中<strong>逐次转移到完美阵列</strong>。
+      每个 k-shift 步骤容忍大量擦除而不干扰活跃逻辑比特的相干性，
+      可反复执行以维持长时计算。</p>
+    </div>
+    <div class="card">
+      <h4>⚡ 损耗偏置策略</h4>
+      <span class="tag tag-code">Pecorari, Brennen et al., 2025</span>
+      <p>在快速纠错周期中（<strong>亚毫秒级</strong>），通过中电路自电离
+      快速将寄生 Rydberg 激发转化为原子损耗。仅需对辅助比特（而非全部比特）
+      执行电离即可保持容错性——这一策略特别适合<strong>异核双原子架构</strong>（如 Rb+Cs）。</p>
+    </div>
+    <div class="card">
+      <h4>🧩 MBQC 路径</h4>
+      <span class="tag tag-theory">Ying et al., arXiv 2024</span>
+      <p>基于测量的量子计算（MBQC）方案，利用泡利旋转近似（PTA）
+      将 Rydberg 泄漏传播转化为泡利错误，<strong>无需中电路检测</strong>（仅需最终泄漏检测）。
+      CZ 门纯 Rydberg 衰减的阈值达到 <strong>3.617%</strong>，保持了错误距离 dₑ = d。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 第五章 ==================== -->
+<div class="section" id="sec5">
+  <h2><span class="icon">🏆</span> 五、关键实验里程碑</h2>
+
+  <div class="timeline">
+
+    <div class="tl-item">
+      <div class="tl-year">2023 年</div>
+      <div class="tl-title">首次中电路擦除转换实验演示</div>
+      <p>Ma, Thompson et al. (Princeton) 在 <sup>171</sup>Yb 亚稳态量子比特上实现：
+      1Q 门擦除转换率 56%，2Q 门 33%，诱导误差 &lt;10⁻⁵。
+      首次端到端验证了中性原子平台的擦除转换能力。<br>
+      <em>Nature, 2023</em></p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2024 年 3 月</div>
+      <div class="tl-title">首个基于可重构原子阵列的逻辑量子处理器</div>
+      <p>Bluvstein, Lukin et al. (Harvard) 在 280 量子比特的可重构阵列上演示了
+      48 个逻辑量子比特的操作，包括逻辑门、逻辑态制备和逻辑测量。<br>
+      <em>Nature 626, 58–65 (2024)</em></p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2024 年 6 月</div>
+      <div class="tl-title">常数开销容错量子计算理论方案</div>
+      <p>Xu, Bonilla Ataides, Zhou et al. 提出结合 qLDPC 码与可重构原子阵列的蓝图。
+      证明 &lt;10⁵ 物理比特可执行数千逻辑比特算法。<br>
+      <em>Nature Physics 20, 1084–1090 (2024)</em></p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2024 年 9 月</div>
+      <div class="tl-title">Bivariate Bicycle 码的优化静态实现</div>
+      <p>Poole, Saffman et al. 提出布局折叠 + 整形 Rydberg 脉冲方案，
+      将通信距离压缩 ~3×，纠错周期降至 ~1.2 ms。<br>
+      <em>arXiv:2404.18809 (2024)</em></p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2025 年 1 月</div>
+      <div class="tl-title">La-cross 码：面向中性原子的高码率静态 qLDPC</div>
+      <p>Pecorari, Jandura, Brennen, Pupillo 发表 La-cross 码家族。
+      多色 Rydberg 静态实现，门速度比输运方案快 20×。
+      近邻门 p&lt;0.1% 时全面超越表面码。<br>
+      <em>Nature Communications 16, 1111 (2025)</em></p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2025 年 10 月</div>
+      <div class="tl-title">6,100 原子光镊阵列</div>
+      <p>Manetsch, Endres et al. (Caltech) 展示 12,000 光镊工位的 Cs 阵列，
+      超精细 T₂=12.6 s，成像保真度 99.994%，室温真空寿命 23 分钟。<br>
+      <em>Nature, 2025</em></p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2025 年 12 月</div>
+      <div class="tl-title">41 轮重复症候提取 + 原子替换</div>
+      <p>Atom Computing + Microsoft 合作，在 <sup>171</sup>Yb 上演示最多 41 轮
+      重复码症候提取，中电路测量破坏率 0.5%/轮，实现原子束重装填。<br>
+      <em>Physical Review X, 2025</em></p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2025 年 11 月</div>
+      <div class="tl-title">Clifford 变形 La-cross 码 + 擦除偏置噪声</div>
+      <p>Pecorari & Pupillo 将 La-cross 码推广至擦除偏置噪声模型，
+      展示了在 98% 擦除转换率下数量级的逻辑错误压制。<br>
+      <em>Physical Review A, 2025</em></p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-year">2026 年 4 月</div>
+      <div class="tl-title">2:1 物理-逻辑比特比演示</div>
+      <p>QuEra / Harvard / MIT 实现 2,304 物理比特 → 1,156 逻辑比特（编码率 50.2%），
+      逻辑错误率 ~1.3×10<sup>−13</sup>/轮，Teraquop 级运算能力。<br>
+      <em>2026</em></p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== 第六章 ==================== -->
+<div class="section" id="sec6">
+  <h2><span class="icon">🔮</span> 六、技术路线对比与展望</h2>
+
+  <h3>6.1 Shuttling vs 静态：光镊架构的两条路径</h3>
+  <div class="compare-box">
+    <div class="compare-col header">🔄 Shuttling 路线</div>
+    <div class="compare-col header">📡 静态多色 Rydberg 路线</div>
+  </div>
+  <div class="compare-box">
+    <div class="compare-col">
+      <p><strong>✅ 优势</strong></p>
+      <ul>
+        <li>原则上全连通，不限于 Rydberg 范围</li>
+        <li>可支持任意复杂的 qLDPC 码</li>
+        <li>已在实验中演示逻辑量子比特操作</li>
+        <li>并行移动已在 3,000 原子阵列上验证</li>
+      </ul>
+    </div>
+    <div class="compare-col">
+      <p><strong>✅ 优势</strong></p>
+      <ul>
+        <li>纠错周期快 ~10×（~1.2 ms vs ~10 ms）</li>
+        <li>无输运损耗和串扰</li>
+        <li>系统复杂度低（无需 AOD）</li>
+        <li>更适合大规模重复症候提取</li>
+      </ul>
+    </div>
+  </div>
+  <div class="compare-box">
+    <div class="compare-col">
+      <p><strong>❌ 劣势</strong></p>
+      <ul>
+        <li>纠错周期受限于移动时间（~100 μs/次）</li>
+        <li>输运过程中原子加热和损耗</li>
+        <li>AOD 通道数限制并行度</li>
+        <li>频繁移动加剧退相干</li>
+      </ul>
+    </div>
+    <div class="compare-col">
+      <p><strong>❌ 劣势</strong></p>
+      <ul>
+        <li>长程门距离受限于 ~7 晶格常数</li>
+        <li>多波长激光系统复杂度和成本高</li>
+        <li>高 n Rydberg 态的"意大利面条区"串扰</li>
+        <li>支持的 qLDPC 码族有限</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>6.2 关键性能指标对比</h3>
+  <table>
+    <thead>
+      <tr><th>方案</th><th>纠错周期</th><th>阈值</th><th>最高编码率</th><th>实验验证</th><th>技术就绪度</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>表面码 + Shuttling</td>
+        <td>~10 ms</td>
+        <td>~0.94% (退极化)<br>~4.15% (擦除)</td>
+        <td>O(1/d²)</td>
+        <td>✅ Harvard 2024 (48 逻辑比特)</td>
+        <td>TRL 4–5</td>
+      </tr>
+      <tr>
+        <td>Bivariate Bicycle + Shuttling</td>
+        <td>~10 ms</td>
+        <td>~0.5%</td>
+        <td>~k/n ≈ 8.3% ([[144,12,12]])</td>
+        <td>⚠️ 部分验证</td>
+        <td>TRL 3–4</td>
+      </tr>
+      <tr>
+        <td>La-cross + 静态多色 Rydberg</td>
+        <td>~1.2 ms</td>
+        <td>~0.17–0.22%</td>
+        <td>~k/(2k+1)² ≈ 14% (k=3)</td>
+        <td>❌ 仅理论</td>
+        <td>TRL 2–3</td>
+      </tr>
+      <tr>
+        <td>HGP 乘积码 + Shuttling</td>
+        <td>~10 ms</td>
+        <td>~0.1%</td>
+        <td>~50%</td>
+        <td>✅ QuEra 2025-2026 (2:1)</td>
+        <td>TRL 4</td>
+      </tr>
+      <tr>
+        <td>Loss-biased 码 + 自电离</td>
+        <td>&lt;1 ms</td>
+        <td>理论预测</td>
+        <td>依赖具体码族</td>
+        <td>❌ 仅理论</td>
+        <td>TRL 1–2</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>6.3 未来发展方向</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>🏛️ 三维/四维码架构</h4>
+      <span class="tag tag-arch">长期方向</span>
+      <p>利用声光透镜（AOL）3D 光镊阵列实现平面选择性操控（已实验验证
+      4×4×3 立方阵列）。结合三维拓扑码或层码，实现<strong>部分自纠错</strong>，
+      大幅减少主动症候提取频率。更高维度可实现完全自纠错的量子存储。</p>
+    </div>
+    <div class="card">
+      <h4>🔄 混合架构</h4>
+      <span class="tag tag-arch">中期方向</span>
+      <p>结合 shuttling 的灵活性与静态门的速度优势：
+      用 AOD 执行周期性全局重排（秒级），用多色 Rydberg 门
+      执行快速局部症候提取（毫秒级），实现<strong>分层纠错</strong>架构。</p>
+    </div>
+    <div class="card">
+      <h4>🧠 硬件原生解码器</h4>
+      <span class="tag tag-code">近期方向</span>
+      <p>BP+OSD 解码延迟是实时纠错的瓶颈。基于 FPGA 或定制 ASIC 的
+      <strong>低延迟解码器</strong>、利用原子阵列并行性实现
+      解码的<strong>模拟计算</strong>方案正在探索中。</p>
+    </div>
+    <div class="card">
+      <h4>🔗 分布式纠错架构</h4>
+      <span class="tag tag-arch">长期方向</span>
+      <p>利用中性原子 qLDPC 存储器的长相干时间（>1 s），
+      结合光子纠缠实现<strong>模块化分布式量子计算</strong>。
+      已有资源估算表明中性原子 qLDPC 存储器在量子网络中
+      具有显著的资源效率优势。<br>
+      <em>arXiv:2410.01211 (2024)</em></p>
+    </div>
+  </div>
+
+  <h3>6.4 总结性评估</h3>
+  <div class="highlight good">
+    <strong>🎯 综合评估：</strong>中性原子光镊平台与量子纠错的适配度极高。其核心架构特性——
+    可重构连接图、擦除结构化错误和原子可替换性——分别对应 qLDPC 码的非局域性需求、
+    高阈值纠错需求和大规模长时运行需求。<br><br>
+    <strong>短期（1–3 年）：</strong>Shuttling 路线将持续引领实验进展，
+    2:1 物理-逻辑比特比和 41 轮症候提取已奠定实用化基础。<br>
+    <strong>中期（3–5 年）：</strong>静态多色 Rydberg 路线与混合架构将趋于成熟，
+    纠错周期有望压缩至亚毫秒级，结合擦除转换可使有效阈值突破 1%。<br>
+    <strong>长期（5–10 年）：</strong>3D/4D 自纠错码 + 模块化分布式架构
+    可能实现接近实用规模的通用容错量子计算。
+  </div>
+</div>
+
+<!-- ==================== 第七章 ==================== -->
+<div class="section" id="sec7">
+  <h2><span class="icon">📚</span> 七、参考文献</h2>
+  <ol class="ref-list">
+    <li>
+      <strong>Xu Q, Bonilla Ataides JP, Pattison CA, et al.</strong>
+      "Constant-overhead fault-tolerant quantum computation with reconfigurable atom arrays."
+      <em>Nature Physics</em> 20, 1084–1090 (2024).
+      <a href="https://doi.org/10.1038/s41567-024-02479-z" target="_blank">DOI: 10.1038/s41567-024-02479-z</a>
+    </li>
+    <li>
+      <strong>Pecorari L, Jandura S, Brennen GK, Pupillo G.</strong>
+      "High-rate quantum LDPC codes for long-range-connected neutral atom registers."
+      <em>Nature Communications</em> 16, 1111 (2025).
+      <a href="https://doi.org/10.1038/s41467-025-56255-5" target="_blank">DOI: 10.1038/s41467-025-56255-5</a>
+    </li>
+    <li>
+      <strong>Bluvstein D, Evered SJ, Geim AA, et al.</strong>
+      "Logical quantum processor based on reconfigurable atom arrays."
+      <em>Nature</em> 626, 58–65 (2024).
+    </li>
+    <li>
+      <strong>Ma S, Liu G, Peng P, et al.</strong>
+      "High-fidelity gates and mid-circuit erasure conversion in an atomic qubit."
+      <em>Nature</em> 622, 279–284 (2023).
+    </li>
+    <li>
+      <strong>Wu Y, Kolkowitz S, Puri S, Thompson JD.</strong>
+      "Erasure conversion for fault-tolerant quantum computing in alkaline earth Rydberg atom arrays."
+      <em>Nature Communications</em> 13, 4657 (2022). Updated arXiv:2201.03540 (2024).
+    </li>
+    <li>
+      <strong>Pecorari L, Pupillo G.</strong>
+      "Quantum low-density parity-check codes for erasure-biased atomic quantum processors."
+      <em>Physical Review A</em>, 2025 (published Nov 10, 2025). arXiv:2502.20189.
+    </li>
+    <li>
+      <strong>Kobayashi K, Nagayama S.</strong>
+      "Erasure-tolerance scheme for the surface codes on neutral atom quantum computers."
+      <em>IEEE Transactions on Quantum Engineering</em>, 2025. arXiv:2404.12656.
+    </li>
+    <li>
+      <strong>Poole C, Graham TM, Saffman M, et al.</strong>
+      "Architecture for fast implementation of qLDPC codes with optimized Rydberg gates."
+      arXiv:2404.18809 (2024).
+    </li>
+    <li>
+      <strong>Manetsch P, ... Endres M, et al.</strong>
+      "A tweezer array with 6,100 highly coherent atomic qubits."
+      <em>Nature</em>, 2025.
+      <a href="https://www.nature.com/articles/s41586-025-09641-4" target="_blank">DOI: 10.1038/s41586-025-09641-4</a>
+    </li>
+    <li>
+      <strong>Atom Computing & Microsoft.</strong>
+      "Repeated ancilla reuse for logical computation on a neutral atom quantum computer."
+      <em>Physical Review X</em>, 2025.
+    </li>
+    <li>
+      <strong>Pecorari L, Brennen GK, Kondov S, Pupillo G.</strong>
+      "Loss-biased fault-tolerant quantum error correction."
+      arXiv:2604.21876 (2025).
+    </li>
+    <li>
+      <strong>Guo Y, Hong S, Kaufman AM, Lucas A.</strong>
+      "Towards self-correcting quantum codes for neutral atom arrays."
+      arXiv:2502.20189 (2025).
+    </li>
+    <li>
+      <strong>Lin et al.</strong>
+      "AI-enabled parallel assembly of thousands of defect-free neutral atom arrays."
+      <em>Physical Review Letters</em>, 2025.
+    </li>
+    <li>
+      <strong>QuEra / Harvard / MIT.</strong>
+      "Demonstration of 2:1 physical-to-logical qubit ratio using qLDPC codes."
+      April 2026.
+    </li>
+    <li>
+      <strong>Ying et al.</strong>
+      "Processing and decoding Rydberg decay error with MBQC."
+      arXiv:2411.04664 (2024).
+    </li>
+    <li>
+      <strong>Resource estimation for delayed choice quantum entanglement based sneakernet networks using neutral atom qLDPC memories.</strong>
+      arXiv:2410.01211 (2024).
+    </li>
+  </ol>
+</div>
+
+</div><!-- /container -->
+
+<footer>
+  <p>中性原子量子计算机纠错方案调研报告 · 生成于 2026 年 6 月 29 日</p>
+  <p>基于公开学术文献与实验报告的综合分析，覆盖 2023–2026 年主要研究成果</p>
+</footer>
+
+<button class="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
+
+</body>
+</html>

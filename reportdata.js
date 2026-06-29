@@ -21,18 +21,38 @@ const REPORT_NOTES = {
         "htmlFile": "reports/中性原子量子计算纠错方案调研报告.html"
     },
     "r004": {
-        "title": "QRAM on Neural Atom Quantum Computers",
+        "title": "QRAM on Neutral Atom Quantum Computers",
         "date": "2026-06-29",
         "tags": ["QRAM" , "综述"],
         "abstract": "中性原子量子计算机凭借光镊阵列的大规模存储能力（6,100+量子比特）、超长相干时间（12.6秒）及AOD原子搬移的物理路由优势，成为目前最具QRAM规模化潜力的物理平台。",
         "htmlFile": "reports/中性原子量子计算机在QRAM方面的实现方案.html"
     },
-    "r004": {
+    "r005": {
         "title": "QAOA电力出清调研报告",
         "date": "2026-06-29",
         "tags": ["QAOA","电力市场" ,"电力出清", "综述"],
         "abstract": "QAOA在电力市场出清中的核心价值在于将机组组合等离散子问题编码为QUBO模型求解，连续调度与定价交由经典优化器完成，形成混合量子-经典协同架构。该方案已在IEEE 39-bus至300-bus系统上验证，拓扑分解方法在大规模稀疏电网中展现出数量级性能提升。",
         "htmlFile": "reports/QAOA电力出清调研报告.html"
     },
-    
+    "r006": {
+        "title": "NeutralAtom CZ Gate Report",
+        "date": "2026-06-29",
+        "tags": ["Neutral Atom","硬件" ],
+        "abstract": "梳理当前实现CZ门的各种方案。",
+        "htmlFile": "reports/NeutralAtom_CZ_Gate_Report.html"
+    },
+    "r007": {
+        "title": "中科酷原量子计算机硬件原理",
+        "date": "2026-06-29",
+        "tags": ["Neutral Atom","硬件" ],
+        "abstract": "梳理公司目前硬件原理。",
+        "htmlFile": "reports/中科酷原量子计算机硬件原理.html"
+    },
+    "r008": {
+        "title": "QRAM architecture report",
+        "date": "2026-06-29",
+        "tags": ["QRAM","Neutral Atom","硬件" ],
+        "abstract": "探索公司目前硬件与QRAM架构适配的可行设计方案。",
+        "htmlFile": "reports/QRAM_architecture_report.html"
+    },
 };

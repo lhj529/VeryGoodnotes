@@ -21,7 +21,7 @@ const REPORT_NOTES = {
         "htmlFile": "reports/中性原子量子计算纠错方案调研报告.html"
     },
     "r004": {
-        "title": "QRAM on Neural Atom Quantum Computers",
+        "title": "QRAM on Neutral Atom Quantum Computers",
         "date": "2026-06-29",
         "tags": ["QRAM", , "综述"],
         "abstract": "中性原子量子计算机凭借光镊阵列的大规模存储能力（6,100+量子比特）、超长相干时间（12.6秒）及AOD原子搬移的物理路由优势，成为目前最具QRAM规模化潜力的物理平台。",

@@ -232,6 +232,7 @@
 </div>
 
 <script src="notedata.js"></script>
+<script src="reportdata.js"></script>
 
 <script>
     // --- 1. 轮播逻辑 (全量预加载版) ---
@@ -273,8 +274,11 @@
     // --- 2. 数据渲染逻辑 ---
     const urlParams = new URLSearchParams(window.location.search);
     const noteId = urlParams.get('id');
-    const pdfToView = urlParams.get('pdf'); 
-    const data = ALL_NOTES[noteId];
+    const pdfToView = urlParams.get('pdf');
+    const typeParam = urlParams.get('type') || '';
+    const data = (typeParam === 'report' && typeof REPORT_NOTES !== 'undefined')
+        ? REPORT_NOTES[noteId]
+        : (typeof ALL_NOTES !== 'undefined' ? ALL_NOTES[noteId] : undefined);
 
     function parseText(text) {
         if (!text) return "";
@@ -300,7 +304,28 @@
 
         const container = document.getElementById('contents-container');
 
-        if (pdfToView) {
+        // ---- AI 调研报告：iframe 渲染 ----
+        if (typeParam === 'report') {
+            document.getElementById('tag-box').innerHTML = (data.tags || []).map(t =>
+                `<span class="tag"># ${t}</span>`
+            ).join('');
+            document.getElementById('meta-box').innerHTML = `
+                📅 ${data.date || '未知日期'}
+            `;
+            container.innerHTML = `
+                <div class="pdf-viewer-wrapper">
+                    <div class="pdf-toolbar">
+                        <span style="font-weight: bold; color: var(--brand-color);">📝 AI 调研笔记：${data.title || ''}</span>
+                        <a href="showitem.html?type=report" class="nav-item" style="font-size: 0.9rem;">🔙 返回 AI 调研列表</a>
+                    </div>
+                    <iframe src="${data.htmlFile}" class="pdf-frame" frameborder="0"></iframe>
+                </div>
+            `;
+            // 跳过关联笔记（report 不与 ALL_NOTES 交叉关联）
+            document.getElementById('related-box').innerHTML = "<p style='color:#999; font-size:0.85rem;'>📝 AI 调研笔记</p>";
+            // 跳过剩余渲染逻辑，但音乐播放器仍需初始化
+            // 注意：这里不能 return，因为后面还有音乐逻辑
+        } else if (pdfToView) {
             container.innerHTML = `
                 <div class="pdf-viewer-wrapper">
                     <div class="pdf-toolbar">
@@ -353,21 +378,24 @@
             container.innerHTML = pdfLinksHTML + contentsHTML + detailHTML;
         }
 
-        const currentTags = data.tag || [];
-        const relatedIds = Object.keys(ALL_NOTES).filter(id => {
-            if (id === noteId) return false;
-            return (ALL_NOTES[id].tag || []).some(t => currentTags.includes(t));
-        });
+        // 关联笔记（仅普通笔记，report 类型跳过）
+        if (typeParam !== 'report') {
+            const currentTags = data.tag || [];
+            const relatedIds = Object.keys(ALL_NOTES).filter(id => {
+                if (id === noteId) return false;
+                return (ALL_NOTES[id].tag || []).some(t => currentTags.includes(t));
+            });
 
-        const selectedIds = relatedIds.sort(() => 0.5 - Math.random()).slice(0, 8);
-        const relatedBox = document.getElementById('related-box');
-        
-        if (selectedIds.length > 0) {
-            relatedBox.innerHTML = selectedIds.map(id => `
-                <a href="note.html?id=${id}" class="link-item">· ${ALL_NOTES[id].title}</a>
-            `).join('');
-        } else {
-            relatedBox.innerHTML = "<p style='color:#999; font-size:0.85rem;'>暂无关联笔记</p>";
+            const selectedIds = relatedIds.sort(() => 0.5 - Math.random()).slice(0, 8);
+            const relatedBox = document.getElementById('related-box');
+
+            if (selectedIds.length > 0) {
+                relatedBox.innerHTML = selectedIds.map(id => `
+                    <a href="note.html?id=${id}" class="link-item">· ${ALL_NOTES[id].title}</a>
+                `).join('');
+            } else {
+                relatedBox.innerHTML = "<p style='color:#999; font-size:0.85rem;'>暂无关联笔记</p>";
+            }
         }
 
     } else {

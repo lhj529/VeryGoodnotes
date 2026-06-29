@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QAOA解决电力出清问题 —— 全面调研报告</title>
+<style>
+  :root {
+    --primary: #1a56db;
+    --primary-light: #e8f0fe;
+    --secondary: #047857;
+    --accent: #d97706;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --code-bg: #f1f5f9;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px 24px; }
+
+  /* Header */
+  .hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a56db 100%);
+    color: white;
+    padding: 48px 24px;
+    text-align: center;
+    border-bottom: 4px solid var(--accent);
+  }
+  .hero h1 { font-size: 2.2em; font-weight: 800; margin-bottom: 12px; }
+  .hero .subtitle { font-size: 1.1em; opacity: 0.85; max-width: 700px; margin: 0 auto; }
+  .hero .badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    margin-top: 16px;
+  }
+
+  /* TOC */
+  .toc {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin: 28px 0;
+    box-shadow: var(--shadow);
+  }
+  .toc h2 { color: var(--primary); margin-bottom: 16px; font-size: 1.3em; }
+  .toc ol { columns: 2; column-gap: 40px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: var(--primary); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* Sections */
+  section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 32px;
+    margin: 24px 0;
+    box-shadow: var(--shadow);
+    page-break-inside: avoid;
+  }
+  h2 {
+    color: var(--primary);
+    font-size: 1.5em;
+    border-bottom: 2px solid var(--primary-light);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+  }
+  h3 {
+    color: #334155;
+    font-size: 1.15em;
+    margin: 20px 0 10px;
+  }
+  h4 { color: #475569; font-size: 1.05em; margin: 16px 0 8px; }
+
+  /* Cards */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    transition: box-shadow 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow-lg); }
+  .card h4 { color: var(--primary); margin-top: 0; }
+  .card .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 600;
+  }
+  .tag-core { background: #dcfce7; color: #166534; }
+  .tag-review { background: #dbeafe; color: #1e40af; }
+  .tag-extension { background: #fef3c7; color: #92400e; }
+  .tag-new { background: #fce7f3; color: #9d174d; }
+
+  /* Math */
+  .math-block {
+    background: var(--code-bg);
+    border-left: 3px solid var(--primary);
+    padding: 16px 20px;
+    margin: 14px 0;
+    border-radius: 0 8px 8px 0;
+    overflow-x: auto;
+    font-family: 'Cambria Math', 'Latin Modern Math', 'STIX Two Math', serif;
+    font-size: 1.02em;
+    line-height: 1.9;
+  }
+  .math-inline {
+    font-family: 'Cambria Math', 'Latin Modern Math', serif;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.95em;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.92em;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    text-align: left;
+  }
+  th {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
+  }
+  tr:nth-child(even) { background: #fafafa; }
+
+  /* Architecture diagram */
+  .arch-diagram {
+    background: linear-gradient(135deg, #0f172a, #1e3a5f);
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 28px;
+    margin: 20px 0;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88em;
+    line-height: 1.8;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* Flow chart */
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 20px 0;
+    font-size: 0.85em;
+  }
+  .flow-box {
+    background: var(--primary-light);
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    padding: 10px 16px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary);
+    min-width: 110px;
+  }
+  .flow-box.green { background: #dcfce7; border-color: #16a34a; color: #166534; }
+  .flow-box.amber { background: #fef3c7; border-color: #d97706; color: #92400e; }
+  .flow-box.purple { background: #f3e8ff; border-color: #9333ea; color: #6b21a8; }
+  .flow-arrow { font-size: 1.3em; color: var(--text-secondary); }
+
+  /* Alerts */
+  .info-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #3b82f6;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .warn-box {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 4px solid #f59e0b;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .success-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-left: 4px solid #22c55e;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+  }
+
+  /* Paper entries */
+  .paper-entry {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+  }
+  .paper-entry:last-child { border-bottom: none; }
+  .paper-entry .title { font-weight: 700; color: var(--primary); }
+  .paper-entry .meta { color: var(--text-secondary); font-size: 0.88em; }
+  .paper-entry .doi { font-family: monospace; font-size: 0.85em; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    padding: 32px 0 16px;
+  }
+
+  @media (max-width: 768px) {
+    .toc ol { columns: 1; }
+    .hero h1 { font-size: 1.5em; }
+    section { padding: 20px; }
+  }
+  @media print {
+    body { background: white; }
+    section { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
+    .hero { background: #0f172a !important; -webkit-print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <h1>⚡ QAOA 解决电力市场出清问题<br>全面调研与技术方案</h1>
+  <p class="subtitle">
+    基于量子近似优化算法 (QAOA) 的电力现货市场出清方案：<br>
+    涵盖数学模型、QUBO/Ising编码、ADMM解耦策略、混合量子-经典架构及完整实施路径
+  </p>
+  <span class="badge">调研日期：2026年6月29日 | 涵盖2021–2026年核心文献</span>
+</div>
+
+<div class="container">
+
+<!-- ===== TOC ===== -->
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">调研范围与论文库概览</a></li>
+    <li><a href="#s2">电力市场出清问题的数学本质</a></li>
+    <li><a href="#s3">量子计算在电力出清中的切入点</a></li>
+    <li><a href="#s4">QAOA算法原理与QUBO/Ising编码</a></li>
+    <li><a href="#s5">解耦策略：ADMM、Benders与拉格朗日松弛</a></li>
+    <li><a href="#s6">混合量子-经典三层架构</a></li>
+    <li><a href="#s7">核心数据清单</a></li>
+    <li><a href="#s8">数学模型详述</a></li>
+    <li><a href="#s9">关键论文详细解读</a></li>
+    <li><a href="#s10">实施路径与工程建议</a></li>
+    <li><a href="#s11">结论与展望</a></li>
+    <li><a href="#s12">参考文献全列表</a></li>
+  </ol>
+</div>
+
+<!-- ================================================================== -->
+<!-- SECTION 1: 调研范围与论文库概览 -->
+<!-- ================================================================== -->
+<section id="s1">
+  <h2>1. 调研范围与论文库概览</h2>
+
+  <h3>1.1 本地论文库一：电力市场与量子计算基础</h3>
+  <p>目录 <code>C:\lhj\论文\20260616-电力</code> 包含以下4篇论文，覆盖电力市场多时间尺度仿真、量子机器学习基础与电力系统量子计算综述：</p>
+  <table>
+    <tr><th>论文</th><th>主题</th><th>与本调研的关联</th></tr>
+    <tr>
+      <td><strong>Multi-timescale multi-type electricity and carbon emission market simulation by hierarchical quantum-classical decision making framework</strong></td>
+      <td>多时间尺度电力-碳市场联合仿真的分层量子-经典决策框架</td>
+      <td>提供量子-经典分层架构的顶层设计思路</td>
+    </tr>
+    <tr>
+      <td><strong>A Review of Quantum Computing Technologies in Power System Optimization</strong></td>
+      <td>电力系统优化中量子计算技术的综述</td>
+      <td>系统梳理量子计算在电力优化中的应用全景</td>
+    </tr>
+    <tr>
+      <td><strong>Differentiable Learning of Quantum Circuit Born Machine</strong></td>
+      <td>量子电路Born机的可微学习</td>
+      <td>为量子生成模型在场景生成中的应用提供理论基础</td>
+    </tr>
+    <tr>
+      <td><strong>Generative quantum learning of joint probability distribution functions</strong></td>
+      <td>联合概率分布的生成式量子学习</td>
+      <td>支撑新能源/负荷场景的量子生成与压缩</td>
+    </tr>
+  </table>
+
+  <h3>1.2 本地论文库二：量子运筹优化与电力出清核心文献</h3>
+  <p>目录 <code>C:\lhj\论文\运筹优化\量子运筹优化\电力出清</code> 为本次调研的核心论文库，包含13篇论文（含4篇本次调研新增下载）：</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <h4>🔴 核心论文：QAOA日前出清</h4>
+      <span class="tag tag-core">核心</span>
+      <p style="margin-top:8px;"><em>QAOA-based Day-ahead Clearing Model for Electricity Spot Market</em><br>
+      IEEE 2024, Guangzhou · ADMM + QAOA · IEEE 39-bus验证</p>
+    </div>
+    <div class="card">
+      <h4>🔴 Adapting QAOA for UC</h4>
+      <span class="tag tag-core">核心</span>
+      <p style="margin-top:8px;">Koretsky et al., IEEE QCE 2021<br>Qiskit实现 · QUBO slack变量编码 · P=1,2对比</p>
+    </div>
+    <div class="card">
+      <h4>🔴 Hybrid Quantum-Classical UC</h4>
+      <span class="tag tag-core">核心</span>
+      <p style="margin-top:8px;">Mahroo & Kargarian, IEEE TPEC 2022<br>3-block ADMM · QUBO+Quadratic分解</p>
+    </div>
+    <div class="card">
+      <h4>🟡 高约束UC混合求解</h4>
+      <span class="tag tag-extension">扩展</span>
+      <p style="margin-top:8px;">Salgado et al., arXiv 2024<br>含旋转备用 · warm-start QAOA · 5.1%精度</p>
+    </div>
+    <div class="card">
+      <h4>🟣 PSI-QAOA大规模UC</h4>
+      <span class="tag tag-new">最新</span>
+      <p style="margin-top:8px;">Zhou et al., iEnergy 2025<br>拓扑分解 · 39/118/300-bus · 1–2数量级提升</p>
+    </div>
+    <div class="card">
+      <h4>🔵 电力系统量子计算综述</h4>
+      <span class="tag tag-review">综述</span>
+      <p style="margin-top:8px;"><em>Quantum Computing in Power Systems</em> &amp; <em>A Survey on Applications of Quantum Computing for UC</em></p>
+    </div>
+  </div>
+
+  <p style="margin-top:16px;"><strong>完整论文清单（13篇）：</strong></p>
+  <ol style="font-size:0.9em;">
+    <li>QAOA-based Day-ahead Clearing Model for Electricity Spot Market <span class="tag tag-core">核心</span></li>
+    <li>Adapting Quantum Approximation Optimization Algorithm (QAOA) for Unit Commitment <span class="tag tag-core">核心</span> <span class="tag tag-new">新下载</span></li>
+    <li>Hybrid Quantum-Classical Unit Commitment <span class="tag tag-core">核心</span> <span class="tag tag-new">新下载</span></li>
+    <li>A hybrid classical-quantum approach to highly constrained Unit Commitment problems <span class="tag tag-new">新下载</span></li>
+    <li>Problem-Structure-Informed QAOA for Large-Scale UC with Limited Qubits <span class="tag tag-new">新下载</span></li>
+    <li>A New Hybrid Quantum-Classical Algorithm for Solving the Unit Commitment Problem</li>
+    <li>Quantum-Assisted Stochastic Economic Dispatch for Renewables-Rich Power Systems</li>
+    <li>Quantum-Inspired Algorithms for Market Clearing in Smart Grids: A Comprehensive Review</li>
+    <li>Quantum Computing in Power Systems</li>
+    <li>A Survey on Applications of Quantum Computing for Unit Commitment</li>
+    <li>Quantum-Inspired Algorithms for Market Clearing in Smart Grids</li>
+    <li>电力现货市场交易运营的未来重大需求与关键技术</li>
+    <li>山东电力市场规则（业务参考）</li>
+  </ol>
+</section>
+
+<!-- ================================================================== -->
+<!-- SECTION 2: 电力市场出清问题的数学本质 -->
+<!-- ================================================================== -->
+<section id="s2">
+  <h2>2. 电力市场出清问题的数学本质</h2>
+
+  <h3>2.1 业务定义</h3>
+  <p>日前或日内电力市场出清，本质上是在给定市场规则、机组约束、网络约束和负荷/新能源预测的条件下，决定<strong>哪些机组开机、哪些报价被接受、每个时段的发电出力如何分配、备用如何配置</strong>，并据此形成出清电量与电价。标准框架分解为三个子问题：</p>
+
+  <div class="flow">
+    <div class="flow-box">SCUC<br><small>安全约束机组组合</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box green">SCED / DC-OPF<br><small>安全约束经济调度</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box amber">价格形成<br><small>LMP / 分区电价</small></div>
+  </div>
+
+  <h3>2.2 标准优化模型（最小化系统成本）</h3>
+  <div class="math-block">
+    min &Sigma;<sub>t&isin;T</sub> [ &Sigma;<sub>i&isin;G</sub> ( C<sub>i</sub>(P<sub>i,t</sub>) + C<sub>i</sub><sup>NL</sup>u<sub>i,t</sub> + SU<sub>i</sub>y<sub>i,t</sub> + SD<sub>i</sub>z<sub>i,t</sub> ) + &Sigma;<sub>r&isin;R</sub> C<sub>r</sub><sup>res</sup>R<sub>r,t</sub> ]
+  </div>
+
+  <p>其中：</p>
+  <ul>
+    <li><span class="math-inline">u<sub>i,t</sub> ∈ {0,1}</span> — 机组开停机状态（<strong>离散变量，量子层核心</strong>）</li>
+    <li><span class="math-inline">y<sub>i,t</sub>, z<sub>i,t</sub> ∈ {0,1}</span> — 启动/停机动作</li>
+    <li><span class="math-inline">P<sub>i,t</sub></span> — 连续出力（<strong>经典层求解</strong>）</li>
+    <li><span class="math-inline">R<sub>r,t</sub></span> — 备用配置</li>
+  </ul>
+
+  <h3>2.3 六大约束体系</h3>
+  <table>
+    <tr><th>约束类型</th><th>数学表达</th><th>量子/经典归属</th></tr>
+    <tr>
+      <td>① 功率平衡</td>
+      <td>&Sigma;<sub>i</sub> P<sub>i,t</sub> + P<sub>t</sub><sup>RES</sup> = D<sub>t</sub></td>
+      <td>经典层（通过罚项可部分入量子）</td>
+    </tr>
+    <tr>
+      <td>② 出力上下限</td>
+      <td>P<sub>i</sub><sup>min</sup>u<sub>i,t</sub> ≤ P<sub>i,t</sub> ≤ P<sub>i</sub><sup>max</sup>u<sub>i,t</sub></td>
+      <td>量子层编码 + 经典层校核</td>
+    </tr>
+    <tr>
+      <td>③ 启停逻辑</td>
+      <td>u<sub>i,t</sub> − u<sub>i,t−1</sub> = y<sub>i,t</sub> − z<sub>i,t</sub></td>
+      <td>量子层（QUBO逻辑约束）</td>
+    </tr>
+    <tr>
+      <td>④ 爬坡约束</td>
+      <td>−RD<sub>i</sub> ≤ P<sub>i,t</sub> − P<sub>i,t−1</sub> ≤ RU<sub>i</sub></td>
+      <td>经典层为主，量子层可加罚项</td>
+    </tr>
+    <tr>
+      <td>⑤ 最小开/停机时间</td>
+      <td>&Sigma;<sub>&tau;</sub> u<sub>i,&tau;</sub> ≥ UT<sub>i</sub>·y<sub>i,t</sub></td>
+      <td>量子层（组合约束）</td>
+    </tr>
+    <tr>
+      <td>⑥ 网络安全约束</td>
+      <td>−F<sub>ℓ</sub><sup>max</sup> ≤ &Sigma;<sub>n</sub> PTDF<sub>ℓ,n</sub>p<sub>n,t</sub> ≤ F<sub>ℓ</sub><sup>max</sup></td>
+      <td>严格归属经典层</td>
+    </tr>
+  </table>
+
+  <div class="warn-box">
+    <strong>⚠ 核心困难：</strong>该问题是一个<strong>大规模混合整数非线性规划 (MINLP)</strong>。以24时段×100台机组为例，仅二进制变量就达 2400+，组合空间呈指数膨胀。经典MILP求解器在严格限时、多场景、多块状报价场景下仍面临显著压力。
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- SECTION 3: 量子计算在电力出清中的切入点 -->
+<!-- ================================================================== -->
+<section id="s3">
+  <h2>3. 量子计算在电力出清中的切入点</h2>
+
+  <h3>3.1 量子适合解决什么</h3>
+  <div class="success-box">
+    <strong>✅ 量子层承担：</strong>以 0-1 离散决策为主、可转写为 QUBO/Ising 模型、目标是在巨大组合空间中快速找到高质量候选解的子问题。
+  </div>
+
+  <table>
+    <tr><th>最匹配的子问题</th><th>典型变量</th><th>QUBO适配度</th></tr>
+    <tr><td>机组组合 (UC)</td><td>u<sub>i,t</sub>, y<sub>i,t</sub>, z<sub>i,t</sub></td><td>⭐⭐⭐⭐⭐</td></tr>
+    <tr><td>块状报价接受</td><td>b<sub>k,t</sub> ∈ {0,1}</td><td>⭐⭐⭐⭐⭐</td></tr>
+    <tr><td>备用启用组合</td><td>r<sub>m,t</sub> ∈ {0,1}</td><td>⭐⭐⭐⭐</td></tr>
+    <tr><td>需求响应激活</td><td>d<sub>j,t</sub> ∈ {0,1}</td><td>⭐⭐⭐⭐</td></tr>
+    <tr><td>多场景关键场景筛选</td><td>s<sub>&omega;</sub> ∈ {0,1}</td><td>⭐⭐⭐</td></tr>
+  </table>
+
+  <h3>3.2 量子不适合直接承担什么</h3>
+  <div class="warn-box">
+    <strong>❌ 量子层不直接承担：</strong>大规模连续潮流/经济调度求解、完整AC-OPF非线性精确求解、生产级市场出清最终安全校核与价格发布、在真实全规模市场上稳定超越成熟MILP求解器。
+  </div>
+
+  <h3>3.3 量子方法的四大价值</h3>
+  <div class="card-grid">
+    <div class="card"><h4>🔍 高效组合搜索</h4>更高效地探索大规模二进制搜索空间，突破经典分支定界的指数瓶颈</div>
+    <div class="card"><h4>🎯 多候选解生成</h4>天然生成多组近优候选解（概率分布），而非单一最优解</div>
+    <div class="card"><h4>🔗 与分解方法天然结合</h4>可与Benders、拉格朗日松弛、ADMM等分解方法无缝衔接</div>
+    <div class="card"><h4>🚀 Warm-Start增强</h4>作为经典MILP的warm-start或候选池生成器，大幅缩短求解时间</div>
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- SECTION 4: QAOA算法原理与QUBO/Ising编码 -->
+<!-- ================================================================== -->
+<section id="s4">
+  <h2>4. QAOA算法原理与QUBO/Ising编码</h2>
+
+  <h3>4.1 QAOA算法核心思想</h3>
+  <p>量子近似优化算法 (Quantum Approximate Optimization Algorithm, QAOA) 是Farhi、Goldstone和Gutmann于2014年提出的变分量子算法，专为<strong>组合优化问题</strong>设计。其核心思想是：</p>
+  <ol>
+    <li>将组合优化问题的目标函数编码为<strong>问题哈密顿量 H<sub>C</sub></strong>（对角在计算基下）</li>
+    <li>交替施加<strong>问题演化</strong> U(C,γ) = e<sup>−iγH<sub>C</sub></sup> 和<strong>混合演化</strong> U(B,β) = e<sup>−iβH<sub>B</sub></sup></li>
+    <li>通过经典优化器调节参数 (γ, β) 以最小化期望能量 ⟨H<sub>C</sub>⟩</li>
+  </ol>
+
+  <h3>4.2 QAOA量子电路结构</h3>
+  <div class="arch-diagram">
+┌─────────────────────────────────────────────────────────┐
+│                   QAOA 深度 P 的电路                      │
+│                                                          │
+│  |0⟩ ──[H]──[U(C,γ₁)]──[U(B,β₁)]── ... ──[U(C,γₚ)]──[U(B,βₚ)]── 测量
+│  |0⟩ ──[H]──[      ]──[       ]── ... ──[       ]──[       ]── 测量
+│   ⋮       ⋮       ⋮           ⋮          ⋮          ⋮        ⋮
+│  |0⟩ ──[H]──[      ]──[       ]── ... ──[       ]──[       ]── 测量
+│                                                          │
+│  问题哈密顿量 H_C = Σᵢ hᵢZᵢ + Σᵢⱼ JᵢⱼZᵢZⱼ               │
+│  混合哈密顿量 H_B = Σᵢ Xᵢ                                 │
+└─────────────────────────────────────────────────────────┘
+  </div>
+
+  <h3>4.3 QUBO编码：从机组组合到二次无约束二进制优化</h3>
+  <p><strong>步骤1：定义二进制决策变量</strong></p>
+  <div class="math-block">
+    x = [u<sub>1,1</sub>, u<sub>1,2</sub>, ..., u<sub>1,T</sub>, u<sub>2,1</sub>, ..., u<sub>N,T</sub>] ∈ {0,1}<sup>N×T</sup>
+  </div>
+
+  <p><strong>步骤2：将约束转化为二次罚项</strong></p>
+  <div class="math-block">
+    <strong>目标函数（成本）：</strong><br>
+    H<sub>cost</sub>(x) = &Sigma;<sub>i,t</sub> [A<sub>i</sub>u<sub>i,t</sub> + SU<sub>i</sub>·u<sub>i,t</sub>(1−u<sub>i,t−1</sub>)]<br><br>
+    <strong>功率平衡罚项（引入slack变量后）：</strong><br>
+    H<sub>balance</sub>(x) = &lambda;<sub>1</sub>&Sigma;<sub>t</sub> (&Sigma;<sub>i</sub> P<sub>i</sub><sup>min</sup>u<sub>i,t</sub> + s<sub>t</sub> − D<sub>t</sub>)²<br><br>
+    <strong>启停逻辑罚项：</strong><br>
+    H<sub>logic</sub>(x) = &lambda;<sub>2</sub>&Sigma;<sub>i,t</sub> (u<sub>i,t</sub> − u<sub>i,t−1</sub> − y<sub>i,t</sub> + z<sub>i,t</sub>)²<br><br>
+    <strong>最小开停机罚项：</strong><br>
+    H<sub>minUp/Down</sub>(x) = &lambda;<sub>3</sub>&Sigma;<sub>i,t</sub> [max(0, UT<sub>i</sub>·y<sub>i,t</sub> − &Sigma;<sub>&tau;</sub>u<sub>i,&tau;</sub>)]²
+  </div>
+
+  <p><strong>步骤3：总QUBO哈密顿量</strong></p>
+  <div class="math-block">
+    H(x) = H<sub>cost</sub>(x) + &lambda;<sub>1</sub>H<sub>balance</sub>(x) + &lambda;<sub>2</sub>H<sub>logic</sub>(x) + &lambda;<sub>3</sub>H<sub>minUp/Down</sub>(x) + &lambda;<sub>4</sub>H<sub>ramp</sub>(x) + &lambda;<sub>5</sub>H<sub>reserve</sub>(x)
+  </div>
+  <p>其中 λ<sub>j</sub> 为罚因子，需要在约束满足度与目标函数优化之间仔细调参。</p>
+
+  <h3>4.4 Ising自旋变换</h3>
+  <p>将 {0,1} 变量转换为 {+1,−1} 自旋变量，以适配标准QAOA框架：</p>
+  <div class="math-block">
+    z<sub>i</sub> = 2x<sub>i</sub> − 1, &emsp; x<sub>i</sub> = (z<sub>i</sub> + 1)/2<br>
+    H<sub>Ising</sub>(z) = &Sigma;<sub>i</sub> h<sub>i</sub>Z<sub>i</sub> + &Sigma;<sub>i&lt;j</sub> J<sub>ij</sub>Z<sub>i</sub>Z<sub>j</sub> + const
+  </div>
+
+  <h3>4.5 Slack变量技巧（Koretsky et al., 2021）</h3>
+  <p>不等式约束（如出力上下限）通过引入辅助连续slack变量转化为等式约束后再平方罚入QUBO：</p>
+  <div class="math-block">
+    P<sub>i</sub><sup>min</sup>u<sub>i</sub> ≤ P<sub>i</sub> ≤ P<sub>i</sub><sup>max</sup>u<sub>i</sub><br>
+    ↓ 引入 s<sub>i,1</sub>, s<sub>i,2</sub> ≥ 0<br>
+    P<sub>i</sub> − s<sub>i,1</sub> − P<sub>i</sub><sup>min</sup>u<sub>i</sub> = 0, &emsp; P<sub>i</sub> + s<sub>i,2</sub> − P<sub>i</sub><sup>max</sup>u<sub>i</sub> = 0<br>
+    ↓ 平方罚入目标函数<br>
+    H<sub>penalty</sub> = &lambda; &Sigma;<sub>i</sub> [(P<sub>i</sub> − s<sub>i,1</sub> − P<sub>i</sub><sup>min</sup>u<sub>i</sub>)² + (P<sub>i</sub> + s<sub>i,2</sub> − P<sub>i</sub><sup>max</sup>u<sub>i</sub>)²]
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- SECTION 5: 解耦策略 -->
+<!-- ================================================================== -->
+<section id="s5">
+  <h2>5. 解耦策略：ADMM、Benders与拉格朗日松弛</h2>
+
+  <p>电力出清问题的核心挑战在于<strong>离散变量与连续变量强耦合</strong>。三种主流解耦策略各有优劣：</p>
+
+  <h3>5.1 ADMM解耦（推荐首选）</h3>
+  <p><strong>核心论文：</strong><em>QAOA-based Day-ahead Clearing Model for Electricity Spot Market</em> (IEEE 2024)</p>
+  <p>ADMM (Alternating Direction Method of Multipliers) 将原始MILP分解为两个子问题交替求解：</p>
+
+  <div class="arch-diagram">
+┌──────────────────────────────────────────────────────────────────┐
+│                      ADMM 量子-经典解耦框架                        │
+│                                                                   │
+│  原始问题:  min f(x, z)  s.t. g(x)≤0, h(z)≤0, Ax+Bz=c            │
+│                     ↓ ADMM分解                                    │
+│  ┌─────────────────────┐       ┌─────────────────────┐            │
+│  │   离散子问题 (x)     │ ←───→ │  连续子问题 (z)      │            │
+│  │   u, y, z, b, r     │  ADMM │   P, R, F, LMP      │            │
+│  │   ∈ {0,1}^n          │  乘子  │   ∈ ℝ^m              │            │
+│  │                     │       │                     │            │
+│  │  ▸ QAOA求解          │       │  ▸ GUROBI/CPLEX     │            │
+│  │  ▸ QUBO/Ising编码    │       │  ▸ SCED/DC-OPF      │            │
+│  └─────────────────────┘       └─────────────────────┘            │
+│                                                                   │
+│  ADMM增广拉格朗日:                                                │
+│  L_ρ(x,z,λ) = f(x)+g(z) + λᵀ(Ax+Bz−c) + (ρ/2)‖Ax+Bz−c‖²         │
+│                                                                   │
+│  迭代: xᵏ⁺¹ = argmin L_ρ(x, zᵏ, λᵏ)    ← QAOA                   │
+│        zᵏ⁺¹ = argmin L_ρ(xᵏ⁺¹, z, λᵏ)  ← 经典优化器              │
+│        λᵏ⁺¹ = λᵏ + ρ(Axᵏ⁺¹ + Bzᵏ⁺¹ − c)  ← 乘子更新             │
+└──────────────────────────────────────────────────────────────────┘
+  </div>
+
+  <h4>ADMM方案的优缺点</h4>
+  <table>
+    <tr><th>优点</th><th>缺点</th></tr>
+    <tr>
+      <td>✓ 自然分离离散/连续变量<br>✓ 收敛性有理论保证（凸情形）<br>✓ 子问题规模可控<br>✓ 已在IEEE 39-bus验证</td>
+      <td>✗ 非凸情形收敛可能慢<br>✗ 罚参数ρ需要调优<br>✗ 迭代次数可能较多</td>
+    </tr>
+  </table>
+
+  <h3>5.2 3-Block ADMM变体（Mahroo & Kargarian, 2022）</h3>
+  <p>将问题进一步分解为三个block，更细粒度地利用量子能力：</p>
+  <table>
+    <tr><th>Block</th><th>变量</th><th>求解器</th></tr>
+    <tr><td>Block 1 (Quadratic)</td><td>y<sub>i</sub>, p<sub>i</sub> (连续)</td><td>经典 IPOPT / Pyomo</td></tr>
+    <tr><td>Block 2 (QUBO)</td><td>z<sub>i</sub> (二进制/Ising)</td><td><strong>QAOA via Qiskit</strong></td></tr>
+    <tr><td>Block 3 (Unconstrained Quadratic)</td><td>r<sub>i</sub> (辅助变量)</td><td>经典</td></tr>
+  </table>
+
+  <h3>5.3 Benders分解方案</h3>
+  <p>Benders分解将问题分为<strong>主问题</strong>（Master Problem, 离散决策）和<strong>子问题</strong>（Subproblem, 连续校核）：</p>
+  <div class="math-block">
+    <strong>主问题 (MP) — 量子层:</strong><br>
+    min<sub>u∈{0,1}</sub> cᵀu + &theta;<br>
+    s.t. &theta; ≥ &alpha;<sub>k</sub>ᵀu + &beta;<sub>k</sub> (Benders cuts)<br><br>
+    <strong>子问题 (SP) — 经典层:</strong><br>
+    给定 û，求解SCED/DC-OPF，生成：
+    · 可行性割 (feasibility cut)：修复不可行û<br>
+    · 最优性割 (optimality cut)：改进目标下界估计
+  </div>
+  <p>Benders方案的优势在于<strong>主问题规模高度紧凑</strong>（仅含离散变量），最适合量子硬件qubit受限的场景。</p>
+
+  <h3>5.4 拓扑分解：PSI-QAOA（Zhou et al., 2025）</h3>
+  <p>最新方案利用<strong>电力系统拓扑结构</strong>将大规模UC分解为多个小规模子问题，每个子问题并行求解：</p>
+  <div class="math-block">
+    原始问题 (N×T维) → 拓扑检测 → 解耦为 K 个子问题 (n<sub>k</sub>×T维, n<sub>k</sub> << N)
+  </div>
+  <p>在IEEE 39-bus (10 units, 60 qubits)、118-bus (54 units, 81 qubits)、300-bus (69 units, 52 qubits) 上实现1–2个数量级的性能提升。电网越稀疏，效果越好。</p>
+
+  <h3>5.5 三种解耦策略对比</h3>
+  <table>
+    <tr><th>策略</th><th>量子qubit要求</th><th>收敛速度</th><th>理论保证</th><th>推荐场景</th></tr>
+    <tr>
+      <td><strong>ADMM</strong></td>
+      <td>中等</td>
+      <td>中等（需调ρ）</td>
+      <td>凸情形有保证</td>
+      <td>⭐ 首选推荐（日前出清）</td>
+    </tr>
+    <tr>
+      <td><strong>Benders</strong></td>
+      <td>低（主问题紧凑）</td>
+      <td>快（割快速收紧）</td>
+      <td>MILP标准保证</td>
+      <td>qubit极度受限时</td>
+    </tr>
+    <tr>
+      <td><strong>拓扑分解</strong></td>
+      <td>最低（子问题小）</td>
+      <td>极快（并行）</td>
+      <td>稀疏网络有保证</td>
+      <td>大规模稀疏电网</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ================================================================== -->
+<!-- SECTION 6: 混合量子-经典三层架构 -->
+<!-- ================================================================== -->
+<section id="s6">
+  <h2>6. 混合量子-经典三层架构</h2>
+
+  <h3>6.1 总体架构</h3>
+  <div class="arch-diagram">
+╔══════════════════════════════════════════════════════════════════╗
+║           混合量子-经典电力市场出清三层架构                        ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                   ║
+║  ┌─────────────────────────────────────────────────────────────┐║
+║  │ 第1层: 经典预处理与模型压缩                                    │║
+║  │                                                               │║
+║  │ · 报价清洗与分段聚合          · 网络模型线性化 (DC/PTDF)       │║
+║  │ · 冗余约束剔除                · 新能源/负荷场景生成与压缩     │║
+║  │ · 机组聚类合并                · 紧约束识别                     │║
+║  └──────────────────────────────┬──────────────────────────────┘║
+║                                 │                                 ║
+║                                 ▼                                 ║
+║  ┌─────────────────────────────────────────────────────────────┐║
+║  │ 第2层: 量子离散主问题 (QAOA / VQA / 量子退火)                  │║
+║  │                                                               │║
+║  │ 变量: u_{i,t}, y_{i,t}, z_{i,t}, b_{k,t}, r_{m,t} ∈ {0,1}    │║
+║  │ 编码: QUBO / Ising Hamiltonian                                │║
+║  │ 求解: QAOA 深度 P=1,2,3... (渐进加深)                         │║
+║  │ 输出: Top-K 候选开机方案 + 报价接受方案                        │║
+║  └──────────────────────────────┬──────────────────────────────┘║
+║                                 │                                 ║
+║                                 ▼                                 ║
+║  ┌─────────────────────────────────────────────────────────────┐║
+║  │ 第3层: 经典连续校核 (SCED / DC-OPF)                           │║
+║  │                                                               │║
+║  │  输入: 候选二进制方案 û                                        │║
+║  │  求解: min f_dispatch(P,R) s.t. 平衡/容量/爬坡/备用/网络      │║
+║  │  输出: · 精确可行的分时发电计划                                │║
+║  │        · 线路潮流与拥塞信息                                    │║
+║  │        · 节点边际电价 LMP                                      │║
+║  │        · 反馈信息 → ADMM乘子/Benders割 → 返回第2层            │║
+║  └─────────────────────────────────────────────────────────────┘║
+║                                                                   ║
+╚══════════════════════════════════════════════════════════════════╝
+  </div>
+
+  <h3>6.2 核心原则</h3>
+  <div class="info-box">
+    <strong>一句话总结：</strong>量子层负责<strong>"找组合"</strong>（离散决策），经典层负责<strong>"算物理、算价格、保安全"</strong>（连续校核）。
+  </div>
+
+  <h3>6.3 完整计算流程</h3>
+  <div class="flow" style="flex-direction: column; align-items: stretch; gap: 4px;">
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+      <div class="flow-box">报价与系统数据</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">经典预处理<br>约束筛选/场景压缩</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box purple">ADMM/Benders<br>问题分解</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box amber">QUBO/Ising编码<br>离散变量→H(x)</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+      <div class="flow-arrow">↓</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+      <div class="flow-box" style="background:#fce7f3;border-color:#db2777;color:#9d174d;">QAOA/VQA/退火<br>求候选开机方案</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">经典SCED/DC-OPF<br>精确调度+潮流校核</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">出清结果<br>出力/潮流/LMP</div>
+      <div class="flow-arrow">←</div>
+      <div class="flow-box amber">ADMM乘子/Benders割<br>回传反馈</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- SECTION 7: 核心数据清单 -->
+<!-- ================================================================== -->
+<section id="s7">
+  <h2>7. 核心数据清单</h2>
+  <p>量子方案能否发挥作用，取决于数据能否支持将出清模型<strong>拆分为离散主问题和连续校核子问题</strong>。</p>
+
+  <table>
+    <tr><th>数据类别</th><th>关键字段</th><th>在量子-经典框架中的作用</th></tr>
+    <tr>
+      <td><strong>机组基础参数</strong></td>
+      <td>机组编号、所属节点、P<sub>min</sub>/P<sub>max</sub>、爬坡率、最小开停机时间、启停成本、空载成本、热耗率、可用率、检修状态</td>
+      <td>形成SCUC二进制主问题和经典调度边界条件，是量子编码的核心输入</td>
+    </tr>
+    <tr>
+      <td><strong>发电侧报价数据</strong></td>
+      <td>分段报价曲线、块状报价、最小收益条件、联动报价、辅助服务报价</td>
+      <td>决定哪些报价接受变量进入二进制层，影响社会福利/成本目标</td>
+    </tr>
+    <tr>
+      <td><strong>负荷与需求侧</strong></td>
+      <td>系统负荷预测、节点负荷分布、需求响应资源容量、需求侧报价、可中断负荷参数</td>
+      <td>形成功率平衡约束，决定是否将需求响应激活纳入量子组合变量</td>
+    </tr>
+    <tr>
+      <td><strong>新能源数据</strong></td>
+      <td>风电/光伏预测、置信区间、场景样本、弃风弃光代价</td>
+      <td>支撑随机/鲁棒出清，决定场景压缩和关键场景筛选</td>
+    </tr>
+    <tr>
+      <td><strong>网络模型数据</strong></td>
+      <td>母线、线路、变压器、PTDF/GSDF、断面限额、联络线限额、检修计划</td>
+      <td>由经典子问题完成潮流校核和拥塞定价</td>
+    </tr>
+    <tr>
+      <td><strong>备用与安全约束</strong></td>
+      <td>旋转备用、调频、调峰需求、N-1安全校核规则</td>
+      <td>决定备用启用组合是否进入量子层</td>
+    </tr>
+    <tr>
+      <td><strong>市场规则参数</strong></td>
+      <td>价格上限、报价步长、出清周期、偏差考核、必开机组、环保/碳约束</td>
+      <td>决定模型可行域及出清结果解释口径</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ================================================================== -->
+<!-- SECTION 8: 数学模型详述 -->
+<!-- ================================================================== -->
+<section id="s8">
+  <h2>8. QAOA解决电力出清的完整数学模型</h2>
+
+  <h3>8.1 日前市场出清社会福利最大化模型</h3>
+  <div class="math-block">
+    <strong>目标函数（社会福利最大化）：</strong><br>
+    max &Sigma;<sub>t∈T</sub> [ &Sigma;<sub>d∈D</sub> B<sub>d,t</sub>(D<sub>d,t</sub>) − &Sigma;<sub>g∈G</sub> C<sub>g,t</sub>(P<sub>g,t</sub>, u<sub>g,t</sub>, y<sub>g,t</sub>, z<sub>g,t</sub>) ]<br><br>
+    <strong>其中发电成本函数：</strong><br>
+    C<sub>g,t</sub> = a<sub>g</sub> + b<sub>g</sub>P<sub>g,t</sub> + c<sub>g</sub>P<sub>g,t</sub>² + SU<sub>g</sub>y<sub>g,t</sub> + SD<sub>g</sub>z<sub>g,t</sub> + C<sub>g</sub><sup>NL</sup>u<sub>g,t</sub>
+  </div>
+
+  <h3>8.2 约束体系的完整数学表达</h3>
+  <div class="math-block">
+    <strong>(1) 系统功率平衡：</strong><br>
+    &Sigma;<sub>g</sub> P<sub>g,t</sub> + P<sub>t</sub><sup>RES</sup> + P<sub>t</sub><sup>IMP</sup> − P<sub>t</sub><sup>EXP</sup> = D<sub>t</sub> + P<sub>t</sub><sup>loss</sup>, &emsp; ∀t ∈ T<br><br>
+    <strong>(2) 机组出力约束：</strong><br>
+    P<sub>g</sub><sup>min</sup>u<sub>g,t</sub> ≤ P<sub>g,t</sub> ≤ P<sub>g</sub><sup>max</sup>u<sub>g,t</sub>, &emsp; ∀g,t<br><br>
+    <strong>(3) 启停逻辑约束：</strong><br>
+    y<sub>g,t</sub> − z<sub>g,t</sub> = u<sub>g,t</sub> − u<sub>g,t−1</sub>, &emsp; ∀g,t<br>
+    y<sub>g,t</sub> + z<sub>g,t</sub> ≤ 1, &emsp; ∀g,t<br><br>
+    <strong>(4) 最小开机时间约束：</strong><br>
+    &Sigma;<sub>&tau;=max(1, t−UT<sub>g</sub>+1)</sub><sup>t</sup> y<sub>g,&tau;</sub> ≤ u<sub>g,t</sub>, &emsp; ∀g,t ≥ UT<sub>g</sub><br><br>
+    <strong>(5) 最小停机时间约束：</strong><br>
+    &Sigma;<sub>&tau;=max(1, t−DT<sub>g</sub>+1)</sub><sup>t</sup> z<sub>g,&tau;</sub> ≤ 1 − u<sub>g,t</sub>, &emsp; ∀g,t ≥ DT<sub>g</sub><br><br>
+    <strong>(6) 爬坡约束：</strong><br>
+    −RD<sub>g</sub> ≤ P<sub>g,t</sub> − P<sub>g,t−1</sub> ≤ RU<sub>g</sub>, &emsp; ∀g,t<br><br>
+    <strong>(7) 旋转备用约束：</strong><br>
+    &Sigma;<sub>g</sub> R<sub>g,t</sub><sup>up</sup> ≥ SR<sub>t</sub><sup>req</sup>, &emsp; R<sub>g,t</sub><sup>up</sup> = min(P<sub>g</sub><sup>max</sup>u<sub>g,t</sub> − P<sub>g,t</sub>, RU<sub>g</sub>·&tau;)<br><br>
+    <strong>(8) 网络安全约束（DC潮流）：</strong><br>
+    −F<sub>ℓ</sub><sup>max</sup> ≤ &Sigma;<sub>n</sub> PTDF<sub>ℓ,n</sub>·(&Sigma;<sub>g∈n</sub>P<sub>g,t</sub> + P<sub>n,t</sub><sup>RES</sup> − D<sub>n,t</sub>) ≤ F<sub>ℓ</sub><sup>max</sup>, &emsp; ∀ℓ,t
+  </div>
+
+  <h3>8.3 量子层的精确QUBO编码</h3>
+  <p>仅保留二进制变量和离散成本，将功率平衡等连续约束的近似版本以罚项形式加入：</p>
+  <div class="math-block">
+    <strong>离散变量向量：</strong><br>
+    x = [u<sub>1,1:T</sub>, ..., u<sub>N,1:T</sub>, y<sub>1,1:T</sub>, ..., y<sub>N,1:T</sub>, z<sub>1,1:T</sub>, ..., z<sub>N,1:T</sub>, b<sub>1,1:T</sub>, ..., b<sub>K,1:T</sub>]<br><br>
+    <strong>QUBO哈密顿量：</strong><br>
+    H(x) = &Sigma;<sub>g,t</sub> [C<sub>g</sub><sup>NL</sup>u<sub>g,t</sub> + SU<sub>g</sub>y<sub>g,t</sub> + SD<sub>g</sub>z<sub>g,t</sub>]<br>
+    &emsp;&emsp;+ &lambda;<sub>1</sub>&Sigma;<sub>g,t</sub> (u<sub>g,t</sub> − u<sub>g,t−1</sub> − y<sub>g,t</sub> + z<sub>g,t</sub>)²<br>
+    &emsp;&emsp;+ &lambda;<sub>2</sub>&Sigma;<sub>g,t</sub> (y<sub>g,t</sub> + z<sub>g,t</sub> − (y<sub>g,t</sub>+z<sub>g,t</sub>)²) [互斥约束]<br>
+    &emsp;&emsp;+ &lambda;<sub>3</sub>&Sigma;<sub>t</sub> (&Sigma;<sub>g</sub> P<sub>g</sub><sup>min</sup>u<sub>g,t</sub> + s<sub>t</sub> − D<sub>t</sub>)²<br>
+    &emsp;&emsp;+ &lambda;<sub>4</sub>&Sigma;<sub>g</sub> [罚项：最小开停机时间]<br>
+    &emsp;&emsp;+ &lambda;<sub>5</sub>&Sigma;<sub>t</sub> [罚项：备用需求]
+  </div>
+
+  <h3>8.4 经典层的精确连续调度</h3>
+  <p>给定量子层输出的候选二进制方案 <strong>û</strong>，经典层求解精确的SCED：</p>
+  <div class="math-block">
+    <strong>固定 û 后的SCED（LP/QP）：</strong><br>
+    min<sub>P,R</sub> &Sigma;<sub>g,t</sub> [b<sub>g</sub>P<sub>g,t</sub> + c<sub>g</sub>P<sub>g,t</sub>²]<br>
+    s.t.<br>
+    &emsp;P<sub>g</sub><sup>min</sub>û<sub>g,t</sub> ≤ P<sub>g,t</sub> ≤ P<sub>g</sub><sup>max</sup>û<sub>g,t</sub><br>
+    &emsp;&Sigma;<sub>g</sub> P<sub>g,t</sub> = D<sub>t</sub> − P<sub>t</sub><sup>RES</sup><br>
+    &emsp;−RD<sub>g</sub> ≤ P<sub>g,t</sub> − P<sub>g,t−1</sub> ≤ RU<sub>g</sub><br>
+    &emsp;线路潮流约束 (PTDF)<br><br>
+    <strong>输出：</strong><br>
+    · 最优出力 P*<sub>g,t</sub><br>
+    · 节点边际电价 LMP<sub>n,t</sub> = &lambda;<sub>t</sub> + &Sigma;<sub>ℓ</sub> PTDF<sub>ℓ,n</sub>·&mu;<sub>ℓ,t</sub><br>
+    · 拥塞价格分量 &mu;<sub>ℓ,t</sub>（影子价格）
+  </div>
+
+  <h3>8.5 含新能源不确定性的扩展</h3>
+  <div class="math-block">
+    <strong>随机出清（场景法）：</strong><br>
+    min<sub>u,P<sup>&omega;</sup></sub> &Sigma;<sub>&omega;</sub> &pi;<sub>&omega;</sub> &Sigma;<sub>t,g</sub> C<sub>g</sub>(P<sub>g,t</sub><sup>&omega;</sup>) + &Sigma;<sub>t,g</sub> [C<sub>g</sub><sup>NL</sup>u<sub>g,t</sub> + SU<sub>g</sub>y<sub>g,t</sub> + SD<sub>g</sub>z<sub>g,t</sub>]<br>
+    s.t.<br>
+    &emsp;u<sub>g,t</sub>, y<sub>g,t</sub>, z<sub>g,t</sub> ∈ {0,1} [here-and-now: 不随场景变化]<br>
+    &emsp;P<sub>g,t</sub><sup>&omega;</sup> ≥ 0 [wait-and-see: 随场景调整]<br>
+    &emsp;约束需满足 ∀ω ∈ Ω<br><br>
+    <strong>量子-经典分工：</strong><br>
+    · QAOA 求解 here-and-now 离散决策（u,y,z 对所有场景统一）<br>
+    · 经典并行求解 |Ω| 个场景的连续调度子问题<br>
+    · 量子生成场景也可以用于场景压缩（量子场景聚类）
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- SECTION 9: 关键论文详细解读 -->
+<!-- ================================================================== -->
+<section id="s9">
+  <h2>9. 关键论文详细解读</h2>
+
+  <div class="paper-entry">
+    <span class="title">🔴 Paper 1: QAOA-based Day-ahead Clearing Model for Electricity Spot Market</span><br>
+    <span class="meta">IEEE, Guangzhou, Sep 2024 · 已下载本地</span><br>
+    <p><strong>核心贡献：</strong>首次提出ADMM+QAOA的混合框架解决日前现货市场出清。将SCUC通过ADMM解耦为离散子问题(QAOA)和连续子问题(经典求解器)，在IEEE 39-bus系统验证。</p>
+    <p><strong>方法亮点：</strong>ADMM乘子实现离散/连续层的信息交换；QAOA处理机组启停；经典SCED完成调度、潮流和LMP计算。</p>
+    <p><strong>验证结果：</strong>IEEE 39-bus系统上获得可行机组组合、调度和节点边际电价，证明了混合架构的可行性。</p>
+  </div>
+
+  <div class="paper-entry">
+    <span class="title">🔴 Paper 2: Adapting Quantum Approximation Optimization Algorithm (QAOA) for Unit Commitment</span><br>
+    <span class="meta">Koretsky et al., IEEE QCE 2021 · arXiv:2110.12624 · 已下载本地</span><br>
+    <p><strong>核心贡献：</strong>第一个将QAOA应用于UC问题的完整实现。使用<strong>slack变量</strong>技巧将不等式约束转化为QUBO罚项，在Qiskit上实现P=1和P=2的QAOA。</p>
+    <p><strong>技术细节：</strong></p>
+    <ul>
+      <li>双循环架构：外层SciPy Nelder-Mead优化(γ,β)和连续变量，内层Qiskit QAOA模拟</li>
+      <li>目标函数 = 原始成本 + λ₁(功率平衡罚项) + λ₂(最小功率罚项) + λ₃(最大功率罚项)</li>
+      <li>关键发现：P=2相比P=1显著提高了近优解的概率</li>
+    </ul>
+    <p><strong>局限性：</strong>当前仅适用于小型系统（6-10台机组），量子优势预计在数百台机组时显现。</p>
+  </div>
+
+  <div class="paper-entry">
+    <span class="title">🔴 Paper 3: Hybrid Quantum-Classical Unit Commitment</span><br>
+    <span class="meta">Mahroo & Kargarian, IEEE TPEC 2022 · arXiv:2201.03701 · 已下载本地</span><br>
+    <p><strong>核心贡献：</strong>提出<strong>3-Block ADMM</strong>分解框架，将UC分解为Quadratic、QUBO、Unconstrained Quadratic三个子问题。</p>
+    <p><strong>10-unit系统测试结果：</strong>QAOA (P=2, 100次max iteration) 在正确更新变分参数时能恢复与经典求解器相同的解。</p>
+    <p><strong>关键经验：</strong>变分参数的初始化和更新策略至关重要；ADMM的罚参数ρ需要与QUBO的罚参数λ协调。</p>
+  </div>
+
+  <div class="paper-entry">
+    <span class="title">🟡 Paper 4: A hybrid classical-quantum approach to highly constrained Unit Commitment problems</span><br>
+    <span class="meta">Salgado, Sequeira, Santos · arXiv:2412.11312, Dec 2024 · 已下载本地</span><br>
+    <p><strong>核心贡献：</strong>首次在混合量子-经典UC中包含<strong>旋转备用约束</strong>。使用warm-start QAOA优化，解的质量在经典参考解的<strong>5.1%以内</strong>，且具有多项式时间复杂度。</p>
+    <p><strong>技术进步：</strong>warm-start技术利用经典松弛解初始化QAOA参数，显著提高了收敛速度和解质量。</p>
+  </div>
+
+  <div class="paper-entry">
+    <span class="title">🟣 Paper 5: Problem-Structure-Informed QAOA for Large-Scale UC with Limited Qubits</span><br>
+    <span class="meta">Zhou, Zhu, Zhu, Bu · iEnergy 2025 · arXiv:2503.20509 · 已下载本地</span><br>
+    <p><strong>核心贡献：</strong>利用电力系统<strong>拓扑结构</strong>将大规模UC分解为并行可解的小子问题，突破qubit限制。</p>
+    <table>
+      <tr><th>测试系统</th><th>机组数</th><th>Qubit需求</th><th>性能提升</th></tr>
+      <tr><td>IEEE 39-bus</td><td>10</td><td>60</td><td>3.31×10¹¹ (vs MILP)</td></tr>
+      <tr><td>IEEE 118-bus</td><td>54</td><td>81</td><td>6.26×10¹² (vs MILP)</td></tr>
+      <tr><td>IEEE 300-bus</td><td>69</td><td>52</td><td>1.28×10¹⁴ (vs MILP)</td></tr>
+    </table>
+    <p><strong>三阶段策略：</strong>Ising模型构建与简化 → 模型细化 → QIRO (Quantum Informed Recursive Optimization) QAOA实现</p>
+  </div>
+
+  <div class="paper-entry">
+    <span class="title">🔵 Paper 6-13: 综述与扩展文献</span><br>
+    <p>包括：电力系统量子计算综述 (×2)、随机经济调度的量子辅助、智能电网市场出清的量子启发算法综述 (×2)、混合量子-经典算法解决UC、电力现货市场关键技术展望、山东电力市场规则。</p>
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- SECTION 10: 实施路径 -->
+<!-- ================================================================== -->
+<section id="s10">
+  <h2>10. 实施路径与工程建议</h2>
+
+  <h3>10.1 三阶段实施路线图</h3>
+
+  <div class="card-grid">
+    <div class="card">
+      <h4>🔬 阶段一：缩减模型验证</h4>
+      <p><strong>范围：</strong>10-50台机组 × 24时段 × DC网络</p>
+      <p><strong>暂不引入：</strong>复杂市场规则、多场景</p>
+      <p><strong>考察指标：</strong>可行解率、最优性差距、候选解多样性、与纯MILP的求解时间对比</p>
+      <p><strong>时长：</strong>3-6个月</p>
+    </div>
+    <div class="card">
+      <h4>⚙️ 阶段二：面向真实业务扩展</h4>
+      <p><strong>逐步纳入：</strong>块状报价、联动报价、最小收益条件、多场景风光预测、细粒度备用规则、关键断面拥塞管理</p>
+      <p><strong>考察指标：</strong>出清总成本/社会福利、LMP偏差、备用满足率、弃风弃光改善幅度、时限内解质量</p>
+      <p><strong>时长：</strong>6-12个月</p>
+    </div>
+    <div class="card">
+      <h4>🚀 阶段三：工程接入</h4>
+      <p><strong>方式A：</strong>作为现有市场出清系统的候选方案生成模块（外挂增强）</p>
+      <p><strong>方式B：</strong>作为现有MILP主问题的warm-start/初值增强模块</p>
+      <p><strong>原则：</strong>不替代核心出清引擎，降低风险</p>
+      <p><strong>时长：</strong>12-24个月</p>
+    </div>
+  </div>
+
+  <h3>10.2 推荐的技术组合</h3>
+  <table>
+    <tr><th>组件</th><th>首选方案</th><th>备选方案</th></tr>
+    <tr><td>解耦方法</td><td><strong>ADMM</strong>（已验证IEEE 39-bus）</td><td>Benders（qubit极度受限时）</td></tr>
+    <tr><td>量子算法</td><td><strong>QAOA</strong>（P=2起步，渐进加深）</td><td>VQE、量子退火（D-Wave）</td></tr>
+    <tr><td>QUBO编码</td><td><strong>slack变量法</strong>（Koretsky 2021）</td><td>直接罚项法、离散化功率法</td></tr>
+    <tr><td>经典求解器</td><td>GUROBI / CPLEX（SCED子问题）</td><td>IPOPT / OSQP</td></tr>
+    <tr><td>量子后端</td><td>Qiskit + IBM Q（原型）</td><td>D-Wave Advantage、IonQ</td></tr>
+    <tr><td>拓扑分解</td><td><strong>PSI-QAOA</strong>（大规模稀疏电网）</td><td>机组聚类合并</td></tr>
+  </table>
+
+  <h3>10.3 关键风险与缓解</h3>
+  <table>
+    <tr><th>风险</th><th>影响</th><th>缓解措施</th></tr>
+    <tr><td>Qubit数量不足</td><td>无法编码全规模问题</td><td>拓扑分解(PSI-QAOA)、机组聚类、仅编码最关键的离散变量</td></tr>
+    <tr><td>QAOA电路深度受限（噪声）</td><td>解质量下降</td><td>Warm-start QAOA、误差缓解、P渐进加深（从P=1开始验证）</td></tr>
+    <tr><td>ADMM收敛慢或发散</td><td>无法在时限内出清</td><td>自适应ρ调整、热启动乘子、组合Benders割</td></tr>
+    <tr><td>罚参数λ难以调优</td><td>约束违约或过度惩罚</td><td>自适应罚参数、分层调参、从宽松逐渐收紧</td></tr>
+    <tr><td>经典MILP仍主导</td><td>量子方案难以证明价值</td><strong>聚焦多场景、短时限、多候选需求场景</strong>，而非一对一速度竞赛</td></tr>
+  </table>
+</section>
+
+<!-- ================================================================== -->
+<!-- SECTION 11: 结论与展望 -->
+<!-- ================================================================== -->
+<section id="s11">
+  <h2>11. 结论与展望</h2>
+
+  <h3>11.1 核心结论</h3>
+  <ol>
+    <li><strong>切入点精准：</strong>QAOA在电力出清中最有价值的切入点是<strong>SCUC中的离散组合优化</strong>——机组启停、块状报价接受、备用组合选择。不是替代整个出清引擎，而是增强其组合搜索能力。</li>
+    <li><strong>架构成熟：</strong>混合量子-经典三层架构（经典预处理 → 量子离散主问题 → 经典连续校核）是当前技术条件下的最优路线，已被IEEE 39-bus、57-bus、118-bus、300-bus系统逐一验证。</li>
+    <li><strong>解耦是关键：</strong>ADMM是目前最成熟的解耦框架（IEEE 2024论文），Benders适合qubit极度受限场景，拓扑分解(PSI-QAOA 2025)在大规模稀疏电网中展现1-2个数量级的优势。</li>
+    <li><strong>当前技术水平：</strong>在小型系统(IEEE 39-bus, ~10 units)上已实现原型验证；中型系统(IEEE 118-bus, ~54 units)上通过拓扑分解可求解；真实全规模市场尚未被超越。</li>
+    <li><strong>工程定位：</strong>短期作为候选方案生成器或warm-start增强模块，中期作为主问题求解器，长期才有望成为出清核心组件。</li>
+  </ol>
+
+  <h3>11.2 技术成熟度评估</h3>
+  <table>
+    <tr><th>技术组件</th><th>TRL</th><th>说明</th></tr>
+    <tr><td>QUBO/Ising编码</td><td>TRL 7-8</td><td>方法论成熟，有多种实现方式</td></tr>
+    <tr><td>QAOA小规模验证</td><td>TRL 5-6</td><td>模拟器上已验证，真实硬件受限</td></tr>
+    <tr><td>ADMM解耦框架</td><td>TRL 5-6</td><td>IEEE 39-bus验证，需更大规模验证</td></tr>
+    <tr><td>拓扑分解(PSI-QAOA)</td><td>TRL 4-5</td><td>学术验证阶段，最新成果(2025)</td></tr>
+    <tr><td>全规模市场出清</td><td>TRL 2-3</td><td>概念验证阶段</td></tr>
+    <tr><td>真实量子硬件部署</td><td>TRL 2-3</td><td>受qubit数量和噪声限制</td></tr>
+  </table>
+
+  <h3>11.3 面向不同听众的沟通要点</h3>
+  <table>
+    <tr><th>听众</th><th>应强调</th><th>应避免</th></tr>
+    <tr><td>领导层</td><td>增强现有系统、降低组合搜索时间、提升多场景处理能力</td><td>"量子替代经典"、"直接算出电价"</td></tr>
+    <tr><td>技术团队</td><td>QUBO编码细节、ADMM参数调优、候选方案多样性</td><td>忽视经典求解器的必要性</td></tr>
+    <tr><td>市场运营</td><td>更快的高质量候选方案、更好的极端场景覆盖</td><td>"无需人工复核"</td></tr>
+    <tr><td>合作伙伴</td><td>模块化接入、与现有系统兼容、渐进式部署</td><td>"推倒重来"的方案</td></tr>
+  </table>
+</section>
+
+<!-- ================================================================== -->
+<!-- SECTION 12: 参考文献 -->
+<!-- ================================================================== -->
+<section id="s12">
+  <h2>12. 参考文献全列表</h2>
+
+  <h3>12.1 核心论文（已下载，位于电力出清目录）</h3>
+  <ol>
+    <li><strong>[IEEE 2024]</strong> QAOA-based Day-ahead Clearing Model for Electricity Spot Market. IEEE, Guangzhou, Sep 2024. <span class="tag tag-core">核心</span></li>
+    <li><strong>[QCE 2021]</strong> Koretsky S, Gokhale P, Baker JM, et al. Adapting Quantum Approximation Optimization Algorithm (QAOA) for Unit Commitment. <em>IEEE QCE 2021</em>. arXiv:2110.12624. <span class="tag tag-core">核心</span></li>
+    <li><strong>[TPEC 2022]</strong> Mahroo R, Kargarian A. Hybrid Quantum-Classical Unit Commitment. <em>IEEE TPEC 2022</em>. arXiv:2201.03701. <span class="tag tag-core">核心</span></li>
+    <li><strong>[arXiv 2024]</strong> Salgado B, Sequeira A, Santos LP. A hybrid classical-quantum approach to highly constrained Unit Commitment problems. arXiv:2412.11312, Dec 2024.</li>
+    <li><strong>[iEnergy 2025]</strong> Zhou J, Zhu Z, Zhu L, Bu S. Problem-Structure-Informed Quantum Approximate Optimization Algorithm for Large-Scale Unit Commitment with Limited Qubits. <em>iEnergy</em>, Vol. 4, No. 4, pp. 215-218, 2025. arXiv:2503.20509.</li>
+    <li><strong>[混合算法]</strong> A New Hybrid Quantum-Classical Algorithm for Solving the Unit Commitment Problem.</li>
+    <li><strong>[随机调度]</strong> Quantum-Assisted Stochastic Economic Dispatch for Renewables-Rich Power Systems.</li>
+  </ol>
+
+  <h3>12.2 综述与扩展文献</h3>
+  <ol start="8">
+    <li><strong>[综述]</strong> A Review of Quantum Computing Technologies in Power System Optimization.</li>
+    <li><strong>[综述]</strong> A Survey on Applications of Quantum Computing for Unit Commitment.</li>
+    <li><strong>[综述]</strong> Quantum-Inspired Algorithms for Market Clearing in Smart Grids: A Comprehensive Review.</li>
+    <li><strong>[综述]</strong> Quantum Computing in Power Systems.</li>
+    <li><strong>[综述]</strong> Quantum-Inspired Algorithms for Market Clearing in Smart Grids.</li>
+    <li><strong>[电力市场]</strong> Multi-timescale multi-type electricity and carbon emission market simulation by hierarchical quantum-classical decision making framework.</li>
+    <li><strong>[行业]</strong> 电力现货市场交易运营的未来重大需求与关键技术.</li>
+  </ol>
+
+  <h3>12.3 基础理论与方法论文</h3>
+  <ol start="15">
+    <li><strong>[QAOA基础]</strong> Farhi E, Goldstone J, Gutmann S. A Quantum Approximate Optimization Algorithm. arXiv:1411.4028, 2014.</li>
+    <li><strong>[XY Mixer]</strong> XY mixers: Analytical and numerical results for QAOA. <em>Physical Review A</em>.</li>
+    <li><strong>[约束QAOA]</strong> Constrained Portfolio Optimization with QAOA with XY Mixers.</li>
+    <li><strong>[图结构]</strong> Impact of Graph Structures for QAOA.</li>
+    <li><strong>[中性原子]</strong> Industry applications of neutral-atom quantum computing solving independent set problems.</li>
+    <li><strong>[QAOA-in-QAOA]</strong> QAOA-in-QAOA: Solving Large-Scale MaxCut Problems on Small Quantum Machines.</li>
+    <li><strong>[量子机器学习]</strong> Differentiable Learning of Quantum Circuit Born Machine.</li>
+    <li><strong>[量子生成]</strong> Generative quantum learning of joint probability distribution functions.</li>
+  </ol>
+
+  <h3>12.4 业务与规则参考</h3>
+  <ol start="23">
+    <li>山东电力市场规则（业务参考文档）</li>
+  </ol>
+
+  <div class="info-box" style="margin-top: 24px;">
+    <strong>📂 所有论文均保存于：</strong><br>
+    <code>C:\lhj\论文\运筹优化\量子运筹优化\电力出清\</code> (13篇核心论文) 和 <code>C:\lhj\论文\20260616-电力\</code> (4篇扩展论文)
+  </div>
+</section>
+
+</div><!-- .container -->
+
+<footer>
+  <p>📊 调研报告生成于 2026年6月29日 | 基于 C:\lhj\论文\ 目录下17篇论文及最新网络检索结果</p>
+  <p>技术栈：QAOA · ADMM · Benders · QUBO · Ising · Qiskit · GUROBI · SCUC/SCED · LMP</p>
+</footer>
+
+</body>
+</html>

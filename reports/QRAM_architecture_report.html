@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中科酷原·中性原子量子计算机QRAM架构设计调研报告</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  :root {
+    --accent: #1a5276;
+    --highlight: #2980b9;
+    --card-bg: #f8f9fa;
+    --border: #dee2e6;
+    --text: #2c3e50;
+    --warning: #e67e22;
+    --success: #27ae60;
+    --info: #3498db;
+    --danger: #c0392b;
+    --purple: #8e44ad;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    color: var(--text);
+    line-height: 1.8;
+    background: #fff;
+  }
+
+  /* Cover */
+  .cover {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1b3a4b 40%, #1a5276 100%);
+    color: white;
+    padding: 100px 60px 80px;
+    text-align: center;
+    min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(41,128,185,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(155,89,182,0.12) 0%, transparent 40%),
+                radial-gradient(circle at 50% 60%, rgba(230,126,34,0.08) 0%, transparent 35%);
+    animation: pulse 8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1.2; }
+  }
+  .cover > * { position: relative; z-index: 1; }
+  .cover h1 {
+    font-size: 2.6em;
+    font-weight: 800;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+  }
+  .cover .subtitle {
+    font-size: 1.25em;
+    color: #85c1e9;
+    margin-bottom: 35px;
+  }
+  .cover .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 30px;
+    padding: 12px 28px;
+    font-size: 1.05em;
+    margin: 8px;
+    backdrop-filter: blur(10px);
+  }
+  .cover .badge span { color: #f1c40f; font-weight: bold; }
+  .cover .date { margin-top: 30px; color: #aab7c4; font-size: 0.95em; }
+
+  /* TOC */
+  nav.toc {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 40px 50px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border-left: 5px solid var(--accent);
+  }
+  nav.toc h2 { color: var(--accent); margin-bottom: 20px; font-size: 1.6em; }
+  nav.toc ol { counter-reset: toc-counter; padding-left: 0; list-style: none; }
+  nav.toc ol li { counter-increment: toc-counter; margin: 8px 0; }
+  nav.toc ol li::before {
+    content: counter(toc-counter);
+    display: inline-block;
+    width: 24px; height: 24px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 24px;
+    font-size: 0.8em;
+    margin-right: 10px;
+  }
+  nav.toc a { color: var(--highlight); text-decoration: none; font-size: 1.05em; }
+  nav.toc a:hover { text-decoration: underline; }
+  nav.toc .sub-toc { margin-left: 34px; font-size: 0.95em; }
+  nav.toc .sub-toc li::before { background: var(--highlight); font-size: 0.7em; }
+
+  /* Main content */
+  main { max-width: 1050px; margin: 0 auto; padding: 0 30px 60px; }
+  section { margin: 50px 0; }
+  section h2 {
+    color: var(--accent);
+    font-size: 1.8em;
+    border-bottom: 3px solid var(--highlight);
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+    counter-increment: section-counter;
+  }
+  section h2::before {
+    content: counter(section-counter) ". ";
+    color: var(--highlight);
+  }
+  section h3 {
+    color: var(--highlight);
+    font-size: 1.3em;
+    margin: 30px 0 15px;
+  }
+  section h4 {
+    color: #555;
+    font-size: 1.1em;
+    margin: 20px 0 10px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 25px 30px;
+    margin: 20px 0;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .card-tip { border-left: 4px solid var(--success); background: #eafaf1; }
+  .card-warning { border-left: 4px solid var(--warning); background: #fef9e7; }
+  .card-note { border-left: 4px solid var(--info); background: #eaf2f8; }
+  .card-insight { border-left: 4px solid var(--purple); background: #f4ecf7; }
+  .card-tip::before { content: "💡 设计要点"; font-weight: bold; color: var(--success); display: block; margin-bottom: 8px; }
+  .card-warning::before { content: "⚠️ 挑战"; font-weight: bold; color: var(--warning); display: block; margin-bottom: 8px; }
+  .card-note::before { content: "📘 背景"; font-weight: bold; color: var(--info); display: block; margin-bottom: 8px; }
+  .card-insight::before { content: "🔬 核心洞察"; font-weight: bold; color: var(--purple); display: block; margin-bottom: 8px; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.95em;
+  }
+  thead th {
+    background: var(--accent);
+    color: white;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+  }
+  tbody td {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr:nth-child(even) { background: #f4f7f9; }
+  tbody tr:hover { background: #e8f0f8; }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+    margin: 2px;
+  }
+  .tag.arch { background: #d5f5e3; color: #1e8449; }
+  .tag.impl { background: #fdebd0; color: #b9770e; }
+  .tag.theory { background: #d6eaf8; color: #1a5276; }
+  .tag.platform { background: #e8daef; color: #6c3483; }
+  .tag.key { background: #fadbd8; color: #c0392b; }
+
+  /* Pre blocks */
+  pre.diagram {
+    background: #1e293b;
+    color: #94a3b8;
+    padding: 25px;
+    border-radius: 8px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.82em;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+    margin: 20px 0;
+  }
+  pre.diagram .hl { color: #f1c40f; }
+  pre.diagram .hl2 { color: #2ecc71; }
+  pre.diagram .hl3 { color: #e74c3c; }
+
+  /* Figures */
+  figure { margin: 25px 0; text-align: center; }
+  figure figcaption {
+    font-size: 0.9em;
+    color: #777;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  /* Comparison grid */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+  }
+  .compare-grid .col {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .compare-grid .col h4 { margin-top: 0; }
+
+  /* Arch layers */
+  .layer-stack {
+    margin: 20px 0;
+  }
+  .layer-box {
+    padding: 18px 25px;
+    margin: 3px 0;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    position: relative;
+  }
+
+  /* References */
+  .refs { counter-reset: ref-counter; }
+  .refs ol { list-style: none; padding-left: 0; }
+  .refs li {
+    counter-increment: ref-counter;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.93em;
+  }
+  .refs li::before {
+    content: "[" counter(ref-counter) "]";
+    font-weight: bold;
+    color: var(--accent);
+    margin-right: 8px;
+  }
+  .refs .doi { color: var(--highlight); font-size: 0.85em; }
+  .refs .local { color: var(--success); font-size: 0.85em; }
+
+  /* Print */
+  @media print {
+    .cover { background: #1a5276 !important; -webkit-print-color-adjust: exact; }
+    body { font-size: 11pt; }
+    nav.toc { break-after: page; }
+    section { break-inside: avoid; }
+  }
+  @media (max-width: 768px) {
+    .cover h1 { font-size: 1.6em; }
+    .cover .subtitle { font-size: 0.95em; }
+    main { padding: 0 15px 40px; }
+    table { font-size: 0.78em; }
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+
+  .formula-block {
+    background: #f0f4f8;
+    padding: 20px;
+    border-radius: 6px;
+    margin: 15px 0;
+    text-align: center;
+    overflow-x: auto;
+  }
+
+  /* Progress bars for metrics */
+  .metric-bar {
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    margin: 5px 0 10px;
+    overflow: hidden;
+  }
+  .metric-bar .fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--success), var(--highlight));
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== 封面 ==================== -->
+<div class="cover">
+  <h1>中科酷原·中性原子量子计算机<br>QRAM 架构设计调研报告</h1>
+  <div class="subtitle">基于光纤阵列光学镊平台的中性原子量子随机存取存储器设计方案</div>
+  <div>
+    <span class="badge">📄 收录论文: <span>20+</span> 篇</span>
+    <span class="badge">🏗️ 架构方案: <span>3</span> 种</span>
+    <span class="badge">🎯 平台: <span>中科酷原中性原子</span></span>
+  </div>
+  <div>
+    <span class="badge">🔬 QRAM范式: <span>Bucket-Brigade / Resource-State / QRAMpoly</span></span>
+    <span class="badge">📐 核心技术: <span>里德堡阻塞 · 光纤阵列 · 魔幻光强阱 · 原子转移</span></span>
+  </div>
+  <div class="date">调研日期: 2026年6月29日 &nbsp;|&nbsp; 涵盖 QRAM 文献: 2012–2026</div>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>📋 目录</h2>
+  <ol>
+    <li><a href="#s1">调研动机与研究背景</a></li>
+    <li><a href="#s2">QRAM 基础理论与架构总览</a>
+      <ol class="sub-toc">
+        <li><a href="#s2-1">QRAM 的形式化定义</a></li>
+        <li><a href="#s2-2">Bucket-Brigade 架构</a></li>
+        <li><a href="#s2-3">Active vs Passive QRAM 之争</a></li>
+        <li><a href="#s2-4">QRAM 噪声弹性</a></li>
+      </ol>
+    </li>
+    <li><a href="#s3">中科酷原平台能力与 QRAM 需求的匹配分析</a>
+      <ol class="sub-toc">
+        <li><a href="#s3-1">平台核心技术栈</a></li>
+        <li><a href="#s3-2">QRAM 功能需求与技术映射</a></li>
+        <li><a href="#s3-3">平台瓶颈与 QRAM 特定挑战</a></li>
+      </ol>
+    </li>
+    <li><a href="#s4">方案一：Resource-State QRAM（推荐方案）</a>
+      <ol class="sub-toc">
+        <li><a href="#s4-1">设计原理与 Clifford 查询协议</a></li>
+        <li><a href="#s4-2">QRAM 工厂：中性原子阵列实现</a></li>
+        <li><a href="#s4-3">Zone 架构与端到端延迟</a></li>
+        <li><a href="#s4-4">容错扩展路径</a></li>
+      </ol>
+    </li>
+    <li><a href="#s5">方案二：Bucket-Brigade 原生实现</a>
+      <ol class="sub-toc">
+        <li><a href="#s5-1">路由器节点的物理实现</a></li>
+        <li><a href="#s5-2">里德堡阻塞路由协议</a></li>
+        <li><a href="#s5-3">三能级 vs 二能级路由器</a></li>
+      </ol>
+    </li>
+    <li><a href="#s6">方案三：混合 QRAMpoly + 中性原子</a></li>
+    <li><a href="#s7">QRAM 错误分析与噪声抑制策略</a>
+      <ol class="sub-toc">
+        <li><a href="#s7-1">Bucket-Brigade 噪声弹性</a></li>
+        <li><a href="#s7-2">Error Filtration 协议</a></li>
+        <li><a href="#s7-3">相干误差的 Pauli Twirling</a></li>
+      </ol>
+    </li>
+    <li><a href="#s8">综合设计方案推荐</a>
+      <ol class="sub-toc">
+        <li><a href="#s8-1">推荐架构总图</a></li>
+        <li><a href="#s8-2">分层技术栈</a></li>
+        <li><a href="#s8-3">近中期路线图</a></li>
+      </ol>
+    </li>
+    <li><a href="#s9">与其他平台的对比分析</a></li>
+    <li><a href="#s10">参考文献</a></li>
+  </ol>
+</nav>
+
+<!-- ==================== 正文 ==================== -->
+<main>
+
+<!-- ====== 第1章 引言 ====== -->
+<section id="s1">
+<h2>调研动机与研究背景</h2>
+
+<p>量子随机存取存储器（Quantum Random Access Memory, QRAM）被广泛认为是实现量子计算实用优势的关键瓶颈组件。与经典 RAM 允许 CPU 快速检索指定地址的数据类似，QRAM 使得量子处理单元（QPU）能够<strong>在叠加态中</strong>访问经典（或量子）数据：</p>
+
+<div class="formula-block">
+\[
+U_{\text{QRAM}} \sum_x \alpha_x |x\rangle_A |0\rangle_B = \sum_x \alpha_x |x\rangle_A |D_x\rangle_B
+\]
+<p style="text-align:center; color:#888; font-size:0.85em;">QRAM 的量子查询操作：地址寄存器 A 处于叠加态，输出总线上出现对应数据的叠加</p>
+</div>
+
+<p>这一能力对大量量子算法至关重要——包括量子线性代数、量子机器学习、量子化学模拟、Shor 算法的现代变体、Grover 搜索、碰撞查找和格基密码分析等。然而，<strong>QRAM 的物理实现一直是量子计算领域最具争议和挑战性的问题之一</strong>。</p>
+
+<p><strong>中科酷原</strong>（中国科学院精密测量科学与技术创新研究院孵化的量子计算公司）拥有国内领先的中性原子量子计算平台。其「汉原」系列量子计算机的核心技术栈——光学镊阵列、魔幻光强阱、里德堡阻塞门、光纤阵列寻址架构和相干原子转移——<strong>恰好为 QRAM 的物理实现提供了独特且极具优势的硬件基础</strong>。</p>
+
+<div class="card card-insight">
+<p><strong>核心调研问题：</strong>如何利用中科酷原的中性原子量子计算平台，设计并实现高效、可扩展、噪声鲁棒的 QRAM 架构？</p>
+<p>本报告基于对 20+ 篇 QRAM 文献和中科酷原平台 14 篇核心论文的系统调研，提出三种可行方案，并给出综合推荐架构。</p>
+</div>
+</section>
+
+<!-- ====== 第2章 QRAM 基础理论 ====== -->
+<section id="s2">
+<h2>QRAM 基础理论与架构总览</h2>
+
+<h3 id="s2-1">2.1 QRAM 的形式化定义</h3>
+
+<p>按照 Kuperberg (2024) 的分类法，量子存储器可根据两个维度分为四种类型：</p>
+
+<table>
+  <thead>
+    <tr><th></th><th>经典访问 (CRA)</th><th>量子访问 (QRA)</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>经典存储 (CM)</strong></td>
+      <td>CRACM（传统 RAM）</td>
+      <td><strong>QRACM</strong>（量子地址访问经典数据）</td>
+    </tr>
+    <tr>
+      <td><strong>量子存储 (QM)</strong></td>
+      <td>CRAQM（可寻址量子比特）</td>
+      <td><strong>QRAQM</strong>（量子地址访问量子数据）</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>本报告主要关注 <strong>QRACM</strong>（Quantum Random Access Classical Memory），这是大多数量子算法所依赖的形式，也是实现难度相对较低的目标。定义如下：</p>
+
+<div class="formula-block">
+\[
+U_{\text{QRACM}}(T) |i\rangle |0\rangle = |i\rangle |T_i\rangle
+\]
+\[
+\text{其中 } T \in \{0,1\}^N \text{ 为经典数据表，} i \text{ 为 } n=\log_2 N \text{ 位的地址}
+\]
+</div>
+
+<p>QRACM 操作的核心包含两个子任务：(1) <strong>路由</strong>（routing）——将输入地址信号分发到正确的物理存储单元；(2) <strong>读出</strong>（readout）——从该单元提取数据并返回。路由通常被认为是更具挑战性的部分。</p>
+
+<h3 id="s2-2">2.2 Bucket-Brigade 架构</h3>
+
+<p>Giovannetti, Lloyd 和 Maccone (GLM, 2008) 提出的 <strong>bucket-brigade（斗链式）架构</strong>是迄今为止最主流、研究最深入的 QRAM 架构。其核心思想是用一个由 \(2N-1\) 个量子路由器（router）构成的完全二叉树来路由地址和数据：</p>
+
+<pre class="diagram">
+┌─────────────────────────────────────────────────────────┐
+│              Bucket-Brigade QRAM 查询流程                  │
+│                                                         │
+│  地址 qubit: |a₀,a₁,a₂⟩  (n=3 → N=8 个存储单元)         │
+│                                                         │
+│         ┌───┐                    ← 根路由器 (第0层)       │
+│         │ R │                                           │
+│         └─┬─┘                                           │
+│       ┌───┴───┐                                         │
+│     ┌─┴─┐   ┌─┴─┐           ← 第1层 (2个路由器)          │
+│     │ R │   │ R │                                       │
+│     └─┬─┘   └─┬─┘                                       │
+│   ┌───┴───┐ ┌───┴───┐     ← 第2层 (4个路由器)            │
+│  ┌┴┐ ┌┴┐ ┌┴┐ ┌┴┐                                        │
+│  │R│ │R│ │R│ │R│           ← 叶层 + N个存储单元          │
+│  └┬┘ └┬┘ └┬┘ └┬┘                                        │
+│  [D₀] [D₁] [D₂] [D₃] [D₄] [D₅] [D₆] [D₇]   ← 经典数据  │
+│                                                         │
+│  查询步骤 (深度 O(log N)):                                │
+│  1. 地址注入: 逐位将地址 qubit 送入根路由器               │
+│  2. 路由传播: 每个路由器根据控制态 |L⟩/|R⟩ 路由信号       │
+│  3. 数据复制: 信号到达叶层后，复制对应数据                │
+│  4. 逆路由: 沿原路返回，解纠缠路由器                      │
+│                                                         │
+│  路由器状态: |W⟩ (等待/空闲)  |L⟩ (左路由)  |R⟩ (右路由)  │
+└─────────────────────────────────────────────────────────┘
+</pre>
+
+<p><strong>Bucket-Brigade 的关键优势：</strong></p>
+<ul>
+  <li><strong>查询深度</strong>：\(O(\log N)\)，指数级优于朴素方案的 \(O(N)\)</li>
+  <li><strong>噪声弹性</strong>：查询保真度仅随 \(O(\text{poly}\log N)\) 退化（而非 \(O(\text{poly} N)\)）——这是该架构最不平凡的特性</li>
+  <li><strong>可逆性</strong>：路由过程完全可逆，查询结束后树恢复到初始态（理想条件下）</li>
+  <li><strong>低激发率</strong>：每次查询只激发树中 \(O(\log N)\) 个路由器，其余保持在惰性 |W⟩ 态</li>
+</ul>
+
+<div class="card card-note">
+<p><strong>硬件开销：</strong>虽然时间深度为 \(O(\log N)\)，但物理路由器数量为 \(O(N)\)（N个存储单元需要 N-1 个路由器）。这意味着 QRAM 的"芯片面积"与存储容量成线性关系，类似经典 RAM——这是所有已知 QRAM 方案面临的共性挑战。</p>
+</div>
+
+<h3 id="s2-3">2.3 Active vs Passive QRAM 之争</h3>
+
+<p>Jaques 和 Rattew (2025, Quantum) 的综述将 QRAM 方案分为两大类：</p>
+
+<div class="compare-grid">
+  <div class="col">
+    <h4>🔌 Active QRAM（电路型）</h4>
+    <p>每次查询需要外部控制器对每个门操作进行干预。包括所有纯 Clifford+T 电路实现。</p>
+    <p><strong>优点：</strong>兼容容错量子计算框架，可直接纠错</p>
+    <p><strong>缺点：</strong>总控制成本 \(O(N)\)，机会成本巨大——控制硬件本身就可以并行运行经典算法</p>
+    <p><strong>T-gate 开销：</strong>\(O(N)\) T 门 / \(O(N)\) 量子比特</p>
+  </div>
+  <div class="col">
+    <h4>⚡ Passive QRAM（硬件型）</h4>
+    <p>查询信号注入后无需外部干预，通过物理哈密顿量的时间演化"弹道式"完成。</p>
+    <p><strong>优点：</strong>理论上无控制开销，可实现真正的量子加速</p>
+    <p><strong>缺点：</strong>需要近乎零噪声的物理元件；无法主动纠错；隐含着极其苛刻的物理假设</p>
+    <p><strong>可行性：</strong>Jaques 认为现有提案均存在根本性缺陷</p>
+  </div>
+</div>
+
+<div class="card card-warning">
+<p><strong>对中科酷原的启示：</strong>纯粹的被动 QRAM 在当前技术水平下不可行，而纯电路 QRAM 的机会成本过高。中科酷原的最佳路径是走<strong>"主动硬件 QRAM"的中间路线</strong>——利用物理层的天然噪声弹性（bucket-brigade 的 polylog 保真度缩放）结合适度的量子纠错，而非寄希望于完全无源的弹道计算。</p>
+</div>
+
+<h3 id="s2-4">2.4 QRAM 噪声弹性</h3>
+
+<p>Hann et al. (2021, PRX Quantum) 严格证明了 Bucket-Brigade QRAM 的噪声弹性定理，Lee/Mehta et al. (2024) 进一步扩展到更广泛的噪声模型：</p>
+
+<table>
+  <thead>
+    <tr><th>噪声模型</th><th>保真度缩放</th><th>关键条件</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>局部非相干噪声 (Bernoulli)</td>
+      <td>\(1-F \leq 4(\vartheta+1)(n+1) \in O(n^2)\)</td>
+      <td>单路由器误差率 \(\epsilon\)、三能级路由器</td>
+    </tr>
+    <tr>
+      <td>任意初始化误差</td>
+      <td>\(1-F \leq 4(\vartheta+1)(n+1)^2 \in O(n^3)\)</td>
+      <td>二能级路由器 + 查询倍增（query doubling）</td>
+    </tr>
+    <tr>
+      <td>空间关联误差</td>
+      <td>保持 polylog 缩放</td>
+      <td>关联范围有限</td>
+    </tr>
+    <tr>
+      <td>相干误差</td>
+      <td>polylog 缩放（但系数变大）</td>
+      <td>可通过 Pauli Twirling 转换</td>
+    </tr>
+    <tr>
+      <td>连续去极化噪声</td>
+      <td>\(1-F \propto \epsilon \cdot O(\log^2 N)\)</td>
+      <td>\(\epsilon \lesssim 10^{-4}\) 时 N≤512 保真度 >95%</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="card card-tip">
+<p><strong>设计启示：</strong>Bucket-Brigade 的 polylog 噪声弹性使得我们可以在不依赖完全量子纠错的情况下，利用物理层保真度的适度提升来支持中等规模的 QRAM（N≈2¹⁰~2¹⁵，即 1KB~32KB）。这对于中科酷原当前 200-qubit 级别的平台来说是一个务实的目标。</p>
+</div>
+</section>
+
+<!-- ====== 第3章 平台匹配 ====== -->
+<section id="s3">
+<h2>中科酷原平台能力与 QRAM 需求的匹配分析</h2>
+
+<h3 id="s3-1">3.1 平台核心技术栈</h3>
+
+<p>中科酷原/中科院精密测量院的「汉原」系列中性原子量子计算机具备以下核心技术能力：</p>
+
+<table>
+  <thead>
+    <tr><th>技术要素</th><th>物理参数</th><th>QRAM 设计中的潜在价值</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>光学镊阵列</strong></td>
+      <td>二维 ~500 阱位（汉原2号），间距 3-10 μm</td>
+      <td>大规模、规则排列的原子阵列天然适合构建 QRAM 二叉树路由器的物理层</td>
+    </tr>
+    <tr>
+      <td><strong>魔幻光强阱</strong></td>
+      <td>相干时间 >300 ms（汉原2号），双物种可达 ~1 s</td>
+      <td>确保 QRAM 查询周期（~ms级）内维持相干性，解锁深度查询（n≈20-30）</td>
+    </tr>
+    <tr>
+      <td><strong>里德堡阻塞</strong></td>
+      <td>阻塞半径 R<sub>b</sub>~3-10 μm，CZ 门保真度 0.98-0.99+</td>
+      <td>实现路由器节点间的条件操作，是路由器单元物理实现的核心机制</td>
+    </tr>
+    <tr>
+      <td><strong>光纤阵列架构</strong></td>
+      <td>独立通道寻址，拉比串扰 ~1.0%，单比特门保真度 0.9966(3)</td>
+      <td>为每个路由器节点提供独立控制，避免激光扫描的串扰和 SLM 的刷新率瓶颈</td>
+    </tr>
+    <tr>
+      <td><strong>相干原子转移</strong></td>
+      <td>保真度 0.99992/周期，加热 <1 μK/周期，500+ 周期</td>
+      <td>支持动态原子重排，是 QRAM 工厂中资源态制备和区域间原子传输的核心能力</td>
+    </tr>
+    <tr>
+      <td><strong>双核/异核架构</strong></td>
+      <td>⁸⁷Rb（核1）+ ⁸⁵Rb（核2），各100量子比特</td>
+      <td>异核里德堡阻塞天然解决串扰；两核可分别用作 QRAM 路由器和 QPU 寄存器</td>
+    </tr>
+    <tr>
+      <td><strong>室温工作</strong></td>
+      <td>无需 mK 级稀释制冷机</td>
+      <td>大幅降低 QRAM 部署门槛，允许更大的物理体积容纳 O(N) 个路由器</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="s3-2">3.2 QRAM 功能需求与技术映射</h3>
+
+<p>以下是 Bucket-Brigade QRAM 的每个功能需求如何映射到中科酷原平台的具体技术实现：</p>
+
+<table>
+  <thead>
+    <tr><th>QRAM 功能</th><th>物理实现方案</th><th>平台优势</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>路由器状态编码</strong></td>
+      <td>每个路由器用 1-2 个 <sup>87</sup>Rb 原子的超精细态编码<br>|W⟩ = |F=1,m<sub>F</sub>=0⟩, |L⟩ = |F=2,m<sub>F</sub>=0⟩, |R⟩ = 辅助能级</td>
+      <td>魔幻态天然抗磁噪声，相干时间充足</td>
+    </tr>
+    <tr>
+      <td><strong>地址/数据信号传输</strong></td>
+      <td>方案A: 飞行光子通过光纤阵列传播（利用现有光纤架构）<br>方案B: 原子转移——将"数据原子"在路由器间相干移动</td>
+      <td>光纤阵列已实现多通道独立传输<br>原子转移保真度极高(0.99992)</td>
+    </tr>
+    <tr>
+      <td><strong>路由操作（条件SWAP）</strong></td>
+      <td>利用里德堡阻塞实现受控交换：<br>控制原子-目标原子之间的里德堡相互作用 + 微波/拉曼脉冲</td>
+      <td>已有 0.98-0.99 CZ 门实验基础，ORMD 脉冲方案已成熟</td>
+    </tr>
+    <tr>
+      <td><strong>数据读出</strong></td>
+      <td>共振荧光成像：处于 |1⟩ 的原子散射光子→EMCCD 亮斑<br>探测保真度 >99.9%</td>
+      <td>高保真度态读出已验证</td>
+    </tr>
+    <tr>
+      <td><strong>大规模扩展</strong></td>
+      <td>WDM + 集成光子芯片：一根光纤复用多波长<br>光镊阵列三维堆叠（纵向扩展）</td>
+      <td>光纤架构原生支持 WDM<br>集成光子是明确扩展路径</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="s3-3">3.3 平台瓶颈与 QRAM 特定挑战</h3>
+
+<div class="card card-warning">
+<ul>
+  <li><strong>里德堡态寿命限制：</strong>里德堡态的自然寿命约 100-200 μs（n≈70），而 CZ 门时间约 1-5 μs，留给构成复杂路由器操作的时间窗口有限。但这对于 μs 级的 SWAP/CSWAP 路由操作已足够。</li>
+  <li><strong>原子加热：</strong>大量原子移动（QRAM 工厂需要频繁重排）会累积动能，最终导致原子逃逸。转移加热 <1 μK/周期可支持 500+ 周期，但工厂模式下需优化周期数。</li>
+  <li><strong>光镊阵列密度：</strong>当前间距 ~5.6 μm，受限于里德堡阻塞半径和光学分辨率。N=1024 的 QRAM 树需要 ~2000 个路由器原子，在二维阵列中占据约 50×40 的区域，需 3+ 层堆叠。</li>
+  <li><strong>双比特门保真度：</strong>当前光纤阵列平台双比特门保真度（0.98-0.99+）是 QRAM 查询保真度的主要瓶颈。每个查询涉及 O(n) 个路由操作，需要门保真度 ≥0.999 才能支持大规模 QRAM。</li>
+</ul>
+</div>
+</section>
+
+<!-- ====== 第4章 Resource-State QRAM ====== -->
+<section id="s4">
+<h2>方案一：Resource-State QRAM（推荐方案）<span class="tag key">首选</span></h2>
+
+<div class="card card-insight">
+<p><strong>论文：</strong>Cesa, Bernien & Pichler (2025) "Resource-State Quantum RAM for Fast and Error-Correctable Queries" (arXiv:2503.19172)</p>
+<p>这是<strong>最直接针对中性原子平台设计的 QRAM 方案</strong>，作者来自因斯布鲁克大学/芝加哥大学，包含对中性原子阵列的详细实现蓝图。该方案是本次调研的核心推荐方案。</p>
+</div>
+
+<h3 id="s4-1">4.1 设计原理与 Clifford 查询协议</h3>
+
+<p>Resource-State QRAM 的核心创新在于将 QRAM 的复杂性<strong>完全外包给离线制备的资源态</strong>（resource state），而在线查询仅使用简单的 Clifford 操作和单量子比特 Pauli 测量（SQPM）：</p>
+
+<div class="formula-block">
+\[
+U_{\text{QRAM}} = V^{-1} W_D V
+\]
+\[
+\underbrace{\text{非 Clifford}}_{V} \longrightarrow \underbrace{\text{Clifford 查询}}_{\text{Bell 测量 + SQPM}} + \underbrace{\text{离线资源态制备}}_{|\Phi\rangle \text{ 工厂}}
+\]
+<p style="text-align:center; color:#888; font-size:0.85em;">Resource-State QRAM 将非 Clifford 复杂度"外包"给资源态制备，在线查询只有 Clifford 操作</p>
+</div>
+
+<p><strong>查询协议分为三个步骤：</strong></p>
+
+<pre class="diagram">
+┌─────────────────────────────────────────────────────────┐
+│       Resource-State QRAM Clifford 查询流程               │
+│                                                         │
+│  Step 1: Bell 测量 (深度 O(1))                           │
+│  ┌──────────┐    ┌──────────────┐                        │
+│  │ QPU 输入  │────│ Bell 测量     │ ← 与 |Φ⟩ 的资源态子集 │
+│  │ |ψ⟩ (logN)│    │ → 得到随机结果 m                     │
+│  └──────────┘    └──────────────┘                        │
+│                                                         │
+│  Step 2: 数据加载 (深度 O(1))                             │
+│  ┌──────────────┐                                        │
+│  │ W_D(m): 根据 m │  条件化的 Pauli-Z 旋转               │
+│  │ 条件化数据加载  │  作用于资源态的数据指针 qubit         │
+│  └──────────────┘                                        │
+│                                                         │
+│  Step 3: 逆编码 (深度 O(log N))                           │
+│  ┌──────────────────────────────┐                        │
+│  │ 自适应 SQPM (X 基 / Z 基)    │  通过 O(log N) 层       │
+│  │ 逐层测量并反馈选择下一层基    │  单量子比特测量完成      │
+│  └──────────────────────────────┘                        │
+│                                                         │
+│  输出: |ψ_out⟩ = U_QRAM |ψ⟩                              │
+│  全部在线操作: 仅 Clifford + SQPM (零 T 门!)              │
+│  查询时间: T_query ≈ 2τ·log N (τ 为中电路读出时间)       │
+└─────────────────────────────────────────────────────────┘
+</pre>
+
+<div class="card card-tip">
+<p><strong>为何 Clifford 查询对中科酷原至关重要：</strong></p>
+<ul>
+  <li>在表面码等主流 QEC 方案中，Clifford 操作可完全横向（transversal）实现，大幅降低纠错开销</li>
+  <li>非 Clifford 资源（T 门/Toffoli）的离线制备可与查询并行，不占用在线算法时间</li>
+  <li>Bell 测量和 SQPM 是中性原子平台上最高保真度的操作之一（单比特测量保真度 >99.9%）</li>
+  <li>查询深度仅 2 log N（约为传统 bucket-brigade 的一半）</li>
+</ul>
+</div>
+
+<h3 id="s4-2">4.2 QRAM 工厂：中性原子阵列实现</h3>
+
+<p>资源态 |Φ⟩ 的制备在专门的「QRAM 工厂」中离线完成。Cesa 等人给出了基于中性原子动态重排的高效制备方案：</p>
+
+<pre class="diagram">
+┌─────────────────────────────────────────────────────────┐
+│           QRAM 工厂 —— 中性原子阵列实现                    │
+│                                                         │
+│  阶段 1: Bell 对制备 (O(N) 原子)                          │
+│  ┌──┐ ┌──┐ ┌──┐ ┌──┐     ┌──┐ ┌──┐ ┌──┐ ┌──┐            │
+│  │●━│━●│ │●━│━●│ │●━│━●│ │●━│━●│  ...  O(N) 个 Bell 对   │
+│  └──┘ └──┘ └──┘ └──┘     └──┘ └──┘ └──┘ └──┘            │
+│   里德堡阻塞 + 单比特门生成 Bell 对                       │
+│                                                         │
+│  阶段 2: 系统重排 (O(1) 全局移动)                         │
+│  ┌──┐     ┌──┐     ┌──┐                                 │
+│  │●●│ ──→ │ ●│ ──→ │  │    通过相干原子转移               │
+│  │  │     │● │     │●●│    重新排列为二叉树拓扑            │
+│  └──┘     └──┘     └──┘    只需 O(1) 次全局移动!          │
+│                                                         │
+│  阶段 3: 资源态组装 (2 log N 层)                          │
+│  ├── 迭代构建 |Φ⁽¹⁾⟩: 通过 Clifford 电路合成 NOHE 态     │
+│  ├── 构建 |Φ⁽²⁾⟩: 1D Clifford 电路（稳定子态）           │
+│  └── 融合: Bell 测量 + 局部操作合并为 |Φ⟩                │
+│                                                         │
+│  阶段 4: 注入 QPU Zone                                   │
+│  ┌────────┐      相干传输      ┌────────┐               │
+│  │ QRAM   │ ────────────────→ │  QPU   │               │
+│  │ Zone   │   原子阵列移动      │ Zone   │               │
+│  └────────┘                   └────────┘               │
+└─────────────────────────────────────────────────────────┘
+</pre>
+
+<p><strong>工厂周期 T_factory 的估计：</strong></p>
+
+<div class="formula-block">
+\[
+T_{\text{factory}} \approx 3.6 \cdot \tau_T \cdot N^{1/4} + 2\tau \cdot \log N
+\]
+<p style="text-align:center; color:#888; font-size:0.85em;">第一项来自原子重排（τ_T ≈ 33 μs 为最小阱距传输时间），第二项来自 SQPM 时间（τ ≈ 500 μs）</p>
+</div>
+
+<p>对于 N=1024（1KB 存储），\(T_{\text{query}} \approx 13\text{ ms}\)，工厂速率 \(1/T_{\text{factory}} \approx 0.1\text{ kHz}\)。在当前实验参数下，<strong>重排时间在 N ≤ 2²⁴ （~2MB）前保持可忽略</strong>。</p>
+
+<h3 id="s4-3">4.3 Zone 架构与端到端延迟</h3>
+
+<p>Resource-State QRAM 天然适配现代中性原子处理器的「Zone Architecture」：</p>
+
+<pre class="diagram">
+┌──────────────────────────────────────────────────────────────┐
+│          中科酷原 QRAM Zone 架构                              │
+│                                                              │
+│  ┌──────────┐    ┌──────────────┐    ┌──────────────────┐    │
+│  │  QRAM    │    │  Interaction │    │    Readout       │    │
+│  │ Factory  │───→│  / QRAM Zone │───→│    Zone          │    │
+│  │ (制备|Φ⟩)│    │  (执行查询)  │    │  (SQPM + 检测)   │    │
+│  └──────────┘    └──────────────┘    └──────────────────┘    │
+│       ↑                                             │        │
+│       └───────── 经典反馈 (m → W_D(m)) ─────────────┘        │
+│                                                              │
+│  关键特性:                                                    │
+│  · QRAM Factory 与查询并行: 一个 |Φ⟩ 被消费时，下一个正在制备  │
+│  · 原子传输总线 (Atom Conveyor Belt): 利用最新连续重载技术    │
+│    (Lukin 2025) 实现不间断 |Φ⟩ 供应                          │
+│  · 查询延迟 ≈ 工厂周期 (而非累加): T_query ≤ T_factory       │
+│  · 经典内存可存储于经典硬件(仅 QRACM)或存储于原子态(QRAQM)   │
+└──────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3 id="s4-4">4.4 容错扩展路径</h3>
+
+<p>Resource-State QRAM 为容错量子计算提供了清晰的扩展路径：</p>
+
+<table>
+  <thead>
+    <tr><th>阶段</th><th>规模</th><th>保真度</th><th>关键技术</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>近期 (2026-2027)</strong></td>
+      <td>N ≤ 256 (8 地址 qubit, 32B)</td>
+      <td>> 95% (物理层, ε≈10⁻⁴)</td>
+      <td>物理 Resource-State QRAM, 无 QEC, Heralding 提升保真度</td>
+    </tr>
+    <tr>
+      <td><strong>中期 (2027-2029)</strong></td>
+      <td>N ≤ 4096 (12 地址 qubit, 512B)</td>
+      <td>> 99% (Error Filtration)</td>
+      <td>EF 协议的 T=1/2 层级, Heralding Factory 全面部署</td>
+    </tr>
+    <tr>
+      <td><strong>远期 (2029+)</strong></td>
+      <td>N ≥ 2¹⁶ (16 地址 qubit, 8KB)</td>
+      <td>> 99.9% (FT-QEC)</td>
+      <td>横向 Clifford 查询 + 表面码, T 门蒸馏仅需 1/polylogN 精度</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="card card-tip">
+<p><strong>容错优势：</strong>由于在线查询全部为 Clifford，对逻辑量子比特的 Clifford 操作可在表面码中完全横向实现。所需的 code distance 仅缩放为 \(d \sim \log((1-F)^{-1} \text{polylog} N) / \log(1/\epsilon)\)，相比传统方案的 \(d \sim \log N\) 有指数级降低。</p>
+</div>
+</section>
+
+<!-- ====== 第5章 Bucket-Brigade 原生实现 ====== -->
+<section id="s5">
+<h2>方案二：Bucket-Brigade 原生物理实现</h2>
+
+<h3 id="s5-1">5.1 路由器节点的物理实现</h3>
+
+<p>这是最直接的方法：将每个 Bucket-Brigade 二叉树路由器节点对应到一个（或少数几个）中性原子，利用里德堡阻塞门直接执行路由操作。</p>
+
+<div class="card card-note">
+<p><strong>历史先例：</strong>Hong et al. (2012) "A Robust Quantum Random Access Memory" 首次提出了基于里德堡原子的 QRAM 物理实现方案，使用微环形谐振器（microtoroidal resonator）作为光子-原子接口。虽然其光子方案与中科酷原平台不同，但路由器节点的原子态编码和里德堡相互作用机制是直接相关的。</p>
+</div>
+
+<p><strong>路由器节点设计方案：</strong></p>
+
+<table>
+  <thead>
+    <tr><th>方案</th><th>编码方式</th><th>路由机制</th><th>优势</th><th>局限</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>A: 光子路由</strong></td>
+      <td>路由控制原子 + 飞行光子（地址/数据信号）</td>
+      <td>光纤阵列传输光子 → 原子-光子受控反射/透射</td>
+      <td>与光纤阵列架构无缝衔接；光子低噪声传播</td>
+      <td>需要腔QED或波导QED强耦合；单光子源/探测器要求高</td>
+    </tr>
+    <tr>
+      <td><strong>B: 原子路由</strong></td>
+      <td>路由控制原子 + 数据原子</td>
+      <td>里德堡阻塞 CSWAP：控制原子 → 条件交换两个子节点原子</td>
+      <td>全原子实现，无光子损耗问题；原子转移保真度极高</td>
+      <td>原子移动速度 ~μs级，限制时钟频率；加热累积</td>
+    </tr>
+    <tr>
+      <td><strong>C: 混合路由</strong></td>
+      <td>路由原子 + 光纤辅助连接</td>
+      <td>局部原子-原子里德堡门 + 光纤链路的远程纠缠</td>
+      <td>结合两者优势：局部快速 + 远程低损耗</td>
+      <td>系统复杂度最高</td>
+    </tr>
+  </tbody>
+</table>
+
+<pre class="diagram">
+┌─────────────────────────────────────────────────────────┐
+│      方案B: 原子路由型 Bucket-Brigade 路由器              │
+│                                                         │
+│  控制原子 (rc)           数据原子 (rh)                    │
+│     ┌──┐                   ┌──┐                          │
+│     │  │←─ 地址信号 ──────→│  │                          │
+│     │L/R│    (原子转移)     │  │                          │
+│     └──┘                   └──┘                          │
+│       │                      │                           │
+│       │  里德堡阻塞 CSWAP    │                           │
+│       ├──────────────────────┤                           │
+│       ↓                      ↓                           │
+│    左子节点 (r0)         右子节点 (r1)                    │
+│     ┌──┐                 ┌──┐                            │
+│     │  │                 │  │                            │
+│     └──┘                 └──┘                            │
+│                                                         │
+│  路由操作:                                                │
+│  1. 地址信号原子到达 rc                                   │
+│  2. 里德堡激发 rc → |r⟩ (若地址为 |1⟩)                    │
+│  3. 阻塞相互作用阻止 r0/r1 同时激发                      │
+│  4. 信号被路由到左或右子节点                              │
+│  5. rc 解激发，恢复初始态                                 │
+└─────────────────────────────────────────────────────────┘
+</pre>
+
+<h3 id="s5-2">5.2 里德堡阻塞路由协议</h3>
+
+<p>中科酷原已有的 ORMD（Off-Resonant Modulated Driving）CZ 门技术可直接推广为条件 SWAP 路由操作：</p>
+
+<div class="formula-block">
+\[
+U_{\text{route}} = |0\rangle_c\langle 0| \otimes \text{SWAP}_{h,0} + |1\rangle_c\langle 1| \otimes \text{SWAP}_{h,1}
+\]
+\[
+\text{CSWAP} = |0\rangle_c\langle 0| \otimes I + |1\rangle_c\langle 1| \otimes \text{SWAP}
+\]
+<p style="text-align:center; color:#888; font-size:0.85em;">路由器操作：控制原子（c）决定保持原子（h）与左子节点（0）或右子节点（1）交换</p>
+</div>
+
+<p><strong>关键操作序列（每个路由层）：</strong></p>
+<ol>
+  <li>地址注入：将地址 qubit 原子转移到路由器的控制位</li>
+  <li>里德堡阻塞 CSWAP：基于控制态，条件交换数据原子与左或右子节点</li>
+  <li>解纠缠：逆操作回退控制原子与数据原子之间的纠缠</li>
+</ol>
+
+<h3 id="s5-3">5.3 三能级 vs 二能级路由器</h3>
+
+<p>Lee/Mehta et al. (2024) 的噪声分析揭示了路由器能级结构对 Noise Resilience 的重要影响：</p>
+
+<table>
+  <thead>
+    <tr><th>路由器类型</th><th>状态</th><th>保真度缩放</th><th>硬件需求</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>三能级 (推荐)</strong></td>
+      <td>|W⟩ (等待), |L⟩ (左), |R⟩ (右)</td>
+      <td>\(1-F \in O(n^2)\)</td>
+      <td>需要 qutrit 编码；闲置态 |W⟩ 抑制了误差传播</td>
+    </tr>
+    <tr>
+      <td><strong>二能级 |0⟩-初始化</strong></td>
+      <td>|0⟩ (默认左), |1⟩ (右)</td>
+      <td>\(1-F \in O(n^3)\)</td>
+      <td>简单 qubit 编码；但误差沿默认路径传播更远</td>
+    </tr>
+    <tr>
+      <td><strong>二能级任意初始化</strong></td>
+      <td>任意态</td>
+      <td>\(1-F \in O(n^3)\) (查询倍增)</td>
+      <td>需查询倍增(Q²=1)，深度翻倍，保真度缩放降级</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="card card-tip">
+<p><strong>对中科酷原的建议：</strong>使用三能级路由器编码。可通过以下方式实现 qutrit：(a) 两个超精细能级 + 一个里德堡能级作为 |W⟩；(b) 两个相邻原子共享编码一个路由器（一个编码控制态，另一个作为辅助），利用里德堡阻塞保持 |W⟩ 态的高保真度。</p>
+</div>
+</section>
+
+<!-- ====== 第6章 QRAMpoly ====== -->
+<section id="s6">
+<h2>方案三：混合 QRAMpoly + 中性原子</h2>
+
+<div class="card card-note">
+<p><strong>论文：</strong>Mukhopadhyay (2025) "A quantum random access memory (QRAM) using a polynomial encoding of binary strings" (arXiv:2408.16794)</p>
+<p>QRAMpoly 使用布尔串的多项式编码替代二叉树路由，实现了 T-depth 的指数级降低。虽然原始设计为 Clifford+T 电路，但其核心思想可以映射到中性原子平台。</p>
+</div>
+
+<p><strong>QRAMpoly 的核心创新：</strong></p>
+
+<div class="formula-block">
+\[
+(b_1, b_2, \ldots, b_n) \mapsto p_b(x_1, \ldots, x_n) = \prod_{i=1}^n \left(\frac{1+(-1)^{b_i}}{2} + x_i\right)
+\]
+\[
+p_b(b'_1, \ldots, b'_n) \equiv \delta_{b,b'} \pmod{2}
+\]
+<p style="text-align:center; color:#888; font-size:0.85em;">多项式的正交性天然实现地址选择：只有匹配的地址使多项式为 1</p>
+</div>
+
+<p><strong>性能对比：</strong></p>
+
+<table>
+  <thead>
+    <tr><th>指标</th><th>Bucket-Brigade</th><th>CSWAP</th><th>QRAMpoly</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>T-depth</td><td>O(log N)</td><td>O(√N)</td><td><strong>O(log log N)</strong></td></tr>
+    <tr><td>T-count</td><td>O(N)</td><td>O(√N)</td><td><strong>O(N - log N)</strong></td></tr>
+    <tr><td>逻辑量子比特</td><td>O(N)</td><td>O(√N)</td><td>O(N)</td></tr>
+  </tbody>
+</table>
+
+<p>QRAMpoly 的 T-depth 为 <strong>O(log log N)</strong>——对 Bucket-Brigade 有指数级改善！然而，这需要大量的 Toffoli 门（非 Clifford），在容错设置中成本高昂。</p>
+
+<div class="card card-tip">
+<p><strong>在中科酷原平台上的实现路径：</strong></p>
+<ul>
+  <li>多项式编码可用里德堡阻塞 Toffoli 门（3 原子方案：2 个控制 + 1 个目标）直接实现</li>
+  <li>O(N) 辅助原子的初始化可与魔幻光强阱结合，享受长相干时间</li>
+  <li>T-depth 的指数优势在深度受限的中性原子系统中尤为重要（减少原子加热）</li>
+  <li><strong>推荐策略：</strong>在 Resource-State QRAM 框架下使用 QRAMpoly 的逻辑结构来制备 |Φ⟩——将 QRAMpoly 的 T-gate 复杂度外包到离线工厂</li>
+</ul>
+</div>
+</section>
+
+<!-- ====== 第7章 错误分析 ====== -->
+<section id="s7">
+<h2>QRAM 错误分析与噪声抑制策略</h2>
+
+<h3 id="s7-1">7.1 Bucket-Brigade 噪声弹性</h3>
+
+<p>Lee, Mehta & Jiang (2024, arXiv:2412.10318) 将 Bucket-Brigade 的噪声弹性分析扩展到更接近实际物理平台的场景。以下错误模型均已被证明<strong>保持 polylog 保真度缩放</strong>：</p>
+
+<table>
+  <thead>
+    <tr><th>错误来源</th><th>物理对应</th><th>影响</th><th>缓解措施</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>空间关联误差</td>
+      <td>激光束光斑覆盖多个相邻路由器</td>
+      <td>关联路由器同时出错</td>
+      <td>光纤阵列独立通道天然抑制关联</td>
+    </tr>
+    <tr>
+      <td>相干误差</td>
+      <td>里德堡激光相位漂移</td>
+      <td>误差累积而非抵消</td>
+      <td>Pauli Twirling (见 7.3); 魔幻光强阱抑制光强噪声</td>
+    </tr>
+    <tr>
+      <td>初始化误差</td>
+      <td>查询间路由器未完全复位</td>
+      <td>误差传播跨查询</td>
+      <td>查询倍增 (Query Doubling) 保证正确性</td>
+    </tr>
+    <tr>
+      <td>去极化噪声</td>
+      <td>背景气体碰撞、杂散光</td>
+      <td>连续衰减路由器相干性</td>
+      <td>真空改善; 动态解耦序列</td>
+    </tr>
+    <tr>
+      <td>里德堡噪声</td>
+      <td>297nm 光生电子引起的电场噪声</td>
+      <td>里德堡态退相干</td>
+      <td>电子光脱附 (中科酷原已有方案)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="s7-2">7.2 Error Filtration 协议</h3>
+
+<p>Wang et al. (2025, arXiv:2503.13832) 开发了大规模 Bucket-Brigade 模拟器并系统研究了 Error Filtration (EF) 的效果：</p>
+
+<div class="formula-block">
+\[
+\text{EF level } T: \text{ 控制寄存器 } T \text{ qubit, 执行 } 2^T \text{ 次 } U_{\text{noisy}}
+\]
+\[
+\text{后选择 } |0\rangle^{\otimes T} \text{ 后，保真度缩放: } (1-F) \to (1-F)/2^T
+\]
+<p style="text-align:center; color:#888; font-size:0.85em;">EF 以降低成功概率为代价，指数级抑制非相干噪声</p>
+</div>
+
+<p><strong>Wang 等人的关键发现：</strong></p>
+<ul>
+  <li>在<strong>高噪声/大地址</strong>区域，EF 的抑制效果出现"异常"——后选择概率呈指数衰减，严重限制有效抑制倍数</li>
+  <li>提出精炼 EF 判据：基础保真度必须足够高（F > 0.99），否则后选择概率过低</li>
+  <li>对于 n=20（N≈10⁶），ε≈10⁻⁴ 时 EF 可将保真度从 ~80% 提升到 ~95%（T=1），但 T=2 时后选择概率仅 ~10⁻³</li>
+</ul>
+
+<div class="card card-warning">
+<p><strong>实用建议：</strong>EF 协议最适合于<strong>中低噪声 + 中小规模</strong>的场景（N ≤ 2¹²，ε ≤ 10⁻⁴）。对于中科酷原当前平台（200 qubit, 双比特门误差 ~1%），EF 可提供 ~2-3× 的保真度提升，但不应被视为大规模 QRAM 的唯一噪声抑制手段。</p>
+</div>
+
+<h3 id="s7-3">7.3 相干误差的 Pauli Twirling</h3>
+
+<p>Lee/Mehta et al. 还提出了针对 QRAM 的<strong>专用 Pauli Twirling 方案</strong>。利用 Bucket-Brigade 计算-逆计算（V_d 和 V_d⁻¹）的对称性：</p>
+
+<div class="formula-block">
+\[
+Q = V_d^{\dagger} \cdot V_x \cdot V_d
+\]
+\[
+\text{在 } V_d \text{ 和 } V_d^{\dagger} \text{ 之间插入 Pauli 补偿门，将相干误差随机化为随机 Pauli 误差}
+\]
+</div>
+
+<p>该方案虽然不能直接 twirl 每个单独的路由门（因为路由操作包含非 Clifford 的 CSWAP），但可以在<strong>正向路由和逆向路由之间</strong>整体施加补偿，利用了 Bucket-Brigade 的镜像结构。</p>
+
+<p>这对中科酷原平台特别重要，因为里德堡激光的相位噪声是主要的相干误差来源。</p>
+</section>
+
+<!-- ====== 第8章 综合推荐 ====== -->
+<section id="s8">
+<h2>综合设计方案推荐</h2>
+
+<h3 id="s8-1">8.1 推荐架构总图</h3>
+
+<p>基于以上三种方案的系统分析，我们推荐<strong>以 Resource-State QRAM 为主体框架，融合 Bucket-Brigade 的物理路由器和 QRAMpoly 的编码优化</strong>：</p>
+
+<pre class="diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│    中科酷原 · 中性原子 QRAM 推荐架构                              │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                    离线层 (Offline)                       │   │
+│  │  ┌──────────────────┐    ┌────────────────────────┐      │   │
+│  │  │  QRAM Factory    │    │  经典内存管理           │      │   │
+│  │  │  · 资源态 |Φ⟩ 制备│    │  · 数据编码与更新       │      │   │
+│  │  │  · Heralding优化 │    │  · 地址表维护           │      │   │
+│  │  │  · T门蒸馏(容错) │    │  · Error Filtration调度  │      │   │
+│  │  └────────┬─────────┘    └────────────────────────┘      │   │
+│  └───────────┼──────────────────────────────────────────────┘   │
+│              │ 原子传输总线 (coherent atom transport)            │
+│  ┌───────────┼──────────────────────────────────────────────┐   │
+│  │           ↓          在线层 (Online)                      │   │
+│  │  ┌──────────────────────────────────────────────────┐    │   │
+│  │  │              QRAM Zone                            │    │   │
+│  │  │  ┌─────────────────────────────────────────┐     │    │   │
+│  │  │  │  Bucket-Brigade 路由器二叉树              │     │    │   │
+│  │  │  │  · 2N-1 原子 (⁸⁷Rb + ⁸⁵Rb 双物种)       │     │    │   │
+│  │  │  │  · 三能级路由器 |W⟩/|L⟩/|R⟩              │     │    │   │
+│  │  │  │  · 里德堡阻塞 CSWAP 路由门               │     │    │   │
+│  │  │  │  · 光纤阵列独立通道寻址                   │     │    │   │
+│  │  │  └─────────────────────────────────────────┘     │    │   │
+│  │  │                      ↕ Bell测量 + SQPM           │    │   │
+│  │  │  ┌─────────────────────────────────────────┐     │    │   │
+│  │  │  │  QPU 接口                                │     │    │   │
+│  │  │  │  · log N 地址 qubit + 1 bus qubit        │     │    │   │
+│  │  │  │  · |ψ_in⟩ → Clifford Query → |ψ_out⟩     │     │    │   │
+│  │  │  └─────────────────────────────────────────┘     │    │   │
+│  │  └──────────────────────────────────────────────────┘    │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  关键参数 (N=1024, 即 1KB QRAM):                                 │
+│  · 路由器原子: ~2047 个 (2N-1)                                  │
+│  · 资源态原子: ~2047 个 (可共享/复用)                            │
+│  · 查询时间: ~13 ms (T_query ≈ 2τ·log N, τ≈500μs)              │
+│  · 工厂周期: ~14 ms (原子重排 < 10%)                             │
+│  · 单比特门: 光纤阵列独立寻址 (0.9966→0.999 目标)               │
+│  · 双比特门: ORMD 单脉冲 CZ (0.99→0.999 目标)                   │
+│  · 读出: 共振荧光 (>99.9%)                                      │
+└─────────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3 id="s8-2">8.2 分层技术栈</h3>
+
+<div class="layer-stack">
+  <div class="layer-box" style="background: #e74c3c;">
+    第5层 · 应用层：量子算法调用 QRAM 作为 Oracle
+  </div>
+  <div class="layer-box" style="background: #e67e22;">
+    第4层 · 容错层：Error Filtration (近期) → 表面码 QEC (远期)
+  </div>
+  <div class="layer-box" style="background: #f1c40f; color: #333;">
+    第3层 · 协议层：Resource-State QRAM Clifford 查询 + Bell 测量 + SQPM
+  </div>
+  <div class="layer-box" style="background: #27ae60;">
+    第2层 · 物理路由层：三能级路由器 · 里德堡阻塞 CSWAP · 光纤阵列寻址
+  </div>
+  <div class="layer-box" style="background: #2980b9;">
+    第1层 · 量子比特层：魔幻光强阱 · 光学镊阵列 · 相干原子传输
+  </div>
+  <div class="layer-box" style="background: #1a5276;">
+    第0层 · 基础设施：真空系统 · 激光系统 · EMCCD · 标准机柜
+  </div>
+</div>
+
+<h3 id="s8-3">8.3 近中期路线图</h3>
+
+<table>
+  <thead>
+    <tr><th>阶段</th><th>时间</th><th>里程碑</th><th>目标性能</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Phase 1: 概念验证</strong></td>
+      <td>2026 Q3-Q4</td>
+      <td>在汉原2号上实现 N=4~8 的 Bucket-Brigade（3个路由器原子+4~8个存储）</td>
+      <td>查询保真度 >90%, 验证路由器操作和里德堡CSWAP</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 2: 资源态验证</strong></td>
+      <td>2027 H1</td>
+      <td>离线制备 Resource-State |Φ⟩ (N=8~16)，执行完整 Clifford 查询</td>
+      <td>Clifford查询保真度 >95%, 验证Bell测量+SQPM管道</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 3: 工厂集成</strong></td>
+      <td>2027 H2</td>
+      <td>QRAM Factory + 原子传输总线原型, N=32~64</td>
+      <td>工厂速率匹配查询速率, 集成Zone架构</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 4: 实用QRAM</strong></td>
+      <td>2028</td>
+      <td>N=256~512 (32~64B), 含 Error Filtration</td>
+      <td>查询保真度 >99%, 延迟 <20ms, 连续运行</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 5: 容错QRAM</strong></td>
+      <td>2029+</td>
+      <td>N≥1024, 横向Clifford+表面码QEC</td>
+      <td>逻辑查询保真度 >99.9%, 跨算法集成</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+<!-- ====== 第9章 平台对比 ====== -->
+<section id="s9">
+<h2>与其他 QRAM 实现平台的对比分析</h2>
+
+<table>
+  <thead>
+    <tr><th>平台</th><th>QRAM方案</th><th>优势</th><th>劣势</th><th>当前最大规模</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>中性原子 (中科酷原)</strong></td>
+      <td>Resource-State / Bucket-Brigade</td>
+      <td>高扩展性、室温、长相干时间、可重构全联通、光纤架构天然独立寻址</td>
+      <td>里德堡门保真度仍需提升、双比特门速度 μs 级</td>
+      <td>200 qubit (汉原2号)</td>
+    </tr>
+    <tr>
+      <td><strong>超导 (Google, IBM)</strong></td>
+      <td>Bucket-Brigade电路 (T门实现)</td>
+      <td>门速度极快 (~ns)、工业成熟度高</td>
+      <td>需 mK 低温、布线瓶颈、固定近邻连接</td>
+      <td>N=8 路由器 (Zhang 2025, arXiv:2505.13958)</td>
+    </tr>
+    <tr>
+      <td><strong>离子阱 (Quantinuum, IonQ)</strong></td>
+      <td>Resource-State (类似方案)</td>
+      <td>门保真度最高 (>0.999)、全联通</td>
+      <td>离子链扩展受限 (~50 qubit)、多激光复杂</td>
+      <td>— (未报告QRAM实验)</td>
+    </tr>
+    <tr>
+      <td><strong>光子 (Xanadu, PsiQuantum)</strong></td>
+      <td>光学 Fanout / 时间槽编码</td>
+      <td>天然弹道传播、室温工作</td>
+      <td>光子损耗难题、确定性两比特门困难</td>
+      <td>— (未报告QRAM实验)</td>
+    </tr>
+    <tr>
+      <td><strong>固态自旋 (NV中心等)</strong></td>
+      <td>Spin-Photon 混合</td>
+      <td>集成光子兼容、小型化潜力</td>
+      <td>自旋相干时间受限、制造均匀性差</td>
+      <td>— (该方案仅理论提出)</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="card card-insight">
+<p><strong>中科酷原的差异化竞争优势：</strong></p>
+<ul>
+  <li><strong>光纤阵列架构</strong>为每个路由器节点提供独立、低串扰的控制通道——这恰好解决了 QRAM 最关键的路由器寻址问题，是其他中性原子团队（如 Harvard/QuEra 使用 SLM+AOD 扫描）不具备的优势</li>
+  <li><strong>异核双物种（⁸⁵Rb/⁸⁷Rb）</strong>天然解决路由器和 QPU 量子比特之间的串扰——这在其他平台需要复杂的频率复用方案</li>
+  <li><strong>室温工作 + 标准机柜</strong>使得 O(N) 个路由器阵列的物理部署变得可行，无需像超导平台那样为每个路由器配备稀释制冷机内的布线</li>
+  <li><strong>相干原子转移的高保真度</strong>（0.99992/周期）为 Resource-State QRAM 所需的动态原子重排提供了物理基础</li>
+</ul>
+</div>
+</section>
+
+<!-- ====== 第10章 参考文献 ====== -->
+<section id="s10" class="refs">
+<h2>参考文献</h2>
+
+<h3>A. 中科酷原 / 中科院精密测量院 核心论文</h3>
+<ol>
+  <li>
+    <strong>[核心] A fiber array architecture for atom quantum computing</strong><br>
+    Xiao Li, Jia-Yi Hou, et al., Peng Xu*, Ming-Sheng Zhan*<br>
+    <em>Nature Communications</em> <strong>16</strong>, 9728 (2025) &nbsp;|&nbsp; arXiv: 2411.08502<br>
+    <span class="doi">DOI: 10.1038/s41467-025-64738-8</span><br>
+    <span class="local">📥 已下载</span>
+  </li>
+  <li>
+    <strong>Fast and Coherent Transfer of Atomic Qubits in Optical Tweezers Using Fiber Array Architecture</strong><br>
+    Jia-Chao Wang, et al., Peng Xu*<br>
+    <em>Chinese Physics Letters</em> <strong>43</strong>, 060601 (2026) &nbsp;|&nbsp; arXiv: 2604.07862<br>
+    <span class="local">📥 已下载</span>
+  </li>
+  <li>
+    <strong>High fidelity entanglement of neutral atoms via Rydberg-mediated single-modulated-pulse CZ gate</strong><br>
+    Zhuo Fu, Peng Xu*, et al., Mingsheng Zhan*<br>
+    <em>Physical Review A</em> <strong>105</strong>, 042430 (2022) &nbsp;|&nbsp; arXiv: 2109.02491<br>
+    <span class="local">📥 已下载</span>
+  </li>
+  <li>
+    <strong>Coherence Preservation of a Single Neutral Atom Qubit Transferred between Magic-Intensity Optical Traps</strong><br>
+    Jiaheng Yang, Xiaodong He*, et al., Mingsheng Zhan*<br>
+    <em>Physical Review Letters</em> <strong>117</strong>, 123201 (2016)<br>
+    <span class="local">📥 已下载</span>
+  </li>
+  <li>
+    <strong>Mitigating the noise of residual electric fields for single Rydberg atoms with electron photodesorption</strong><br>
+    Bahtiyar Mamat, et al., Xiao-Dong He*, Ming-Sheng Zhan*<br>
+    <em>Physical Review Applied</em> <strong>22</strong>, 064021 (2024) &nbsp;|&nbsp; arXiv: 2312.02597<br>
+    <span class="local">📥 已下载</span>
+  </li>
+  <li>
+    <strong>High-Fidelity Single-Qubit Gates on Neutral Atoms in a 2D Magic-Intensity ODT Array</strong><br>
+    Cheng Sheng, et al., Mingsheng Zhan*<br>
+    <em>Physical Review Letters</em> <strong>121</strong>, 240501 (2018)
+  </li>
+</ol>
+
+<h3>B. QRAM 核心论文</h3>
+<ol start="7">
+  <li>
+    <strong>[★★★★★] Resource-State Quantum RAM for Fast and Error-Correctable Queries</strong><br>
+    Francesco Cesa, Hannes Bernien, Hannes Pichler<br>
+    <em>arXiv:2503.19172</em> (2025, updated Jun 2026) — <strong>本报告核心推荐方案</strong><br>
+    <span class="tag key">首选中性原子QRAM方案</span> <span class="tag impl">含中性原子实现蓝图</span>
+  </li>
+  <li>
+    <strong>[★★★★★] Quantum random access memory: a survey and critique</strong><br>
+    Samuel Jaques, Arthur G. Rattew<br>
+    <em>Quantum</em> <strong>9</strong>, 1922 (2025) &nbsp;|&nbsp; arXiv: 2305.10310<br>
+    <span class="tag theory">权威综述</span> <span class="tag key">必读</span>
+  </li>
+  <li>
+    <strong>[★★★★★] Quantum Random Access Memory</strong> (Bucket-Brigade 原始方案)<br>
+    Vittorio Giovannetti, Seth Lloyd, Lorenzo Maccone<br>
+    <em>Physical Review Letters</em> <strong>100</strong>, 160501 (2008)<br>
+    <span class="tag theory">奠基性论文</span>
+  </li>
+  <li>
+    <strong>[★★★★] Analysis and Suppression of Errors in Quantum Random Access Memory under Extended Noise Models</strong><br>
+    Rohan Mehta, Gideon Lee, Liang Jiang<br>
+    <em>arXiv:2412.10318</em> (2024)<br>
+    <span class="tag theory">噪声弹性扩展分析</span>
+  </li>
+  <li>
+    <strong>[★★★★] Resilience of the Bucket-Brigade QRAM</strong><br>
+    Connor T. Hann, Gideon Lee, S.M. Girvin, Liang Jiang<br>
+    <em>PRX Quantum</em> <strong>2</strong>, 020311 (2021)<br>
+    <span class="tag theory">噪声弹性严格证明</span>
+  </li>
+  <li>
+    <strong>[★★★★] A Robust Quantum Random Access Memory</strong><br>
+    Fang-Yu Hong, Yang Xiang, et al.<br>
+    <em>arXiv:1201.2250</em> (2012)<br>
+    <span class="tag impl">里德堡原子QRAM物理实现</span>
+  </li>
+  <li>
+    <strong>[★★★★] A QRAM using a polynomial encoding of binary strings (QRAMpoly)</strong><br>
+    Priyanka Mukhopadhyay<br>
+    <em>arXiv:2408.16794</em> (2024, updated Apr 2025)<br>
+    <span class="tag theory">T-depth指数级优化</span>
+  </li>
+  <li>
+    <strong>[★★★] Refined Criteria for QRAM Error Suppression via Efficient Large-Scale QRAM Simulator</strong><br>
+    Yun-Jie Wang, et al. (中科大/本源量子)<br>
+    <em>arXiv:2503.13832</em> (2025)<br>
+    <span class="tag theory">大规模QRAM模拟器+EF分析</span> <span class="tag platform">中国团队</span>
+  </li>
+  <li>
+    <strong>[★★★] Efficient and Error-Resilient Data Access Protocols for a Limited-Sized QRAM</strong><br>
+    <em>arXiv预印本</em><br>
+    <span class="local">📥 已下载</span>
+  </li>
+</ol>
+
+<h3>C. 中性原子平台关键进展（QRAM相关）</h3>
+<ol start="16">
+  <li>
+    <strong>Logical quantum processor based on reconfigurable atom arrays</strong><br>
+    Dolev Bluvstein, et al., Mikhail D. Lukin<br>
+    <em>Nature</em> <strong>626</strong>, 58 (2024) — 首个演示逻辑量子比特的中性原子处理器<br>
+    <span class="tag platform">关键参考</span>
+  </li>
+  <li>
+    <strong>A tweezer array with 6,100 highly coherent atomic qubits</strong><br>
+    Endres group, Caltech<br>
+    <em>Nature</em> (2025) — 相干时间 12.6s，~12,000 阱位<br>
+    <span class="tag platform">扩展性参考</span>
+  </li>
+  <li>
+    <strong>Continuous operation of a coherent 3,000-qubit system</strong><br>
+    Lukin group, Harvard<br>
+    <em>Nature</em> (2025) — 连续原子重载，30,000 atoms/s<br>
+    <span class="tag platform">QRAM工厂连续运行参考</span>
+  </li>
+  <li>
+    <strong>An ultrafast QRAM with Rydberg atoms in a BEC</strong><br>
+    K.R. Patton, U.R. Fischer<br>
+    <em>arXiv:1307.0963</em> (2013)<br>
+    <span class="tag impl">里德堡BEC QRAM</span>
+  </li>
+  <li>
+    <strong>Experimental realization of the bucket-brigade quantum random access memory</strong><br>
+    F. Shen, et al.<br>
+    <em>arXiv:2506.16682</em> (2025)<br>
+    <span class="tag impl">最新bucket-brigade实验</span>
+  </li>
+</ol>
+</section>
+
+</main>
+
+<footer style="background: #0d1b2a; color: #aab7c4; text-align: center; padding: 30px; margin-top: 60px; font-size: 0.9em;">
+  <p>中科酷原 · 中性原子量子计算机 QRAM 架构设计调研报告 &nbsp;|&nbsp; 2026年6月29日</p>
+  <p>研究机构：中国科学院精密测量科学与技术创新研究院 / 中科酷原科技（武汉）有限公司</p>
+  <p>本报告基于公开学术文献编撰，包含对中科酷原平台的能力分析和 QRAM 架构设计建议</p>
+  <p>核心推荐方案：Resource-State QRAM (Cesa, Bernien & Pichler 2025) + 中科酷原光纤阵列架构</p>
+</footer>
+
+</body>
+</html>

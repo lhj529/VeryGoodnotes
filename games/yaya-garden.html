@@ -92,34 +92,6 @@
     100% { transform: translate(0, -80px) scale(0.8); opacity: 0; }
   }
 
-  /* Home button */
-  #home-btn {
-    position: absolute; top: 14px; left: 14px;
-    display: flex; align-items: center; gap: 5px;
-    padding: 7px 16px;
-    background: rgba(60, 35, 80, 0.55);
-    border: 2px solid rgba(255, 200, 230, 0.6);
-    border-radius: 22px;
-    color: #fff5e6;
-    font-size: 13px;
-    cursor: pointer;
-    text-decoration: none;
-    text-shadow: 1px 1px 0 #2a1a3a;
-    z-index: 10;
-    pointer-events: auto;
-    font-family: 'Courier New', monospace;
-    letter-spacing: 1px;
-    transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
-  }
-  #home-btn:hover {
-    transform: translateY(-2px) scale(1.04);
-    background: rgba(120, 70, 150, 0.7);
-    box-shadow: 0 4px 16px rgba(255, 180, 220, 0.3);
-  }
-  #home-btn:active {
-    transform: translateY(0) scale(0.96);
-  }
-
   /* Stat bar */
   #stat {
     position: absolute; bottom: 18px; right: 18px;
@@ -138,19 +110,22 @@
 <div id="app">
   <div id="game-wrap">
     <canvas id="game"></canvas>
-    <a href="芽芽之家.html" id="home-btn">🏡 回家</a>
+    <a href="../games.html" style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:5px;padding:7px 16px;background:rgba(60,35,80,0.55);border:2px solid rgba(255,200,230,0.6);border-radius:22px;color:#fff5e6;font-size:13px;cursor:pointer;text-decoration:none;text-shadow:1px 1px 0 #2a1a3a;z-index:10;pointer-events:auto;font-family:'Courier New',monospace;letter-spacing:1px;transition:transform .15s,background .15s,box-shadow .15s;" onmouseover="this.style.transform='translateY(-2px) scale(1.04)';this.style.background='rgba(120,70,150,0.7)';this.style.boxShadow='0 4px 16px rgba(255,180,220,0.3)'" onmouseout="this.style.transform='';this.style.background='rgba(60,35,80,0.55)';this.style.boxShadow=''">🏠 退出游戏</a>
+    <a href="芽芽之家.html" style="position:absolute;top:14px;left:120px;display:flex;align-items:center;gap:5px;padding:7px 16px;background:rgba(60,35,80,0.55);border:2px solid rgba(255,200,230,0.6);border-radius:22px;color:#fff5e6;font-size:13px;cursor:pointer;text-decoration:none;text-shadow:1px 1px 0 #2a1a3a;z-index:10;pointer-events:auto;font-family:'Courier New',monospace;letter-spacing:1px;transition:transform .15s,background .15s,box-shadow .15s;" onmouseover="this.style.transform='translateY(-2px) scale(1.04)';this.style.background='rgba(120,70,150,0.7)';this.style.boxShadow='0 4px 16px rgba(255,180,220,0.3)'" onmouseout="this.style.transform='';this.style.background='rgba(60,35,80,0.55)';this.style.boxShadow=''">🏡 回家</a>
     <div id="hud">
       <div class="panel">
         <div class="title">🌸 芽芽的像素花园</div>
         <div class="time" id="time">春 1日 · 06:00</div>
       </div>
       <div class="btns">
+        <button class="icon-btn" id="btn-yarn" title="毛线球 (右键点击)">🧶</button>
+        <button class="icon-btn" id="btn-treat" title="零食 (T键)">🍪</button>
         <button class="icon-btn" id="btn-time" title="切换昼夜">🌙</button>
         <button class="icon-btn" id="btn-music" title="背景音乐">🎵</button>
         <button class="icon-btn" id="btn-reset" title="重新开始">🔄</button>
       </div>
     </div>
-    <div id="tip">点击花园任意位置，芽芽会跑过来~ 🐾</div>
+    <div id="tip">点击花园散步 · 右键丢毛线球 · 靠近猫点可抚摸 · 按T投零食 🐾</div>
     <div id="stat">心情: <span id="mood">💛💛💛💛💛</span></div>
   </div>
 </div>
@@ -158,6 +133,7 @@
 <script>
 /* ========================================================================
    芽芽的像素花园 - 治愈系星露谷风格互动小花园
+   增强版：毛线球 + 抚摸 + 零食 + 小鸟 + 彩虹 + 心情泡泡
    ======================================================================== */
 
 const canvas = document.getElementById('game');
@@ -251,6 +227,9 @@ const C = {
   bfP: '#c060e0',
   bfB: '#60a0f0',
 
+  // 彩虹
+  rainbow: ['#ff6b6b','#ffa94d','#ffd43b','#69db7c','#74c0fc','#9775fa'],
+
   // 通用
   black: '#1a1024',
   white: '#fff5e6',
@@ -263,9 +242,9 @@ const C = {
 const state = {
   hour: 7,
   minute: 30,
-  timeSpeed: 2,     // 真实 1 秒 = 游戏内 2 分钟（放慢时间）
+  timeSpeed: 2,
   isDay: true,
-  weather: 'clear',  // clear / cloud / rain
+  weather: 'clear',
   mood: 5,
   flowers: [],
   trees: [],
@@ -274,12 +253,11 @@ const state = {
   fireflies: [],
   clouds: [],
   grassTufts: [],
-  // 猫
   cat: {
     x: VW/2, y: VH - 60,
     vx: 0, vy: 0,
-    facing: 1,    // 1 右 -1 左
-    state: 'idle', // idle, walk, sit, sleep, roll, sniff
+    facing: 1,
+    state: 'idle',
     stateTime: 0,
     targetX: 0, targetY: 0,
     walkSpeed: 0.4,
@@ -289,22 +267,28 @@ const state = {
     tail: 0,
     meow: 0,
   },
-  // 互动
   cursorX: VW/2, cursorY: VH/2,
   clickFX: [],
-  tip: '点击花园任意位置，芽芽会跑过来~ 🐾',
   tipTimer: 0,
   music: false,
   audioCtx: null,
   bgmTimer: 0,
+
+  // ===== 新互动系统 =====
+  yarnBall: null,       // { x, y, vx, vy, life }  毛线球
+  treats: [],           // [{ x, y, life }]         零食
+  bird: null,           // { x, y, vx, vy, state, timer, hopTimer }  小鸟
+  birdSpawnTimer: 0,    // 小鸟来访倒计时
+  petCooldown: 0,       // 抚摸冷却
+  rainbowTimer: 0,      // 彩虹显示计时
+  bubbleText: null,     // { text, timer }  心情泡泡
+  treatCooldown: 0,     // 零食冷却
 };
 
 /* ========================================================================
    静态场景生成（一次性）
    ======================================================================== */
 function generateWorld() {
-  // 地形：定义高度图（地平线在 VH-80 左右）
-  // 草地格子随机
   for (let i = 0; i < 600; i++) {
     state.grassTufts.push({
       x: Math.random() * VW,
@@ -313,7 +297,6 @@ function generateWorld() {
       c: Math.random() < 0.5 ? C.grass2 : C.grass3,
     });
   }
-  // 树
   const treePositions = [
     [22, 130], [48, 145], [78, 135], [120, 130], [170, 140],
     [210, 132], [255, 138], [288, 145], [38, 165], [285, 168],
@@ -321,7 +304,6 @@ function generateWorld() {
   treePositions.forEach(([x, y]) => {
     state.trees.push({ x, y, type: Math.random() < 0.3 ? 'pine' : 'oak', size: 0.85 + Math.random() * 0.4 });
   });
-  // 花
   for (let i = 0; i < 40; i++) {
     const colors = [C.flowerR, C.flowerY, C.flowerP, C.flowerW, C.flowerB];
     state.flowers.push({
@@ -332,26 +314,20 @@ function generateWorld() {
       sway: Math.random() * Math.PI * 2,
     });
   }
-  // 石头
   state.stones = [
     { x: 60, y: 168, w: 14, h: 8 },
     { x: 240, y: 172, w: 18, h: 10 },
     { x: 150, y: 180, w: 10, h: 6 },
   ];
-  // 池塘（在左下角附近）
   state.pond = { x: 18, y: 165, w: 36, h: 18 };
-  // 房子（右下角）
   state.house = { x: 250, y: 142, w: 50, h: 42 };
-  // 栅栏（中间小段）
   state.fences = [];
   for (let i = 0; i < 6; i++) {
     state.fences.push({ x: 90 + i*6, y: 175 });
   }
-  // 蝴蝶池
   for (let i = 0; i < 4; i++) {
     state.butterflies.push(spawnButterfly());
   }
-  // 云
   for (let i = 0; i < 3; i++) {
     state.clouds.push({
       x: Math.random() * VW,
@@ -360,6 +336,10 @@ function generateWorld() {
       w: 30 + Math.random() * 20,
     });
   }
+  // 小鸟初始计时
+  state.birdSpawnTimer = 600 + Math.random() * 400;
+  // 彩虹初始计时
+  state.rainbowTimer = -1200 + Math.random() * 600;
 }
 function spawnButterfly() {
   const colors = [C.bfR, C.bfY, C.bfP, C.bfB];
@@ -379,7 +359,6 @@ function spawnButterfly() {
    绘制：背景层
    ======================================================================== */
 function drawSky() {
-  // 渐变
   let colors;
   const h = state.hour + state.minute / 60;
   if (h < 5 || h >= 21) colors = C.skyNight;
@@ -390,7 +369,6 @@ function drawSky() {
   else if (h < 19) colors = lerpPalette(C.skyDay, C.skyDusk, (h - 17) / 2);
   else             colors = lerpPalette(C.skyDusk, C.skyNight, (h - 19) / 2);
 
-  // 上下渐变
   const grad = ctx.createLinearGradient(0, 0, 0, 110);
   grad.addColorStop(0, colors[0]);
   grad.addColorStop(0.4, colors[1]);
@@ -401,13 +379,12 @@ function drawSky() {
 
   // 太阳 / 月亮
   if (h >= 5 && h < 19) {
-    const t = (h - 5) / 14;  // 0~1
+    const t = (h - 5) / 14;
     const sx = 30 + t * 260;
     const sy = 75 - Math.sin(t * Math.PI) * 60;
     drawCircle(sx, sy, 7, C.sun);
     drawCircle(sx - 1, sy - 1, 6, '#fff8d0');
   } else {
-    // 月亮
     const t = h >= 19 ? (h - 19) / 10 : (h + 5) / 10;
     const sx = 30 + t * 260;
     const sy = 30 + Math.sin(t * Math.PI) * 10;
@@ -424,10 +401,35 @@ function drawSky() {
       ctx.fillRect(sx, sy, 1, 1);
     }
   }
+  // 彩虹
+  if (state.rainbowTimer > 0 && h >= 6 && h < 18) {
+    drawRainbow();
+  }
   // 云
   state.clouds.forEach(c => {
     drawCloud(c.x, c.y, c.w);
   });
+}
+
+function drawRainbow() {
+  const t = performance.now();
+  const alpha = Math.min(1, state.rainbowTimer / 60) * 0.5;
+  const rx = VW/2;
+  const ry = 55;
+  const rw = 80;
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = C.rainbow[i].replace(')', `,${alpha})`).replace('rgb', 'rgba');
+    // 用简化的弧形绘制
+    const r = rw - i * 5;
+    for (let dx = -r; dx <= r; dx++) {
+      const dy = -Math.sqrt(Math.max(0, r*r - dx*dx)) * 0.5;
+      const px = (rx + dx) | 0;
+      const py = (ry + dy) | 0;
+      if (py > 0 && px > 0 && px < VW) {
+        ctx.fillRect(px, py, 1, 1);
+      }
+    }
+  }
 }
 function lerpPalette(a, b, t) {
   t = Math.max(0, Math.min(1, t));
@@ -445,14 +447,12 @@ function lerpColor(a, b, t) {
 }
 function drawCloud(x, y, w) {
   ctx.fillStyle = C.cloud;
-  // 简化的云
   const h = w * 0.45;
   for (let i = 0; i < 4; i++) {
     ctx.fillRect(x + i*4, y, 4, h);
   }
   ctx.fillRect(x + 2, y - 2, w - 4, 4);
   ctx.fillRect(x + 4, y - 4, w - 12, 2);
-  // 阴影（底部）
   ctx.fillStyle = 'rgba(150,180,210,0.4)';
   ctx.fillRect(x, y + h - 1, w, 1);
 }
@@ -468,13 +468,11 @@ function drawCircle(cx, cy, r, color) {
 }
 
 function drawGround() {
-  // 草地主体
   const h = state.hour + state.minute/60;
   const isNight = h < 5.5 || h >= 19.5;
   const baseGrass = isNight ? '#2a5a2a' : C.grass1;
   ctx.fillStyle = baseGrass;
   ctx.fillRect(0, 110, VW, VH - 110);
-  // 草地块斑点
   for (let y = 110; y < VH; y += 2) {
     for (let x = 0; x < VW; x += 3) {
       const n = ((x * 13 + y * 7) % 17) / 17;
@@ -487,20 +485,17 @@ function drawGround() {
       }
     }
   }
-  // 顶部地平线阴影
   ctx.fillStyle = isNight ? '#0a1a0a' : C.grassD;
   ctx.fillRect(0, 110, VW, 1);
   ctx.fillRect(0, 111, VW, 1);
 }
 function drawDistantHills() {
-  // 远山轮廓
   ctx.fillStyle = state.hour < 6 || state.hour >= 19 ? '#1a2a4a' : '#7a9ad0';
   for (let x = 0; x < VW; x += 1) {
     const h1 = Math.sin(x * 0.04) * 8 + Math.sin(x * 0.11) * 4 + 12;
     const h2 = Math.sin(x * 0.07 + 1) * 6 + 10;
     ctx.fillRect(x, 100 - Math.max(h1, h2), 1, Math.max(h1, h2));
   }
-  // 树剪影
   ctx.fillStyle = state.hour < 6 || state.hour >= 19 ? '#0a1a2a' : '#4a6a8a';
   for (let x = 10; x < VW; x += 12) {
     const h = 4 + ((x * 3) % 6);
@@ -511,22 +506,18 @@ function drawDistantHills() {
 
 function drawPond() {
   const p = state.pond;
-  // 水
   const h = state.hour + state.minute/60;
   const isNight = h < 5.5 || h >= 19.5;
   const wc1 = isNight ? '#1a3a5a' : C.water1;
   const wc2 = isNight ? '#0a2a4a' : C.water2;
   const wc3 = isNight ? '#3a5a7a' : C.water3;
-  // 岸
   ctx.fillStyle = C.dirtD;
   ctx.fillRect(p.x - 2, p.y - 2, p.w + 4, 2);
   ctx.fillRect(p.x - 2, p.y + p.h, p.w + 4, 2);
   ctx.fillRect(p.x - 2, p.y, 2, p.h);
   ctx.fillRect(p.x + p.w, p.y, 2, p.h);
-  // 水面
   ctx.fillStyle = wc1;
   ctx.fillRect(p.x, p.y, p.w, p.h);
-  // 涟漪
   const t = performance.now() / 1500;
   ctx.fillStyle = wc3;
   for (let i = 0; i < 4; i++) {
@@ -536,10 +527,8 @@ function drawPond() {
   }
   ctx.fillStyle = wc2;
   ctx.fillRect(p.x + 1, p.y + p.h - 1, p.w - 2, 1);
-  // 荷叶
   drawPixelLily(p.x + 6, p.y + 4);
   drawPixelLily(p.x + 24, p.y + 10);
-  // 倒影（微弱的树影）
   if (!isNight) {
     ctx.fillStyle = 'rgba(255,255,255,0.15)';
     ctx.fillRect(p.x + 3, p.y + 2, 1, 8);
@@ -549,10 +538,8 @@ function drawPixelLily(x, y) {
   ctx.fillStyle = C.leaf;
   ctx.fillRect(x, y, 4, 1);
   ctx.fillRect(x, y+1, 5, 1);
-  // 缺口
   ctx.fillStyle = C.water1;
   ctx.fillRect(x + 2, y, 1, 1);
-  // 花
   ctx.fillStyle = C.flowerP;
   ctx.fillRect(x + 1, y - 1, 2, 1);
   ctx.fillRect(x, y - 1, 1, 1);
@@ -565,13 +552,10 @@ function drawFence() {
     const isNight = h < 5.5 || h >= 19.5;
     const fc = isNight ? C.fenceN : C.fence;
     const fd = isNight ? '#3a2818' : C.fenceD;
-    // 立柱
     ctx.fillStyle = fc;
     ctx.fillRect(f.x, f.y, 2, 7);
     ctx.fillRect(f.x + 3, f.y, 2, 7);
-    // 顶
     ctx.fillRect(f.x - 1, f.y, 6, 1);
-    // 阴影
     ctx.fillStyle = fd;
     ctx.fillRect(f.x + 1, f.y + 1, 1, 6);
     ctx.fillRect(f.x + 4, f.y + 1, 1, 6);
@@ -582,29 +566,23 @@ function drawHouse() {
   const h0 = state.house;
   const h = state.hour + state.minute/60;
   const isNight = h < 5.5 || h >= 19.5;
-  // 房子身体
   ctx.fillStyle = isNight ? '#806a40' : C.wall;
   ctx.fillRect(h0.x + 5, h0.y + 15, h0.w - 10, h0.h - 15);
-  // 木纹
   ctx.fillStyle = isNight ? '#604020' : C.wallD;
   ctx.fillRect(h0.x + 5, h0.y + 22, h0.w - 10, 1);
   ctx.fillRect(h0.x + 5, h0.y + 32, h0.w - 10, 1);
-  // 屋顶
   ctx.fillStyle = isNight ? '#5a2020' : C.roof;
   for (let i = 0; i < 18; i++) {
     const w = (i < 9 ? i + 1 : 17 - i) * 2;
     ctx.fillRect(h0.x + h0.w/2 - w/2, h0.y + i, w, 1);
   }
-  // 屋顶瓦片
   ctx.fillStyle = isNight ? '#3a1010' : C.roofD;
   for (let i = 0; i < 18; i += 2) {
     const w = (i < 9 ? i + 1 : 17 - i) * 2;
     ctx.fillRect(h0.x + h0.w/2 - w/2, h0.y + i, w, 1);
   }
-  // 烟囱
   ctx.fillStyle = C.stone1;
   ctx.fillRect(h0.x + 35, h0.y + 2, 4, 10);
-  // 烟
   if (!isNight) {
     const t = performance.now() / 1000;
     for (let i = 0; i < 4; i++) {
@@ -614,24 +592,20 @@ function drawHouse() {
       ctx.fillRect(sx, sy, 2, 2);
     }
   }
-  // 门
   ctx.fillStyle = isNight ? '#3a1a08' : C.door;
   ctx.fillRect(h0.x + 18, h0.y + 28, 8, 14);
   ctx.fillStyle = C.fence;
   ctx.fillRect(h0.x + 24, h0.y + 35, 1, 1);
-  // 窗
   ctx.fillStyle = isNight ? '#ffe080' : C.window;
   ctx.fillRect(h0.x + 9, h0.y + 22, 7, 7);
   ctx.fillRect(h0.x + 30, h0.y + 22, 7, 7);
   if (isNight) {
-    // 灯光晕
     const g = ctx.createRadialGradient(h0.x + 12, h0.y + 25, 0, h0.x + 12, h0.y + 25, 14);
     g.addColorStop(0, 'rgba(255,224,128,0.5)');
     g.addColorStop(1, 'rgba(255,224,128,0)');
     ctx.fillStyle = g;
     ctx.fillRect(h0.x - 4, h0.y + 16, 30, 18);
   }
-  // 窗框
   ctx.fillStyle = C.door;
   ctx.fillRect(h0.x + 12, h0.y + 22, 1, 7);
   ctx.fillRect(h0.x + 9, h0.y + 25, 7, 1);
@@ -644,16 +618,13 @@ function drawTree(t) {
   const s = t.size;
   const h = state.hour + state.minute/60;
   const isNight = h < 5.5 || h >= 19.5;
-  // 影子
   ctx.fillStyle = 'rgba(0,0,0,0.25)';
   ctx.fillRect(x - 6*s, y + 1, 12*s, 1);
-  // 树干
   ctx.fillStyle = isNight ? '#3a1808' : C.treeTrunk;
   ctx.fillRect(x - 1, y - 8*s, 2, 8*s);
   ctx.fillStyle = isNight ? '#1a0808' : C.treeTrunkD;
   ctx.fillRect(x, y - 8*s, 1, 8*s);
   if (t.type === 'oak') {
-    // 圆树冠
     const r = 8 * s;
     for (let dy = -r; dy <= r; dy++) {
       for (let dx = -r; dx <= r; dx++) {
@@ -666,13 +637,11 @@ function drawTree(t) {
         }
       }
     }
-    // 高光
     ctx.fillStyle = isNight ? '#4a7a4a' : '#7fdf60';
     for (let i = 0; i < 4; i++) {
       ctx.fillRect(x - 2 + i, y - 12*s - 1, 1, 1);
     }
   } else {
-    // 松树（三角形）
     const h0 = 14 * s;
     for (let i = 0; i < h0; i++) {
       const w = (i < h0/2 ? i : h0 - i) * 0.5 + 1;
@@ -681,10 +650,6 @@ function drawTree(t) {
         : (isNight ? '#1a4a1a' : C.leaf2);
       ctx.fillRect(x - w/2, y - 8*s - i, w, 1);
     }
-  }
-  // 苹果
-  if (t.type === 'oak' && Math.random() < 0.02 && !isNight) {
-    // 静止状态不画，避免闪烁
   }
   if (t.type === 'oak' && !isNight) {
     const appleSeeds = [[-3,-10], [3,-11], [-4,-7], [4,-8]];
@@ -700,18 +665,14 @@ function drawStone(s) {
   const h = state.hour + state.minute/60;
   const isNight = h < 5.5 || h >= 19.5;
   const baseY = s.y;
-  // 影子
   ctx.fillStyle = 'rgba(0,0,0,0.2)';
   ctx.fillRect(s.x, baseY + s.h, s.w, 1);
-  // 石头本体
   ctx.fillStyle = isNight ? '#404048' : C.stone1;
   ctx.fillRect(s.x + 1, baseY, s.w - 2, s.h);
   ctx.fillRect(s.x, baseY + 1, s.w, s.h - 2);
-  // 阴影
   ctx.fillStyle = isNight ? '#202028' : C.stone2;
   ctx.fillRect(s.x, baseY + s.h - 1, s.w, 1);
   ctx.fillRect(s.x + s.w - 1, baseY + 1, 1, s.h - 1);
-  // 高光
   ctx.fillStyle = isNight ? '#707078' : '#c0c0c8';
   ctx.fillRect(s.x + 1, baseY, s.w - 3, 1);
 }
@@ -720,18 +681,14 @@ function drawFlower(f) {
   const sway = Math.sin(performance.now() / 800 + f.sway) * 0.5;
   const x = f.x + sway;
   const y = f.y;
-  // 茎
   ctx.fillStyle = C.stem;
   ctx.fillRect(x, y, 1, 3);
-  // 叶
   ctx.fillRect(x - 1, y + 1, 1, 1);
   ctx.fillRect(x + 1, y + 2, 1, 1);
-  // 花头
   ctx.fillStyle = f.color;
   ctx.fillRect(x - 1, y - 2, 3, 1);
   ctx.fillRect(x - 2, y - 1, 5, 1);
   ctx.fillRect(x - 1, y, 3, 1);
-  // 中心
   ctx.fillStyle = C.flowerY;
   ctx.fillRect(x, y - 1, 1, 1);
 }
@@ -745,22 +702,147 @@ function drawGrassTuft(g) {
 function drawButterfly(b) {
   const flap = Math.sin(performance.now() / 80 + b.flapTime);
   const wing = flap > 0 ? 3 : 1;
-  // 身体
   ctx.fillStyle = C.black;
   ctx.fillRect(b.x, b.y, 1, 3);
-  // 左翅
   ctx.fillStyle = b.color;
   ctx.fillRect(b.x - wing, b.y - 1, wing, 2);
   ctx.fillRect(b.x - wing - 1, b.y, wing + 1, 1);
-  // 右翅
   ctx.fillRect(b.x + 1, b.y - 1, wing, 2);
   ctx.fillRect(b.x + 1, b.y, wing + 1, 1);
-  // 翅纹
   ctx.fillStyle = C.flowerW;
   if (flap > 0) {
     ctx.fillRect(b.x - wing, b.y, 1, 1);
     ctx.fillRect(b.x + wing, b.y, 1, 1);
   }
+}
+
+/* ========================================================================
+   绘制：新互动对象
+   ======================================================================== */
+
+// 毛线球
+function drawYarnBall(yb) {
+  if (!yb) return;
+  const x = yb.x | 0, y = yb.y | 0;
+  const t = performance.now() / 200;
+  const roll = yb.vx !== 0 || yb.vy !== 0;
+  // 影子
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillRect(x - 2, y + 2, 5, 1);
+  // 球体
+  ctx.fillStyle = '#e8606a';
+  ctx.fillRect(x - 2, y - 2, 5, 5);
+  ctx.fillRect(x - 3, y - 1, 7, 3);
+  // 纹理（缠绕线）
+  ctx.fillStyle = '#ff9098';
+  const s1 = roll ? Math.sin(t * 2 + yb.x * 0.5) * 1 : 0;
+  ctx.fillRect(x - 2 + s1, y - 2, 1, 1);
+  ctx.fillRect(x - 1 - s1, y, 1, 1);
+  ctx.fillRect(x + s1, y + 1, 1, 1);
+  // 高光
+  ctx.fillStyle = '#ffc0c8';
+  ctx.fillRect(x - 1, y - 2, 1, 1);
+  // 线条尾巴
+  ctx.fillStyle = '#ff8090';
+  if (roll) {
+    const angle = Math.atan2(yb.vy, yb.vx);
+    ctx.fillRect(x - Math.cos(angle)*2, y - Math.sin(angle)*2, 1, 1);
+    ctx.fillRect(x - Math.cos(angle)*3, y - Math.sin(angle)*3, 1, 1);
+  }
+}
+
+// 零食（圆形小饼干）
+function drawTreat(tr) {
+  const x = tr.x | 0, y = tr.y | 0;
+  const alpha = Math.min(1, tr.life / 30);
+  // 影子
+  ctx.fillStyle = `rgba(0,0,0,${0.15 * alpha})`;
+  ctx.fillRect(x - 2, y + 2, 5, 1);
+  // 椭圆形饼干主体
+  ctx.fillStyle = `rgba(220,170,110,${alpha})`;
+  ctx.fillRect(x - 2, y - 1, 5, 2);
+  ctx.fillRect(x - 3, y, 7, 1);
+  ctx.fillRect(x - 1, y - 2, 3, 1);
+  // 深色边框 / 烤痕
+  ctx.fillStyle = `rgba(180,130,80,${alpha * 0.7})`;
+  ctx.fillRect(x - 2, y - 2, 5, 1);
+  ctx.fillRect(x - 3, y - 1, 1, 2);
+  ctx.fillRect(x + 3, y - 1, 1, 2);
+  ctx.fillRect(x - 2, y + 1, 5, 1);
+  // 装饰芝麻点
+  ctx.fillStyle = `rgba(140,100,60,${alpha * 0.5})`;
+  ctx.fillRect(x - 1, y - 1, 1, 1);
+  ctx.fillRect(x + 1, y, 1, 1);
+  ctx.fillRect(x, y + 1, 1, 1);
+  // 高光
+  ctx.fillStyle = `rgba(255,230,190,${alpha * 0.4})`;
+  ctx.fillRect(x - 1, y - 2, 2, 1);
+}
+
+// 小鸟
+function drawBird(bird) {
+  if (!bird) return;
+  const x = bird.x | 0, y = bird.y | 0;
+  const t = performance.now() / 300;
+  const hop = bird.state === 'hopping' ? Math.abs(Math.sin(t * 3)) * 2 : 0;
+
+  if (bird.state === 'flying') {
+    // 飞翔
+    ctx.fillStyle = '#4a7a9a';
+    ctx.fillRect(x - 3, y - 1, 6, 2);
+    const flap = Math.sin(t * 6) > 0;
+    ctx.fillRect(x - 4, y - (flap ? 2 : 0), 2, 2);
+    ctx.fillRect(x + 2, y - (flap ? 2 : 0), 2, 2);
+    ctx.fillRect(x - 1, y + 1, 3, 1); // 尾
+    ctx.fillStyle = '#ffe080';
+    ctx.fillRect(x + 1, y - 1, 1, 1); // 小喙
+  } else {
+    // 地面状态
+    const py = y - hop;
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.fillRect(x - 2, y + 2, 5, 1);
+    ctx.fillStyle = '#5a8aaa';
+    ctx.fillRect(x - 3, py - 1, 6, 3); // 身体
+    ctx.fillStyle = '#7abada';
+    ctx.fillRect(x - 2, py - 2, 4, 1); // 头顶
+    ctx.fillStyle = '#ffe080';
+    ctx.fillRect(x + 3, py, 2, 1);     // 小喙
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(x + 2, py - 1, 1, 1); // 眼睛
+    // 翅膀
+    ctx.fillStyle = '#4a7a9a';
+    ctx.fillRect(x - 1, py - 1, 1, 2);
+    // 尾巴
+    ctx.fillStyle = '#3a5a7a';
+    ctx.fillRect(x - 4, py, 1, 1);
+    ctx.fillRect(x - 5, py + 1, 1, 1);
+    // 腿
+    const legOff = bird.state === 'hopping' ? 0 : Math.sin(t * 2) * 0.5;
+    ctx.fillStyle = '#8a6a4a';
+    ctx.fillRect(x - 1, py + 2 + legOff, 1, 1);
+    ctx.fillRect(x + 1, py + 2 - legOff, 1, 1);
+  }
+}
+
+// 心情泡泡
+function drawBubble(bx, by, text) {
+  if (!text) return;
+  const t = text.timer;
+  const alpha = Math.min(1, t / 20);
+  const x = bx | 0, y = by | 0;
+  // 泡泡主体
+  ctx.fillStyle = `rgba(255,255,255,${0.85 * alpha})`;
+  const tw = text.text.length * 4 + 8;
+  ctx.fillRect(x - tw/2, y - 10, tw, 8);
+  ctx.fillRect(x - tw/2 + 1, y - 12, tw - 2, 2);
+  ctx.fillRect(x - tw/2, y - 2, tw, 1);
+  // 小三角
+  ctx.fillRect(x - 1, y + 1, 2, 1);
+  ctx.fillRect(x, y + 2, 1, 1);
+  // 文字
+  ctx.fillStyle = `rgba(60,30,20,${alpha})`;
+  ctx.font = '5px monospace';
+  ctx.fillText(text.text, x - text.text.length * 2, y - 4);
 }
 
 /* ========================================================================
@@ -774,50 +856,38 @@ function drawCat(cat) {
   const blink = cat.blink > 0;
   const tailWag = Math.sin(t * 5 + cat.tail) * (cat.state === 'walk' ? 2.5 : 1.2);
 
-  // 柔和的椭圆影子
   ctx.fillStyle = 'rgba(40,25,15,0.28)';
   ctx.fillRect(x - 7, y + 2, 14, 2);
   ctx.fillRect(x - 5, y + 1, 10, 3);
 
   if (cat.state === 'sleep') {
-    // 睡觉：蜷缩一团
     drawCatSleep(x, y, f, blink, cat);
   } else if (cat.state === 'sit') {
-    // 坐姿
     drawCatSit(x, y, f, blink, cat, tailWag);
   } else {
-    // 站立 / 行走
     drawCatStand(x, y, f, blink, cat, tailWag, t);
   }
 }
 
 function drawCatSleep(x, y, f, blink, cat) {
-  // 身体团成球
   ctx.fillStyle = C.catBody;
   ctx.fillRect(x - 5, y - 3, 10, 5);
   ctx.fillRect(x - 4, y - 5, 8, 3);
-  // 腹部白毛
   ctx.fillStyle = C.catBelly;
   ctx.fillRect(x - 3, y - 2, 6, 3);
-  // 背纹
   ctx.fillStyle = C.catStripe;
   ctx.fillRect(x - 2, y - 4, 1, 1);
   ctx.fillRect(x + 1, y - 4, 1, 1);
-  // 头埋在前腿里
   ctx.fillStyle = C.catBody;
   ctx.fillRect(x - 3 + f, y - 5, 5, 4);
   ctx.fillRect(x - 2 + f, y - 6, 4, 2);
-  // 耳朵
   ctx.fillRect(x - 2 + f, y - 7, 1, 1);
   ctx.fillRect(x + 1 + f, y - 7, 1, 1);
-  // 粉耳内
   ctx.fillStyle = C.catEarIn;
   ctx.fillRect(x - 1 + f, y - 6, 1, 1);
   ctx.fillRect(x + 1 + f, y - 6, 1, 1);
-  // 闭眼
   ctx.fillStyle = C.catEye;
   ctx.fillRect(x + f, y - 4, 1, 1);
-  // 尾巴卷在身前
   ctx.fillStyle = C.catTail;
   for (let i = 0; i < 4; i++) {
     ctx.fillRect(x - 4 + i, y - 1, 1, 1);
@@ -825,24 +895,19 @@ function drawCatSleep(x, y, f, blink, cat) {
 }
 
 function drawCatSit(x, y, f, blink, cat, tailWag) {
-  // 坐着的后躯
   ctx.fillStyle = C.catBody;
   ctx.fillRect(x - 4, y - 5, 8, 6);
   ctx.fillRect(x - 5, y - 3, 10, 4);
-  // 后腿白爪
   ctx.fillStyle = C.catPaw;
   ctx.fillRect(x - 4, y + 1, 2, 1);
   ctx.fillRect(x + 2, y + 1, 2, 1);
-  // 腹部
   ctx.fillStyle = C.catBelly;
   ctx.fillRect(x - 3, y - 3, 6, 4);
-  // 虎斑纹（背部）
   ctx.fillStyle = C.catStripe;
   ctx.fillRect(x - 2, y - 5, 1, 1);
   ctx.fillRect(x + 1, y - 5, 1, 1);
   ctx.fillRect(x - 3, y - 4, 2, 1);
   ctx.fillRect(x + 2, y - 4, 2, 1);
-  // 尾巴（竖起弯曲，左右轻摆）
   ctx.fillStyle = C.catTail;
   const tx = x + 4 + tailWag * 0.6;
   ctx.fillRect(tx, y - 9, 2, 1);
@@ -850,46 +915,36 @@ function drawCatSit(x, y, f, blink, cat, tailWag) {
   ctx.fillRect(tx + 2, y - 11, 2, 1);
   ctx.fillStyle = C.catBody;
   ctx.fillRect(tx + 3, y - 10, 1, 1);
-  // 前腿
   ctx.fillStyle = C.catBody;
   ctx.fillRect(x - 2, y - 1, 1, 2);
   ctx.fillRect(x + 1, y - 1, 1, 2);
   ctx.fillStyle = C.catPaw;
   ctx.fillRect(x - 2, y + 1, 1, 1);
   ctx.fillRect(x + 1, y + 1, 1, 1);
-  // 头
   drawCatHead(x, y - 6, f, blink, cat);
 }
 
 function drawCatStand(x, y, f, blink, cat, tailWag, t) {
-  // 身体
   ctx.fillStyle = C.catBody;
   ctx.fillRect(x - 4, y - 6, 8, 5);
   ctx.fillRect(x - 3, y - 7, 6, 2);
-  // 背纹
   ctx.fillStyle = C.catStripe;
   ctx.fillRect(x - 2, y - 7, 1, 2);
   ctx.fillRect(x + 1, y - 7, 1, 2);
   ctx.fillRect(x - 1, y - 6, 2, 1);
-  // 肚子白毛
   ctx.fillStyle = C.catBelly;
   ctx.fillRect(x - 2, y - 4, 4, 3);
-  // 腿（行走动画）
   ctx.fillStyle = C.catBody;
   const walkOff = cat.state === 'walk' ? Math.sin(t * 14) * 1.5 : 0;
-  // 后腿
   ctx.fillRect(x - 3, y - 1 + walkOff, 2, 2);
   ctx.fillRect(x + 1, y - 1 - walkOff, 2, 2);
-  // 前腿
   ctx.fillRect(x - 2, y - 1 - walkOff, 1, 2);
   ctx.fillRect(x + 1, y - 1 + walkOff, 1, 2);
-  // 白手套
   ctx.fillStyle = C.catPaw;
   ctx.fillRect(x - 3, y + 1 + walkOff, 2, 1);
   ctx.fillRect(x + 1, y + 1 - walkOff, 2, 1);
   ctx.fillRect(x - 2, y + 1 - walkOff, 1, 1);
   ctx.fillRect(x + 1, y + 1 + walkOff, 1, 1);
-  // 尾巴（长且柔软）
   ctx.fillStyle = C.catTail;
   const tx = x - 5 * f;
   const ty = y - 4;
@@ -898,73 +953,58 @@ function drawCatStand(x, y, f, blink, cat, tailWag, t) {
   ctx.fillRect(tx - 2*f, ty - 2 + tailWag * 0.7, 2, 2);
   ctx.fillStyle = C.catBody;
   ctx.fillRect(tx + 1*f, ty + 1 + tailWag, 1, 1);
-  // 头
   drawCatHead(x, y - 8, f, blink, cat);
 }
 
 function drawCatHead(x, y, f, blink, cat) {
-  // 头主体（更圆润）
   ctx.fillStyle = C.catBody;
   ctx.fillRect(x - 4, y - 3, 9, 6);
   ctx.fillRect(x - 5, y - 1, 11, 4);
   ctx.fillRect(x - 3, y - 5, 7, 2);
-  // 头顶"M"虎斑纹
   ctx.fillStyle = C.catStripe;
   ctx.fillRect(x - 2, y - 5, 1, 2);
   ctx.fillRect(x + 2, y - 5, 1, 2);
   ctx.fillRect(x, y - 5, 1, 1);
-  // 耳朵（三角形，更立）
   ctx.fillStyle = C.catBody;
   ctx.fillRect(x - 5, y - 6, 2, 2);
   ctx.fillRect(x - 6, y - 7, 1, 1);
   ctx.fillRect(x + 4, y - 6, 2, 2);
   ctx.fillRect(x + 5, y - 7, 1, 1);
-  // 粉色内耳
   ctx.fillStyle = C.catEarIn;
   ctx.fillRect(x - 4, y - 5, 1, 1);
   ctx.fillRect(x + 4, y - 5, 1, 1);
-  // 脸颊和下巴白毛（参考图的白色口鼻）
   ctx.fillStyle = C.catBelly;
   ctx.fillRect(x - 3, y + 1, 7, 2);
   ctx.fillRect(x - 4, y + 2, 9, 1);
   ctx.fillRect(x - 1, y, 3, 1);
-  // 眼睛
   if (blink) {
     ctx.fillStyle = C.catEye;
     ctx.fillRect(x - 3, y - 1, 2, 1);
     ctx.fillRect(x + 2, y - 1, 2, 1);
   } else {
-    // 绿色大眼
     ctx.fillStyle = C.catEyeG;
     ctx.fillRect(x - 3, y - 2, 2, 3);
     ctx.fillRect(x + 2, y - 2, 2, 3);
     ctx.fillStyle = C.black;
     ctx.fillRect(x - 2, y - 1, 1, 2);
     ctx.fillRect(x + 3, y - 1, 1, 2);
-    // 高光
     ctx.fillStyle = C.white;
     ctx.fillRect(x - 3, y - 2, 1, 1);
     ctx.fillRect(x + 2, y - 2, 1, 1);
   }
-  // 粉色小鼻子
   ctx.fillStyle = C.catNose;
   ctx.fillRect(x, y + 1, 1, 1);
-  // 嘴巴
   ctx.fillStyle = C.catStripe;
   ctx.fillRect(x - 1, y + 2, 1, 1);
   ctx.fillRect(x + 1, y + 2, 1, 1);
-  // 胡须
   ctx.fillStyle = C.catWhisk;
   ctx.fillRect(x - 7, y + 1, 2, 1);
   ctx.fillRect(x - 8, y + 2, 2, 1);
   ctx.fillRect(x + 5, y + 1, 2, 1);
   ctx.fillRect(x + 6, y + 2, 2, 1);
-  // 喵~ 表情
   if (cat.meow > 0) {
-    // 嘴巴张开
     ctx.fillStyle = C.catNose;
     ctx.fillRect(x - 1, y + 1, 3, 2);
-    // 小爱心
     ctx.fillStyle = C.flowerR;
     ctx.fillRect(x - 5, y - 8, 1, 1);
     ctx.fillRect(x - 4, y - 9, 3, 1);
@@ -975,16 +1015,33 @@ function drawCatHead(x, y, f, blink, cat) {
 }
 
 /* ========================================================================
-   互动
+   互动：增强版点击 / 右键 / 键盘
    ======================================================================== */
+
+// 检查点击是否在猫附近（抚摸判定）
+function isClickNearCat(px, py, cat) {
+  const dx = px - cat.x;
+  const dy = py - cat.y;
+  return Math.hypot(dx, dy) < 18;
+}
+
+// 左键点击
 canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
   const px = (e.clientX - rect.left) / rect.width * VW;
   const py = (e.clientY - rect.top) / rect.height * VH;
   state.cursorX = px;
   state.cursorY = py;
-  // 让猫走向点击点
+
   const cat = state.cat;
+
+  // 优先：如果点击靠近猫，触发抚摸
+  if (isClickNearCat(px, py, cat) && state.petCooldown <= 0 && cat.state !== 'walk') {
+    doPet(rect, e);
+    return;
+  }
+
+  // 否则：让猫走向点击点
   if (cat.state === 'sleep') {
     cat.state = 'idle';
     cat.stateTime = 0;
@@ -993,16 +1050,152 @@ canvas.addEventListener('click', e => {
   cat.targetY = clamp(py, 120, VH - 12);
   cat.state = 'walk';
   cat.stateTime = 0;
-  // 心情 +
   if (state.mood < 5) state.mood++;
   updateMood();
-  // 提示淡出
   state.tipTimer = 1;
-  // 弹出爱心
   spawnHeart(e.clientX - rect.left, e.clientY - rect.top);
-  // 偶尔播放喵声
   if (Math.random() < 0.4) playMeow();
 });
+
+// 右键 → 丢 / 拍毛线球
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) / rect.width * VW;
+  const py = (e.clientY - rect.top) / rect.height * VH;
+
+  if (state.yarnBall && state.yarnBall.life > 0) {
+    // 已有球的���况——拍飞它
+    const dx = px - state.yarnBall.x;
+    const dy = py - state.yarnBall.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const power = 3 + Math.random() * 2;
+    state.yarnBall.vx = (dx / d) * power;
+    state.yarnBall.vy = (dy / d) * power - 1.5;
+    state.yarnBall.life = Math.max(state.yarnBall.life, 180);
+    showTip('拍飞毛线球！芽芽快看～ 🧶');
+  } else {
+    // 丢出新毛线球
+    state.yarnBall = {
+      x: px, y: py - 5,
+      vx: (Math.random() - 0.5) * 2,
+      vy: -2 - Math.random() * 2,
+      life: 300
+    };
+    showTip('毛线球丢出去啦！芽芽快去追～ 🧶');
+    // 猫关注球
+    if (state.cat.state !== 'sleep') {
+      state.cat.targetX = clamp(px, 8, VW - 8);
+      state.cat.targetY = clamp(py, 120, VH - 12);
+      state.cat.state = 'walk';
+      state.cat.stateTime = 0;
+    }
+  }
+  playTossSound();
+});
+
+// 猫被球吸引
+function catChaseYarn() {
+  const cat = state.cat;
+  const yb = state.yarnBall;
+  if (!yb || yb.life <= 0) return false;
+  const dx = yb.x - cat.x;
+  const dy = yb.y - cat.y;
+  const d = Math.hypot(dx, dy);
+  if (d < 8) {
+    // 抓到球：拍飞！
+    const power = 2 + Math.random() * 3;
+    yb.vx = (Math.random() - 0.5) * power * 2;
+    yb.vy = -1 - Math.random() * power;
+    yb.life = Math.max(yb.life, 120);
+    cat.state = 'sit';
+    cat.stateTime = 0;
+    showTip('芽芽抓到毛线球啦～又拍飞了！ 😸');
+    if (Math.random() < 0.6) playMeow();
+    if (state.mood < 5) { state.mood++; updateMood(); }
+    return true;
+  }
+  if (d < 60 && cat.state !== 'sleep') {
+    cat.targetX = yb.x;
+    cat.targetY = yb.y;
+    cat.state = 'walk';
+    cat.walkSpeed = 0.55; // 追球时跑快一点
+    return true;
+  }
+  cat.walkSpeed = 0.4;
+  return false;
+}
+
+// 抚摸
+function doPet(rect, e) {
+  const cat = state.cat;
+  cat.state = 'sit';
+  cat.stateTime = 0;
+  state.petCooldown = 40;
+  if (state.mood < 5) { state.mood = Math.min(5, state.mood + 1); }
+  updateMood();
+  state.bubbleText = { text: '呼噜噜~', timer: 50 };
+  const ex = e ? e.clientX - rect.left : rect.width/2;
+  const ey = e ? e.clientY - rect.top : rect.height/2;
+  spawnHeart(ex, ey);
+  spawnHeart(ex + 15, ey - 10);
+  if (Math.random() < 0.5) playMeow();
+  showTip('摸摸芽芽，他舒服地眯起眼睛 💕');
+}
+
+// 丢零食
+function dropTreat(px, py) {
+  if (state.treatCooldown > 0) return;
+  state.treats.push({
+    x: px || state.cat.x + (Math.random() - 0.5) * 30,
+    y: py || state.cat.y - 10,
+    life: 300
+  });
+  state.treatCooldown = 80;
+  showTip('芽芽闻到零食的香味啦！ 🍪');
+  // 猫注意到零食
+  const cat = state.cat;
+  if (cat.state !== 'sleep') {
+    cat.walkSpeed = 0.5;
+  }
+}
+
+// 键盘操作
+document.addEventListener('keydown', e => {
+  const cat = state.cat;
+  switch(e.key.toLowerCase()) {
+    case 't':
+      // T 键投零食
+      dropTreat(cat.x + (Math.random() - 0.5) * 40, cat.y - 15);
+      break;
+    case 'y':
+      // Y 键丢毛线球
+      if (state.yarnBall && state.yarnBall.life > 0) {
+        state.yarnBall.vx = (Math.random() - 0.5) * 4;
+        state.yarnBall.vy = -2 - Math.random() * 2;
+        state.yarnBall.life = Math.max(state.yarnBall.life, 150);
+      } else {
+        state.yarnBall = {
+          x: cat.x + cat.facing * 10, y: cat.y - 12,
+          vx: cat.facing * 3, vy: -2,
+          life: 300
+        };
+        cat.targetX = state.yarnBall.x;
+        cat.targetY = state.yarnBall.y;
+        cat.state = 'walk';
+        cat.stateTime = 0;
+      }
+      playTossSound();
+      showTip('毛线球飞出去啦！ 🧶');
+      break;
+    case 'f':
+      // F 键抚摸
+      const rect = canvas.getBoundingClientRect();
+      doPet(rect, null);
+      break;
+  }
+});
+
 canvas.addEventListener('mousemove', e => {
   const rect = canvas.getBoundingClientRect();
   state.cursorX = (e.clientX - rect.left) / rect.width * VW;
@@ -1031,7 +1224,7 @@ canvas.addEventListener('touchstart', e => {
 function spawnHeart(x, y) {
   const el = document.createElement('div');
   el.className = 'heart';
-  const emojis = ['💕', '💖', '💗', '✨', '🌸'];
+  const emojis = ['💕', '💖', '💗', '✨', '🌸', '💝', '💘'];
   el.textContent = emojis[Math.random() * emojis.length | 0];
   el.style.left = x + 'px';
   el.style.top = y + 'px';
@@ -1044,8 +1237,31 @@ function updateMood() {
 }
 
 // === 按钮 ===
+document.getElementById('btn-yarn').onclick = () => {
+  const cat = state.cat;
+  if (state.yarnBall && state.yarnBall.life > 0) {
+    state.yarnBall.vx = (Math.random() - 0.5) * 4;
+    state.yarnBall.vy = -2 - Math.random() * 2;
+    state.yarnBall.life = Math.max(state.yarnBall.life, 150);
+    showTip('拍飞毛线球！ 🧶');
+  } else {
+    state.yarnBall = {
+      x: cat.x + 10, y: cat.y - 12,
+      vx: 3, vy: -2,
+      life: 300
+    };
+    cat.targetX = state.yarnBall.x;
+    cat.targetY = state.yarnBall.y;
+    cat.state = 'walk';
+    cat.stateTime = 0;
+    showTip('丢出毛线球～ 🧶');
+  }
+  playTossSound();
+};
+document.getElementById('btn-treat').onclick = () => {
+  dropTreat(state.cat.x + 15, state.cat.y - 10);
+};
 document.getElementById('btn-time').onclick = () => {
-  // 跳到对应时间
   state.hour = state.hour < 12 ? 20 : 8;
   state.minute = 0;
   showTip(state.hour < 12 ? '切换到夜晚~ 🌙' : '切换到白天~ ☀️');
@@ -1066,6 +1282,8 @@ document.getElementById('btn-reset').onclick = () => {
   state.cat.state = 'idle'; state.cat.stateTime = 0;
   state.mood = 5; updateMood();
   state.flowers.forEach(f => f.sway = Math.random() * Math.PI * 2);
+  state.yarnBall = null; state.treats = []; state.bird = null;
+  state.rainbowTimer = -600; state.birdSpawnTimer = 600;
   showTip('花园已重置 ♡');
 };
 
@@ -1073,7 +1291,7 @@ function showTip(text) {
   const tip = document.getElementById('tip');
   tip.textContent = text;
   tip.style.opacity = '1';
-  state.tipTimer = 180; // 3 秒
+  state.tipTimer = 180;
 }
 
 /* ========================================================================
@@ -1105,9 +1323,12 @@ function playTone(freq, duration, type = 'sine', vol = 0.1) {
   osc.start();
   osc.stop(audioCtx.currentTime + duration);
 }
-// 简单治愈旋律
+function playTossSound() {
+  if (!audioCtx) return;
+  playTone(600, 0.08, 'square', 0.04);
+  playTone(800, 0.06, 'triangle', 0.03);
+}
 const melodyNotes = [
-  // 主旋律（C大调）
   523, 587, 659, 698, 784, 698, 659, 587,
   523, 659, 784, 880, 784, 659, 587, 523,
   440, 494, 523, 587, 659, 587, 523, 494,
@@ -1117,7 +1338,6 @@ const bassNotes = [130, 130, 165, 165, 196, 196, 165, 130];
 let noteIdx = 0;
 function playBGM() {
   if (!audioCtx) return;
-  // 主旋律
   bgmInterval = setInterval(() => {
     if (!state.music) return;
     const note = melodyNotes[noteIdx % melodyNotes.length];
@@ -1157,7 +1377,7 @@ function playMeow() {
 let lastTime = performance.now();
 function loop() {
   const now = performance.now();
-  const dt = Math.min(50, now - lastTime) / (1000 / 60); // 以 60fps 为单位
+  const dt = Math.min(50, now - lastTime) / (1000 / 60);
   lastTime = now;
 
   // === 更新状态 ===
@@ -1166,6 +1386,10 @@ function loop() {
   if (state.minute >= 60) {
     state.minute -= 60;
     state.hour = (state.hour + 1) % 24;
+    // 雨后彩虹概率
+    if (state.weather === 'rain' && state.hour >= 6 && state.hour < 18 && Math.random() < 0.3) {
+      state.rainbowTimer = 600 + Math.random() * 400;
+    }
   }
   // 云
   state.clouds.forEach(c => {
@@ -1187,6 +1411,134 @@ function loop() {
       b.y += (dy/d) * 0.3 * dt;
     }
   });
+
+  // ===== 新互动更新 =====
+  // 毛线球物理
+  if (state.yarnBall) {
+    const yb = state.yarnBall;
+    yb.life -= dt;
+    // 重力
+    yb.vy += 0.1 * dt;
+    // 摩擦力
+    yb.vx *= 0.995;
+    yb.vy *= 0.995;
+    // 位置更新
+    yb.x += yb.vx * dt;
+    yb.y += yb.vy * dt;
+    // 地面碰撞
+    if (yb.y > VH - 8) {
+      yb.y = VH - 8;
+      yb.vy *= -0.4;
+      yb.vx *= 0.7;
+      if (Math.abs(yb.vy) < 0.3) { yb.vy = 0; yb.vx *= 0.9; }
+    }
+    // 边界
+    yb.x = clamp(yb.x, 3, VW - 3);
+    // 猫追球
+    catChaseYarn();
+    if (yb.life <= 0) state.yarnBall = null;
+  }
+  // 零食
+  state.treats.forEach(tr => { tr.life -= dt; });
+  state.treats = state.treats.filter(tr => tr.life > 0);
+  // 猫吃零食
+  state.treats = state.treats.filter(tr => {
+    const dx = state.cat.x - tr.x;
+    const dy = state.cat.y - tr.y;
+    if (Math.hypot(dx, dy) < 8) {
+      state.cat.state = 'sit'; state.cat.stateTime = 0;
+      if (state.mood < 5) { state.mood++; updateMood(); }
+      state.bubbleText = { text: '好好吃~', timer: 40 };
+      spawnHeartWorld(tr.x, tr.y);
+      playMeow();
+      return false; // 吃掉
+    }
+    return true;
+  });
+  // 零食冷却
+  if (state.treatCooldown > 0) state.treatCooldown -= dt;
+  // 抚摸冷却
+  if (state.petCooldown > 0) state.petCooldown -= dt;
+  // 彩虹计时
+  if (state.rainbowTimer > -2000) state.rainbowTimer -= dt;
+  if (state.rainbowTimer < -2000) state.rainbowTimer = -2000 + Math.random() * 600;
+  // 小鸟
+  if (!state.bird) {
+    state.birdSpawnTimer -= dt;
+    if (state.birdSpawnTimer <= 0) {
+      // 小鸟登场
+      const fromLeft = Math.random() < 0.5;
+      state.bird = {
+        x: fromLeft ? -5 : VW + 5,
+        y: 80 + Math.random() * 40,
+        vx: fromLeft ? 1.5 : -1.5,
+        vy: 0,
+        state: 'flying',
+        timer: 0,
+        hopTimer: 0,
+      };
+      showTip('一只小鸟飞来花园啦！ 🐦');
+    }
+  }
+  if (state.bird) {
+    const bird = state.bird;
+    bird.timer += dt;
+    if (bird.state === 'flying') {
+      bird.x += bird.vx * dt;
+      bird.y += Math.sin(bird.timer * 0.1) * 0.5 * dt;
+      // 小鸟找到落脚点
+      if (bird.timer > 120 + Math.random() * 60) {
+        bird.state = 'landing';
+        bird.timer = 0;
+        bird.vx = 0; bird.vy = 0;
+        bird.x = clamp(bird.x, 20, VW - 20);
+        bird.y = 140 + Math.random() * 30;
+        showTip('小鸟停在花园里歇脚～ 🐦');
+      }
+    } else if (bird.state === 'landing') {
+      if (bird.timer > 10) {
+        bird.state = 'idle';
+        bird.timer = 0;
+      }
+    } else if (bird.state === 'idle') {
+      // 地面小鸟随机跳
+      bird.hopTimer += dt;
+      if (bird.hopTimer > 40 + Math.random() * 80) {
+        bird.hopTimer = 0;
+        bird.state = 'hopping';
+        bird.timer = 0;
+        bird.vx = (Math.random() - 0.5) * 2;
+      }
+    } else if (bird.state === 'hopping') {
+      bird.x += bird.vx * dt;
+      bird.hopTimer += dt;
+      if (bird.hopTimer > 15) {
+        bird.state = 'idle';
+        bird.hopTimer = 0;
+      }
+    }
+    // 小鸟飞走
+    if (bird.timer > 400 || (bird.state !== 'flying' && Math.hypot(state.cat.x - bird.x, state.cat.y - bird.y) < 25)) {
+      bird.state = 'flying';
+      bird.vx = bird.x > VW/2 ? 2 : -2;
+      bird.vy = -1;
+      bird.timer = 400;
+      if (Math.hypot(state.cat.x - bird.x, state.cat.y - bird.y) < 25) {
+        showTip('小鸟被芽芽吓飞啦～ 🕊️');
+      }
+    }
+    // 小鸟离开屏幕
+    if ((bird.state === 'flying' && bird.timer >= 400) && (bird.x < -10 || bird.x > VW + 10)) {
+      state.bird = null;
+      state.birdSpawnTimer = 600 + Math.random() * 500;
+    }
+  }
+  // 心情泡泡
+  if (state.bubbleText) {
+    state.bubbleText.timer -= dt;
+    if (state.bubbleText.timer <= 0) state.bubbleText = null;
+  }
+
   // 猫状态机
   updateCat(dt);
   // 提示
@@ -1202,22 +1554,21 @@ function loop() {
   drawDistantHills();
   drawGround();
   drawPond();
-  // 远树
   state.trees.forEach(t => drawTree(t));
-  // 栅栏
   drawFence();
-  // 石头
   state.stones.forEach(drawStone);
-  // 草簇
   state.grassTufts.forEach(drawGrassTuft);
-  // 房子
   drawHouse();
-  // 花
   state.flowers.forEach(drawFlower);
-  // 蝴蝶
   state.butterflies.forEach(drawButterfly);
+  // 新互动对象
+  drawYarnBall(state.yarnBall);
+  state.treats.forEach(drawTreat);
+  if (state.bird) drawBird(state.bird);
   // 猫
   drawCat(state.cat);
+  // 心情泡泡（画在猫上方）
+  if (state.bubbleText) drawBubble(state.cat.x, state.cat.y - 14, state.bubbleText);
   // 夜晚萤火虫
   const hh = state.hour + state.minute/60;
   if (hh < 5.5 || hh >= 19.5) {
@@ -1243,25 +1594,25 @@ function loop() {
     });
     state.fireflies = state.fireflies.filter(f => f.life > 0);
   }
-  // 暮光柔光
   if (hh >= 17 && hh < 19) {
     const alpha = (1 - Math.abs(hh - 18)) * 0.15;
     ctx.fillStyle = `rgba(255,180,140,${alpha})`;
     ctx.fillRect(0, 0, VW, VH);
   }
-  // 夜间暗角
   if (hh < 5.5 || hh >= 19.5) {
     const alpha = 0.18 + Math.sin(now/2000) * 0.02;
     ctx.fillStyle = `rgba(20,10,40,${alpha})`;
     ctx.fillRect(0, 0, VW, VH);
   }
 
-  // 时间显示（已隐藏）
-  // const timeStr = formatTime(state.hour, state.minute);
-  // const season = ['春','夏','秋','冬'][Math.floor(state.hour / 6) % 4];
-  // document.getElementById('time').textContent = `${season} 日 · ${timeStr}`;
-
   requestAnimationFrame(loop);
+}
+
+function spawnHeartWorld(x, y) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = (x / VW) * rect.width;
+  const sy = (y / VH) * rect.height;
+  spawnHeart(sx, sy);
 }
 
 function updateCat(dt) {
@@ -1272,10 +1623,8 @@ function updateCat(dt) {
     cat.animTime = 0;
     cat.animFrame = (cat.animFrame + 1) % 4;
   }
-  // 眨眼
   if (cat.blink > 0) cat.blink -= dt;
   if (Math.random() < 0.005) cat.blink = 6;
-  // 喵
   if (cat.meow > 0) cat.meow -= dt;
   cat.tail += dt * 0.1;
 
@@ -1288,7 +1637,7 @@ function updateCat(dt) {
       cat.state = 'idle';
       cat.stateTime = 0;
       cat.vx = 0; cat.vy = 0;
-      // 到了之后随机做一些事
+      cat.walkSpeed = 0.4;
       const r = Math.random();
       if (r < 0.3) cat.state = 'sit';
       else if (r < 0.5) cat.state = 'sniff';
@@ -1302,8 +1651,8 @@ function updateCat(dt) {
     }
   } else if (cat.state === 'idle') {
     cat.vx = 0; cat.vy = 0;
+    cat.walkSpeed = 0.4;
     if (cat.stateTime > 120 + Math.random() * 200) {
-      // 随机选个新目标
       cat.targetX = 20 + Math.random() * (VW - 40);
       cat.targetY = 120 + Math.random() * (VH - 130);
       cat.state = 'walk';
@@ -1325,7 +1674,6 @@ function updateCat(dt) {
       cat.stateTime = 0;
     }
   }
-  // 夜晚会睡觉
   const hh = state.hour + state.minute/60;
   if ((hh < 5.5 || hh >= 21) && cat.state !== 'sleep' && cat.state !== 'walk') {
     cat.state = 'sleep';
@@ -1333,7 +1681,6 @@ function updateCat(dt) {
     cat.targetX = state.house.x + 25;
     cat.targetY = state.house.y + 35;
   }
-  // 偶尔打滚
   if (cat.state === 'sit' && Math.random() < 0.001) {
     cat.state = 'roll';
     cat.stateTime = 0;

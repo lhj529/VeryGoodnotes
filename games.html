@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 游戏中心 - 猫猫咩咩阅览室</title>
+    <style>
+        :root {
+            --brand-color: #2d6a4f;
+            --brand-light: rgba(240, 249, 244, 0.9);
+            --text-main: #1a202c;
+            --nav-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        body {
+            margin: 0; font-family: "Georgia", "PingFang SC", serif;
+            background-image: url('sea.avif');
+            background-size: cover; background-position: center; background-attachment: fixed;
+            color: var(--text-main); padding-top: 80px;
+            min-height: 100vh;
+        }
+
+        /* --- 导航栏 --- */
+        .top-nav {
+            position: fixed; top: 0; width: 100%;
+            min-height: 70px;
+            background: var(--nav-bg); backdrop-filter: blur(12px);
+            z-index: 1000; display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 40px; box-sizing: border-box; box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+        }
+        .nav-left { font-weight: bold; color: var(--brand-color); font-size: 1.2rem; cursor: pointer; text-decoration: none; flex-shrink: 0; }
+        .nav-right {
+            display: flex; gap: 15px; align-items: center; flex-shrink: 0;
+            flex-wrap: wrap; justify-content: flex-end;
+        }
+        .nav-link { text-decoration: none; color: var(--text-main); font-size: 0.95rem; font-weight: 500; transition: 0.3s; white-space: nowrap; padding: 5px 0; }
+        .nav-link:hover { color: var(--brand-color); }
+        .nav-link.active { color: var(--brand-color); font-weight: bold; }
+
+        /* --- 页面头部 --- */
+        .page-header {
+            max-width: 1000px;
+            margin: 20px auto 30px;
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);
+            padding: 30px; border-radius: 15px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+        .page-header h1 { margin: 0 0 10px; color: var(--brand-color); font-size: 2rem; letter-spacing: 2px; }
+        .page-header p { margin: 0; color: #666; font-size: 0.95rem; }
+
+        /* --- 筛选标签 --- */
+        .filter-nav {
+            max-width: 1000px;
+            margin: 0 auto 30px;
+            display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+            padding: 0 20px;
+        }
+        .filter-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(45, 106, 79, 0.15);
+            cursor: pointer; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.3s; color: var(--text-main);
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--brand-color); color: white;
+            border-color: var(--brand-color);
+        }
+
+        /* --- 游戏卡片网格 --- */
+        .game-grid {
+            max-width: 1000px; margin: 0 auto 80px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px; padding: 0 20px;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 15px; padding: 30px;
+            text-decoration: none; color: inherit;
+            display: flex; flex-direction: column; align-items: center;
+            border: 2px solid transparent;
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+            background: #fff;
+        }
+        .game-card .game-icon {
+            font-size: 4rem; margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+        .game-card:hover .game-icon {
+            transform: scale(1.15) rotate(-5deg);
+        }
+        .game-card h2 { margin: 0 0 10px; font-size: 1.3rem; color: var(--brand-color); }
+        .game-card .game-desc {
+            font-size: 0.9rem; line-height: 1.6; color: #555;
+            margin-bottom: 15px;
+        }
+        .game-card .game-tags {
+            display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+        }
+        .mini-tag {
+            font-size: 0.75rem; background: #eef5f1; padding: 3px 10px;
+            border-radius: 12px; color: var(--brand-color); font-weight: bold;
+        }
+
+        /* --- 空状态 --- */
+        .empty-state {
+            grid-column: 1 / -1;
+            padding: 80px 20px; text-align: center;
+            background: rgba(0,0,0,0.15); border-radius: 15px; color: white;
+            font-size: 1.1rem;
+        }
+
+        /* --- 响应式 --- */
+        @media (max-width: 768px) {
+            .top-nav { padding: 10px 15px; justify-content: center; }
+            .nav-left { width: 100%; text-align: center; margin-bottom: 8px; }
+            .nav-right { width: 100%; justify-content: center; gap: 12px; }
+            .page-header { margin: 10px 15px; padding: 20px; }
+            .page-header h1 { font-size: 1.5rem; }
+            .game-grid { grid-template-columns: 1fr; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="top-nav">
+    <a href="index.html" class="nav-left">🌊 猫猫咩咩阅览室</a>
+    <div class="nav-right">
+        <a href="write.html" class="nav-link">➕ 添加</a>
+        <a href="toread.html" class="nav-link" style="color: #d62828; font-weight: bold;">📖 书单&影单</a>
+        <a href="showitem.html?type=all" class="nav-link">📚 书评&影评</a>
+        <a href="showitem.html?type=report" class="nav-link">📝 AI调研笔记</a>
+        <a href="games.html" class="nav-link active">🎮 游戏</a>
+        <a href="index.html" class="nav-link" style="opacity:0.7;">🏠 首页</a>
+    </div>
+</nav>
+
+<div class="page-header">
+    <h1>🎮 游戏中心</h1>
+    <p>放松一下，玩个小游戏吧～</p>
+</div>
+
+<div class="filter-nav" id="filterNav">
+    <button class="filter-btn active" data-tag="all">全部</button>
+</div>
+
+<div class="game-grid" id="gameGrid"></div>
+
+<script src="gamedata.js"></script>
+<script>
+    let currentTag = 'all';
+
+    function initFilters() {
+        const filterNav = document.getElementById('filterNav');
+        const allTags = new Set();
+        if (typeof ALL_GAMES !== 'undefined') {
+            ALL_GAMES.forEach(game => {
+                if (game.tags) game.tags.forEach(t => allTags.add(t));
+            });
+        }
+        Array.from(allTags).sort().forEach(tag => {
+            const btn = document.createElement('button');
+            btn.className = 'filter-btn';
+            btn.dataset.tag = tag;
+            btn.textContent = '#' + tag;
+            btn.onclick = () => filterByTag(tag);
+            filterNav.appendChild(btn);
+        });
+    }
+
+    function filterByTag(tag) {
+        currentTag = tag;
+        document.querySelectorAll('#filterNav .filter-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.tag === tag);
+        });
+        renderGames();
+    }
+
+    function renderGames() {
+        const grid = document.getElementById('gameGrid');
+        if (typeof ALL_GAMES === 'undefined') {
+            grid.innerHTML = '<div class="empty-state">暂无游戏数据</div>';
+            return;
+        }
+
+        let games = ALL_GAMES;
+        if (currentTag !== 'all') {
+            games = games.filter(g => g.tags && g.tags.includes(currentTag));
+        }
+
+        if (games.length === 0) {
+            grid.innerHTML = '<div class="empty-state">暂无该分类的游戏，敬请期待 🎮</div>';
+            return;
+        }
+
+        grid.innerHTML = games.map(g => {
+            const tagsHtml = (g.tags || []).map(t => `<span class="mini-tag">#${t}</span>`).join('');
+            return `
+                <a href="${g.path}" class="game-card" style="border-color: ${g.color || 'transparent'};">
+                    <div class="game-icon">${g.icon || '🎮'}</div>
+                    <h2>${g.name}</h2>
+                    <p class="game-desc">${g.description || '来玩一局吧！'}</p>
+                    <div class="game-tags">${tagsHtml}</div>
+                </a>
+            `;
+        }).join('');
+    }
+
+    window.onload = () => {
+        initFilters();
+        renderGames();
+    };
+</script>
+
+</body>
+</html>

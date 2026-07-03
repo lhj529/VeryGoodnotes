@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QRAM技术全面调研报告 — 从起源到前沿</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  :root {
+    --accent: #1a5276;
+    --highlight: #2980b9;
+    --card-bg: #f8f9fa;
+    --border: #dee2e6;
+    --text: #2c3e50;
+    --warning: #e67e22;
+    --success: #27ae60;
+    --info: #3498db;
+    --danger: #c0392b;
+    --purple: #8e44ad;
+    --teal: #16a085;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    color: var(--text);
+    line-height: 1.85;
+    background: #fff;
+    font-size: 16px;
+  }
+
+  /* Cover */
+  .cover {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1b3a4b 40%, #1a5276 100%);
+    color: white;
+    padding: 100px 60px 80px;
+    text-align: center;
+    min-height: 72vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(41,128,185,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(155,89,182,0.12) 0%, transparent 40%),
+                radial-gradient(circle at 50% 60%, rgba(230,126,34,0.08) 0%, transparent 35%);
+  }
+  .cover > * { position: relative; z-index: 1; }
+  .cover h1 {
+    font-size: 2.7em;
+    font-weight: 800;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+  }
+  .cover .subtitle {
+    font-size: 1.2em;
+    color: #85c1e9;
+    margin-bottom: 35px;
+    line-height: 1.6;
+  }
+  .cover .badge-row { margin-bottom: 10px; }
+  .cover .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 30px;
+    padding: 10px 24px;
+    font-size: 0.95em;
+    margin: 6px;
+    backdrop-filter: blur(10px);
+  }
+  .cover .badge span { color: #f1c40f; font-weight: bold; }
+  .cover .date { margin-top: 30px; color: #aab7c4; font-size: 0.95em; }
+
+  /* TOC */
+  nav.toc {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 40px 50px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border-left: 5px solid var(--accent);
+  }
+  nav.toc h2 { color: var(--accent); margin-bottom: 20px; font-size: 1.6em; }
+  nav.toc ol { padding-left: 0; list-style: none; }
+  nav.toc ol li { margin: 10px 0; padding-left: 36px; position: relative; }
+  nav.toc ol li::before {
+    content: counter(toc-counter);
+    counter-increment: toc-counter;
+    position: absolute;
+    left: 0; top: 2px;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    width: 24px; height: 24px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.8em;
+    font-weight: bold;
+  }
+  nav.toc ol { counter-reset: toc-counter; }
+  nav.toc a { color: var(--text); text-decoration: none; font-size: 1.05em; }
+  nav.toc a:hover { color: var(--highlight); }
+  nav.toc ol ol { margin-top: 4px; }
+  nav.toc ol ol li { font-size: 0.92em; margin: 4px 0; padding-left: 48px; }
+  nav.toc ol ol li::before {
+    content: counter(toc-counter, lower-alpha);
+    background: var(--info);
+    font-size: 0.75em;
+  }
+  nav.toc ol ol { counter-reset: toc-sub; }
+  nav.toc ol ol li { counter-increment: toc-sub; }
+  nav.toc ol ol li::before { content: counter(toc-sub, lower-alpha); }
+
+  /* Main content */
+  .content {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px 40px 80px;
+  }
+  .content h2 {
+    color: var(--accent);
+    font-size: 1.8em;
+    margin: 48px 0 18px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--accent);
+  }
+  .content h3 {
+    color: #1b4f72;
+    font-size: 1.35em;
+    margin: 32px 0 12px;
+    padding-left: 12px;
+    border-left: 4px solid var(--highlight);
+  }
+  .content h4 {
+    color: var(--text);
+    font-size: 1.1em;
+    margin: 20px 0 10px;
+    font-weight: 700;
+  }
+  .content p { margin: 12px 0; text-align: justify; }
+  .content ul, .content ol { margin: 10px 0 10px 24px; }
+  .content li { margin: 4px 0; }
+
+  /* Cards & boxes */
+  .info-box {
+    background: #eaf2f8;
+    border-left: 4px solid var(--info);
+    padding: 18px 24px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .warn-box {
+    background: #fef9e7;
+    border-left: 4px solid var(--warning);
+    padding: 18px 24px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .key-box {
+    background: #eafaf1;
+    border-left: 4px solid var(--success);
+    padding: 18px 24px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .critique-box {
+    background: #fdedec;
+    border-left: 4px solid var(--danger);
+    padding: 18px 24px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.94em;
+  }
+  thead th {
+    background: var(--accent);
+    color: white;
+    padding: 12px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr:nth-child(even) { background: var(--card-bg); }
+  tbody tr:hover { background: #eaf2f8; }
+
+  /* Timeline */
+  .timeline {
+    position: relative;
+    margin: 30px 0;
+    padding-left: 40px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 18px; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, var(--highlight), var(--purple));
+    border-radius: 2px;
+  }
+  .timeline-item {
+    position: relative;
+    margin: 24px 0;
+    padding: 16px 20px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -28px; top: 22px;
+    width: 14px; height: 14px;
+    background: var(--highlight);
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px var(--highlight);
+  }
+  .timeline-item .year {
+    font-weight: 800;
+    color: var(--accent);
+    font-size: 1.1em;
+  }
+  .timeline-item.milestone::before { background: var(--warning); box-shadow: 0 0 0 2px var(--warning); }
+  .timeline-item.breakthrough::before { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
+
+  /* Architecture comparison */
+  .arch-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin: 20px 0;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .arch-card.superconducting { border-top: 4px solid #e74c3c; }
+  .arch-card.neutral-atom { border-top: 4px solid #27ae60; }
+  .arch-card.trapped-ion { border-top: 4px solid #8e44ad; }
+  .arch-card.photonic { border-top: 4px solid #2980b9; }
+  .arch-card h4 { margin-top: 0; font-size: 1.15em; }
+
+  .tag {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    border-radius: 4px;
+    padding: 2px 10px;
+    font-size: 0.8em;
+    margin-right: 6px;
+    font-weight: 600;
+  }
+  .tag.exp { background: var(--success); }
+  .tag.theory { background: var(--info); }
+  .tag.proposal { background: var(--purple); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .cover { padding: 60px 20px; min-height: auto; }
+    .cover h1 { font-size: 1.8em; }
+    .content { padding: 10px 16px 40px; }
+    nav.toc { margin: 20px; padding: 24px; }
+    table { font-size: 0.82em; }
+    thead th, tbody td { padding: 6px 8px; }
+  }
+
+  /* Print */
+  @media print {
+    .cover { page-break-after: always; }
+    nav.toc { page-break-after: always; }
+    .content h2 { page-break-before: always; }
+  }
+
+  /* Figure captions */
+  .fig-caption {
+    text-align: center;
+    font-size: 0.88em;
+    color: #666;
+    margin: 6px 0 20px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== COVER ===== -->
+<section class="cover">
+  <h1>QRAM 技术全面调研报告</h1>
+  <div class="subtitle">
+    Quantum Random Access Memory<br>
+    从源头设想到前沿设计 —— 跨硬件架构的系统性综述
+  </div>
+  <div class="badge-row">
+    <div class="badge">📅 时间跨度: <span>1968 – 2025</span></div>
+    <div class="badge">📐 覆盖架构: <span>5 大类</span></div>
+    <div class="badge">📄 参考文献: <span>40+ 篇</span></div>
+  </div>
+  <div class="badge-row">
+    <div class="badge">🔬 超导电路</div>
+    <div class="badge">⚛️ 中性原子（光镊）</div>
+    <div class="badge">🔮 离子阱</div>
+    <div class="badge">💡 光子平台</div>
+    <div class="badge">🔗 混合架构</div>
+  </div>
+  <div class="date">调研日期: 2026年7月 &nbsp;|&nbsp; 基于学术论文、预印本与综述的系统梳理</div>
+</section>
+
+<!-- ===== TOC ===== -->
+<nav class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">引言：什么是 QRAM？</a></li>
+    <li><a href="#s2">历史发展时间线</a></li>
+    <li><a href="#s3">两种基本架构范式</a>
+      <ol>
+        <li><a href="#s3a">Fanout（扇出）架构</a></li>
+        <li><a href="#s3b">Bucket Brigade（斗链）架构</a></li>
+        <li><a href="#s3c">两种架构的根本对比</a></li>
+      </ol>
+    </li>
+    <li><a href="#s4">按硬件平台分类的技术路线</a>
+      <ol>
+        <li><a href="#s4a">超导电路平台</a></li>
+        <li><a href="#s4b">中性原子平台（光镊 + Rydberg）</a></li>
+        <li><a href="#s4c">离子阱平台</a></li>
+        <li><a href="#s4d">光子平台（线性光学 / 集成光子学）</a></li>
+        <li><a href="#s4e">混合架构</a></li>
+      </ol>
+    </li>
+    <li><a href="#s5">替代性QRAM架构</a>
+      <ol>
+        <li><a href="#s5a">量子行走 QRAM</a></li>
+        <li><a href="#s5b">资源态 QRAM（Resource-State QRAM）</a></li>
+        <li><a href="#s5c">多项式编码 QRAM</a></li>
+      </ol>
+    </li>
+    <li><a href="#s6">容错与纠错</a></li>
+    <li><a href="#s7">关键争论与批评</a></li>
+    <li><a href="#s8">各路线综合对比</a></li>
+    <li><a href="#s9">对中科酷原的启示</a></li>
+    <li><a href="#s10">总结与展望</a></li>
+    <li><a href="#refs">参考文献</a></li>
+  </ol>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="content">
+
+<!-- ========== SECTION 1 ========== -->
+<h2 id="s1">一、引言：什么是 QRAM？</h2>
+
+<p>
+量子随机存取存储器（<strong>QRAM</strong>, Quantum Random Access Memory）是量子计算中的一种理论存储设备，它允许以<strong>量子叠加态地址</strong>访问数据。与经典RAM以确定性的二进制地址访问单个存储单元不同，QRAM接受处于叠加态的地址量子比特作为输入，并在输出寄存器中产生对应存储单元内容的量子叠加态。
+</p>
+
+<div class="info-box">
+<strong>核心定义：</strong> 给定一个存储了 \(N = 2^n\) 个数据单元（每个单元可以是经典数据或量子数据）的存储器，QRAM执行以下酉变换：
+\[
+\sum_{x} \alpha_x |x\rangle_A |0\rangle_D \;\longrightarrow\; \sum_{x} \alpha_x |x\rangle_A |d_x\rangle_D
+\]
+其中 \(|x\rangle_A\) 是地址寄存器的叠加态，\(|d_x\rangle\) 是地址 \(x\) 处存储的数据。
+</div>
+
+<p>
+根据 Kuperberg (2013) 的分类法，量子存储器可分为四种类型：
+</p>
+
+<table>
+  <thead><tr><th>类型</th><th>缩写</th><th>地址</th><th>数据</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>经典随机存取经典存储器</td><td>CRACM</td><td>经典</td><td>经典</td><td>普通计算机RAM</td></tr>
+    <tr><td>经典随机存取量子存储器</td><td>CRAQM</td><td>经典</td><td>量子</td><td>经典控制读取量子数据</td></tr>
+    <tr><td><strong>量子随机存取经典存储器</strong></td><td><strong>QRACM</strong></td><td><strong>量子</strong></td><td><strong>经典</strong></td><td>量子地址读取经典数据（最常见的QRAM应用场景）</td></tr>
+    <tr><td><strong>量子随机存取量子存储器</strong></td><td><strong>QRAQM</strong></td><td><strong>量子</strong></td><td><strong>量子</strong></td><td>全量子存储与访问</td></tr>
+  </tbody>
+</table>
+
+<p>
+QRAM 之所以重要，是因为它是许多量子算法实现<strong>指数级加速</strong>的前提条件。HHL算法（用于求解线性方程组）、量子推荐系统、量子主成分分析、以及量子机器学习中的数据集加载等，都<strong>隐式或显式地依赖QRAM</strong>来高效输入经典数据。然而，QRAM本身是否能够以足够低的成本构造，一直是量子计算领域最具争议的问题之一。
+</p>
+
+<p>
+本报告从 QRAM 最早的设想出发，沿着技术发展的历史脉络，按不同的硬件架构分类梳理各种技术路线，分析其物理基础、优势与局限，并对各路线进行系统对比。
+</p>
+
+<!-- ========== SECTION 2 ========== -->
+<h2 id="s2">二、历史发展时间线</h2>
+
+<div class="timeline">
+
+  <div class="timeline-item">
+    <div class="year">1968</div>
+    <strong>John T. Godfrey</strong> 申请二进制数字计算机专利（US 3390471A），经典RAM架构成熟。这为后来的量子RAM概念提供了工程参照。
+  </div>
+
+  <div class="timeline-item">
+    <div class="year">1985</div>
+    <strong>Richard Feynman</strong> 在 <em>Optics News</em> 上发表「Quantum Mechanical Computers」，首次系统设想量子力学计算机，隐含对量子存储的需求。
+  </div>
+
+  <div class="timeline-item">
+    <div class="year">1997</div>
+    <strong>Brassard, Høyer & Tapp</strong> 在量子密码分析中<strong>隐式使用</strong>了量子地址访问经典数据的概念（最早的QRACM思想）。
+  </div>
+
+  <div class="timeline-item milestone">
+    <div class="year">2007–2008 ⭐ 奠基</div>
+    <strong>Giovannetti, Lloyd & Maccone</strong> 发表两篇开创性论文：<br>
+    · <em>Phys. Rev. Lett.</em> <strong>100</strong>, 160501 (2008) — "Quantum Random Access Memory"<br>
+    · <em>Phys. Rev. A</em> <strong>78</strong>, 052310 (2008) — "Architectures for a Quantum Random Access Memory"<br>
+    首次提出<strong>Bucket Brigade（斗链）架构</strong>，将QRAM的物理交互复杂度从 \(O(N)\) 降低到 \(O(\log N)\)。
+  </div>
+
+  <div class="timeline-item">
+    <div class="year">2009</div>
+    <strong>Harrow, Hassidim & Lloyd</strong> 发表HHL算法，该算法<strong>假设QRAM存在</strong>作为数据输入机制，极大推动了QRAM研究。
+  </div>
+
+  <div class="timeline-item">
+    <div class="year">2013</div>
+    <strong>Kuperberg</strong> 提出CRACM/CRAQM/QRACM/QRAQM四分类法，为QRAM的功能类别提供了清晰框架。
+  </div>
+
+  <div class="timeline-item critique-box">
+    <div class="year">2015 ⚠️ 关键批评</div>
+    <strong>Scott Aaronson</strong> 在 <em>Nature Physics</em> 发表「Read the Fine Print」，指出被动式QRAM依赖"可疑的物理假设"，认为大规模QRAM极不可能在不对噪声进行主动纠错的情况下实现。
+  </div>
+
+  <div class="timeline-item">
+    <div class="year">2015</div>
+    <strong>Arunachalam et al.</strong> 在 <em>New J. Phys.</em> 发表斗链QRAM的鲁棒性分析，证明了其对多种噪声形式的天然抵抗力。
+  </div>
+
+  <div class="timeline-item breakthrough">
+    <div class="year">2019 🏆 首次实验</div>
+    <strong>清华大学（Jiang, Pu, Duan et al.）</strong> 在 <em>npj Quantum Information</em> 报道首个<strong>105量子比特QRAM实验演示</strong>，使用冷原子系综和EIT方案，在210个存储单元中实现94.45%平均条件保真度。
+  </div>
+
+  <div class="timeline-item milestone">
+    <div class="year">2021 ⭐ 噪声鲁棒性</div>
+    <strong>Hann, Lee, Girvin & Jiang (Yale/Chicago)</strong> 在 <em>PRX Quantum</em> 证明斗链QRAM对<strong>任意噪声通道</strong>的噪声鲁棒性，关键机制是有限纠缠而非有限活跃路由器数。
+  </div>
+
+  <div class="timeline-item">
+    <div class="year">2021–2023</div>
+    <strong>Asaka, Sakai & Yahagi</strong> 提出<strong>量子行走QRAM</strong>架构，利用离散时间量子行走在有向图上路由查询，消除树节点对量子器件的需求。
+  </div>
+
+  <div class="timeline-item breakthrough">
+    <div class="year">2023 🏆 超导演示</div>
+    <strong>多个超导实验组</strong>实现QRAM关键原语：Stanford/Chicago实现量子开关(量子路由器)；浙江大学实现4位与8位斗链QRAM（保真度60–81%）；UNSW在IBM Q设备上验证量子路由纠缠。
+  </div>
+
+  <div class="timeline-item">
+    <div class="year">2023</div>
+    <strong>Weiss, Puri & Girvin (Yale)</strong> 在 <em>PRX Quantum</em> 提出基于3D超导腔的斗链QRAM架构，强调dual-rail编码在前容错时代的优势。
+  </div>
+
+  <div class="timeline-item milestone">
+    <div class="year">2023 / 2025 ⭐ 全面综述</div>
+    <strong>Jaques & Rattew</strong> 发表 "QRAM: A Survey and Critique"（<em>Quantum</em> 9, 1922, 2025），是最全面的现代综述，将QRAM分为<strong>主动式</strong>和<strong>被动式</strong>两大类，并系统分析了各类的成本模型。
+  </div>
+
+  <div class="timeline-item">
+    <div class="year">2024</div>
+    <strong>Wang, Qiao, Cleland & Jiang (UChicago)</strong> 提出基于transmon控制声子路由的QRAM（<em>Phys. Rev. Lett.</em> 2025），引入混合dual-rail编码实现损耗错误检测。
+  </div>
+
+  <div class="timeline-item breakthrough">
+    <div class="year">2025 🏆 资源态QRAM</div>
+    <strong>Cesa, Bernien & Pichler</strong> 在 <em>Nature Communications</em> 发表资源态QRAM，将QRAM重构为态制备问题，查询电路<strong>完全Clifford</strong>，天然容错，并提供<strong>中性原子（光镊）硬件蓝图</strong>。
+  </div>
+
+  <div class="timeline-item">
+    <div class="year">2024–2025</div>
+    多种容错优化方案涌现：<strong>异质表面编码QRAM</strong>、<strong>分段容错斗链</strong>（pieceable FT）、<strong>多项式编码QRAM</strong>（T-depth \(O(\log\log N)\)）、<strong>LDPC编码缩减开销</strong>等。
+  </div>
+</div>
+
+<!-- ========== SECTION 3 ========== -->
+<h2 id="s3">三、两种基本架构范式</h2>
+
+<p>
+所有QRAM设计都可以追溯到两种基本的物理寻址范式：<strong>Fanout（扇出）</strong>架构和<strong>Bucket Brigade（斗链）</strong>架构。两者都使用二叉树的拓扑结构来路由量子地址，但路由机制和物理资源消耗截然不同。
+</p>
+
+<!-- --- Fanout --- -->
+<h3 id="s3a">3.1 Fanout（扇出）架构</h3>
+
+<div class="arch-card" style="border-top:4px solid #e74c3c;">
+<h4>核心原理</h4>
+<p>
+在扇出架构中，地址寄存器的<strong>每一个比特同时控制对应层级的所有开关</strong>。第 \(k\) 个地址比特同时控制 \(2^k\) 个路由器（开关），形成指数级的控制扇出。所有 \(O(N)\) 个路由器在一次查询中都被激活。
+</p>
+
+<table>
+  <thead><tr><th>指标</th><th>数值</th></tr></thead>
+  <tbody>
+    <tr><td>总门数</td><td>\(O(2^n) = O(N)\)</td></tr>
+    <tr><td>每次查询激活的门数</td><td>\(O(N)\) — <strong>全部激活</strong></td></tr>
+    <tr><td>路由器纠缠熵</td><td>\(S(\rho) = 1\) — <strong>最大纠缠</strong></td></tr>
+    <tr><td>查询不保真度</td><td>\(1-F \sim \varepsilon N T\) — <strong>线性增长</strong></td></tr>
+    <tr><td>可扩展性</td><td>❌ 极差 — \(N\sim100\) 即为实际极限</td></tr>
+  </tbody>
+</table>
+
+<div class="critique-box">
+<strong>根本问题：</strong>扇出架构产生<strong>宏观薛定谔猫态</strong>——每个路由器都与系统的其余部分最大纠缠。这导致退相干随 \(N\) 线性恶化，在 \(\varepsilon \sim 10^{-3}\) 的门错误率下只能支持约100个存储单元。Nielsen & Chuang 教科书中描述的"fanout QRAM"即属此类，被认为是不实用的。
+</div>
+</div>
+
+<!-- --- Bucket Brigade --- -->
+<h3 id="s3b">3.2 Bucket Brigade（斗链）架构</h3>
+
+<div class="arch-card" style="border-top:4px solid #27ae60;">
+<h4>核心原理</h4>
+<p>
+斗链架构由 <strong>Giovannetti, Lloyd & Maccone (2008)</strong> 提出，使用<strong>三能级量子系统（qutrit）</strong>作为路由节点，状态为 \(|wait\rangle\)、\(|left\rangle\)、\(|right\rangle\)。地址量子比特<strong>顺序发送</strong>进入二叉树：早期的比特"雕刻"出路径，激活沿途节点；后续比特沿着已雕刻的路径自动路由。
+</p>
+
+<div class="key-box">
+<strong>分两步执行：</strong><br>
+<strong>① 路由阶段：</strong>地址比特从根节点开始顺序注入。遇到 \(|wait\rangle\) 态的节点时，量子比特被路由到左或右子节点，同时该节点切换到 \(|left\rangle\) 或 \(|right\rangle\) 态。<br>
+<strong>② 数据检索阶段：</strong>一个"总线量子比特"沿已建立的路由路径到达目标叶子节点，通过CNOT操作将存储的数据复制到总线量子比特上。
+</div>
+
+<table>
+  <thead><tr><th>指标</th><th>数值</th></tr></thead>
+  <tbody>
+    <tr><td>总门数</td><td>\(O(N)\) — 不可回避</td></tr>
+    <tr><td>每次查询<strong>激活</strong>的门数</td><td>\(O(\log N)\) — <strong>指数级减少</strong></td></tr>
+    <tr><td>第 \(\ell\) 层路由器的纠缠熵</td><td>\(S(\rho) \sim 2^{-\ell}\) — <strong>指数衰减</strong></td></tr>
+    <tr><td>查询不保真度</td><td>\(1-F \sim \varepsilon T \log N\) — <strong>对数增长</strong></td></tr>
+    <tr><td>可扩展性</td><td>✅ 极好 — 可在 \(N\sim10^{30}\) 下运行</td></tr>
+  </tbody>
+</table>
+
+<div class="info-box">
+<strong>关键洞察：</strong>在斗链架构中，深层路由器仅在极少数叠加分支中处于活跃状态——第 \(\ell\) 层的路由器仅在 \(N\cdot 2^{-\ell}\) 个分支中活跃。虽然活跃路由器的纠缠熵为1，但所有路由器的<strong>平均</strong>纠缠熵以 \(2^{-\ell}\) 指数衰减。Hann et al. (2021) 进一步证明，即使<strong>所有</strong>路由器（活跃和非活跃）都受到任意噪声的影响，这种鲁棒性仍然成立——关键在于<strong>有限纠缠</strong>而非有限的活跃路由器数。
+</div>
+</div>
+
+<!-- --- Comparison --- -->
+<h3 id="s3c">3.3 两种架构的根本对比</h3>
+
+<table>
+  <thead>
+    <tr><th>维度</th><th>Fanout（扇出）</th><th>Bucket Brigade（斗链）</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>路由器类型</td><td>二能级量子比特</td><td><strong>三能级 qutrit</strong></td></tr>
+    <tr><td>寻址方式</td><td>并行：所有比特同时控制</td><td><strong>串行：逐比特雕刻路径</strong></td></tr>
+    <tr><td>每次查询激活的门</td><td>\(O(N)\)</td><td>\(O(\log N)\)</td></tr>
+    <tr><td>纠缠特征</td><td>全局最大纠缠</td><td>指数衰减的有限纠缠</td></tr>
+    <tr><td>噪声标度</td><td>\(\sim \varepsilon N\)</td><td>\(\sim \varepsilon \log N\)</td></tr>
+    <tr><td>对纠错的需求</td><td>任何非平凡规模都必需</td><td>许多算法中可能不需要</td></tr>
+    <tr><td>是否需要外部控制</td><td>否（被动）</td><td>是（主动/被动混合）</td></tr>
+    <tr><td>实际可行性</td><td>❌ 不实用</td><td>✅ 被广泛研究</td></tr>
+  </tbody>
+</table>
+
+<p>
+<strong>混合方案</strong>也是可能的：将扇出与斗链组合使用，在相干控制的量和量子存储元件的数量之间进行权衡。但由于斗链架构的压倒性优势，几乎所有现代QRAM研究都基于斗链或其变体。
+</p>
+
+<!-- ========== SECTION 4 ========== -->
+<h2 id="s4">四、按硬件平台分类的技术路线</h2>
+
+<p>
+QRAM的物理实现高度依赖底层量子计算硬件平台。不同平台拥有不同的自然优势（长相干时间、高连通性、快速门操作等），因此衍生出了不同的技术路线。以下按照当前主要的量子计算硬件架构分类叙述。
+</p>
+
+<!-- --- Superconducting --- -->
+<h3 id="s4a">4.1 超导电路平台</h3>
+
+<div class="arch-card superconducting">
+<h4><span class="tag exp">实验</span><span class="tag theory">理论</span> 超导量子电路 QRAM</h4>
+
+<p>
+超导电路是目前最成熟的量子计算平台之一，也是QRAM实验演示的<strong>前沿阵地</strong>。该平台利用transmon量子比特、3D超导腔和参数耦合器构建QRAM的路由器与存储单元。
+</p>
+
+<h4>4.1.1 技术基础</h4>
+<ul>
+  <li><strong>Transmon量子比特：</strong>弱非谐振的超导电路，作为量子路由器的基础单元。</li>
+  <li><strong>Qutrit编码：</strong>利用transmon的第三能级（\(|2\rangle\)态）实现斗链所需的 \(|wait\rangle/|left\rangle/|right\rangle\) 三态路由器。</li>
+  <li><strong>参数耦合器：</strong>SQUID基可调电感实现transmon之间的可控耦合，支持红边带（光子交换）和蓝边带（双光子压缩）操作。</li>
+  <li><strong>3D超导腔：</strong>具有极高相干性（毫秒级寿命）的微波腔，可作为长寿命量子存储器。</li>
+  <li><strong>表面声波（SAW）声子：</strong>在压电基片上传播的声学模式，可作为量子信息传输的"总线"。</li>
+</ul>
+
+<h4>4.1.2 关键技术路线</h4>
+
+<p><strong>路线一：Transmon Qutrit 斗链QRAM（实验验证）</strong></p>
+
+<div class="key-box">
+<strong>里程碑：</strong>2023年，<strong>Stanford/Chicago联合团队</strong>（Miao, Lee, Jiang, Schuster）首次在任何量子比特平台上实验演示量子开关（QSwitch）——能根据<strong>量子叠加态</strong>地址将光子路由到叠加态输出端口的四节点量子路由器。发表于 <em>PRX Quantum</em> (2025)。
+</div>
+
+<p>同年，<strong>浙江大学</strong>在超导处理器上实现完整的桶链QRAM（4位和8位），4位查询保真度 \(0.809 \pm 0.025\)，8位查询保真度 \(0.604 \pm 0.005\)。他们还提出了<strong>高效门分解方案</strong>和误差缓解方法。</p>
+
+<p>2023年，<strong>UNSW</strong>在IBM Q 7比特超导设备上实现了量子路由，路由纠缠保真度 \(F=0.85\)，并实验性地将<strong>5量子比特QECC嵌入路由器</strong>，为纠错量子路由提供了验证路径。</p>
+
+<p>2025年，<strong>中国科学技术大学</strong>（Zhang, Wang, Zhao et al.）展示使用qutrit态 \(|0\rangle\) 和 \(|2\rangle\) 编码路由地址的<strong>相干量子路由器</strong>，采用<strong>过渡复合门（TCG）</strong>方案大幅缩减电路深度，单路由器保真度高达<strong>95.74%</strong>。</p>
+
+<p><strong>路线二：3D超导腔 QRAM（理论蓝图）</strong></p>
+<p>
+2023年，<strong>Yale（Weiss, Puri, Girvin）</strong>在 <em>PRX Quantum</em> 提出两种基于高相干3D超导腔的斗链QRAM架构：（a）直接腔控制CSWAP操作；（b）巨单向发射器（GUE）。关键结论是<strong>dual-rail编码</strong>在前容错时代可将后选择不保真度降低近一个数量级。
+</p>
+
+<p><strong>路线三：Transmon控制声子路由 QRAM（混合声学）</strong></p>
+<p>
+2024年，<strong>Chicago（Wang, Qiao, Cleland, Jiang）</strong>在 <em>Phys. Rev. Lett.</em> 提出基于transmon控制<strong>表面声波（SAW）声子路由器</strong>的斗链QRAM。该方案引入了<strong>混合dual-rail编码</strong>，无需额外硬件即可检测主导损耗错误。对于100个存储单元，在现实的 \(T_1\) 时间下（transmon ~100 μs，声子 ~2 μs），实现了~kHz量级的heralding rate。
+</p>
+
+<h4>4.1.3 优势与挑战</h4>
+<table>
+  <thead><tr><th>优势</th><th>挑战</th></tr></thead>
+  <tbody>
+    <tr><td>✅ 最成熟的量子计算平台</td><td>❌ Transmon \(T_1\) ~100 μs 限制了QRAM规模</td></tr>
+    <tr><td>✅ 已有多个QRAM实验演示</td><td>❌ 当前保真度（60–80%）距离实用化还有差距</td></tr>
+    <tr><td>✅ Qutrit编码天然适合斗链架构</td><td>❌ 3D腔方案尚未实验验证</td></tr>
+    <tr><td>✅ 快速门操作（10–100 ns）</td><td>❌ 声子方案的相干时间极短（~2 μs）</td></tr>
+    <tr><td>✅ 强耦合、高连通性</td><td>❌ 串扰和频率拥挤随规模扩大而加剧</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- --- Neutral Atoms --- -->
+<h3 id="s4b">4.2 中性原子平台（光镊 + Rydberg 相互作用）</h3>
+
+<div class="arch-card neutral-atom">
+<h4><span class="tag exp">实验</span><span class="tag theory">理论</span> 中性原子 QRAM</h4>
+
+<div class="warn-box">
+<strong>⚠️ 重要说明：</strong>中科酷原（中科酷原量子科技有限公司）目前使用的中性原子量子计算平台基于<strong>光镊（optical tweezers）阵列</strong>技术，而非光学晶格（optical lattice）阵列。光镊通过高度聚焦的激光束逐个捕获和操控单个原子，具有灵活的原子重排能力。这与光学晶格中原子固定在周期性势阱中的方案有本质区别——光镊方案的可重构性恰恰是资源态QRAM等新架构所依赖的核心能力。
+</div>
+
+<h4>4.2.1 技术基础</h4>
+<ul>
+  <li><strong>光镊阵列：</strong>通过AOD（声光偏转器）或SLM（空间光调制器）产生二维（或三维）可编程的聚焦激光阱阵列，每个阱中捕获一个中性原子（常用 \(^{87}\text{Rb}\) 或 \(^{85}\text{Rb}\)）。</li>
+  <li><strong>Rydberg激发与阻塞：</strong>将原子激发到高主量子数Rydberg态，利用强van der Waals相互作用（\(V \sim R^{-6}\)）或偶极-偶极交换（\(J \sim R^{-3}\)）实现条件量子门。</li>
+  <li><strong>原子重排：</strong>利用移动光镊（动态AOD控制）将原子逐个搬运到目标位置，这是光镊平台独有的能力——光学晶格无法做到。</li>
+  <li><strong>全局/局部激光寻址：</strong>通过AOD偏转、SLM相位调制或DMD图案化实现单个原子的独立寻址。</li>
+</ul>
+
+<h4>4.2.2 关键技术路线</h4>
+
+<p><strong>路线一：传统斗链QRAM在中性原子上的实现（理论探索）</strong></p>
+
+<p>
+中性原子平台实现传统斗链QRAM需要解决的核心问题是<strong>远程量子门的实现</strong>——斗链二叉树中非相邻节点之间的路由需要通过间接耦合来实现。
+</p>
+
+<div class="info-box">
+<strong>量子总线方案（2025, Doultsinos & Petrosyan, Phys. Rev. Research）：</strong>利用一维原子链作为"量子总线"连接远距离量子比特。通过全局啁啾激光脉冲将系统从铁磁基态绝热转移到Rydberg激发的<strong>反铁磁态</strong>，根据两端量子比特的状态获取条件几何π相位（CZ门）。20–30 μm间距的原子在2–3 μs内实现0.98–0.99的保真度。<br><br>
+<strong>扩展（Delakouras et al., 2025, arXiv:2507.16602）：</strong>将单链协议扩展到星图拓扑中的<strong>多量子比特 \(C_kZ\) 门</strong>——这对QRAM的扇出/扇入操作至关重要。<br><br>
+<strong>偶极交换iSWAP方案（Bergonzoni et al., 2025, arXiv:2511.20437）：</strong>利用共振偶极-偶极交换实现<strong>亚微秒级</strong>的长距离iSWAP门，通过GRAPE最优控制设计鲁棒的单连续激光脉冲。
+</div>
+
+<p>
+然而，这些方案目前仍然是<strong>理论提案</strong>，尚未与QRAM架构直接整合并进行实验验证。中性原子QRAM的实现面临的主要工程挑战包括：原子寿命有限、光镊深度对原子温度的约束、以及长距离门保真度的进一步提升。
+</p>
+
+<p><strong>路线二：资源态QRAM（2025，突破性方案）⭐</strong></p>
+
+<div class="key-box">
+<strong>核心论文：</strong>Cesa, Bernien & Pichler, "Resource-state quantum RAM for fast and error-correctable queries," <em>Nature Communications</em> (2026 online); arXiv:2503.19172 (2025).
+</div>
+
+<p>
+这是<strong>专门针对中性原子（光镊）平台设计的QRAM方案</strong>，将QRAM从根本上重新构想为一个<strong>态制备问题</strong>，而非动态路由问题：
+</p>
+
+<ul>
+  <li><strong>资源态（Resource State）：</strong>一个独立于存储数据的专用量子态，离线制备。资源态本身<strong>不编码</strong>存储的数据。</li>
+  <li><strong>查询电路完全Clifford：</strong>实际的数据查询操作仅涉及Clifford门（Hadamard、CNOT、相位门），这些门在标准QEC编码下是<strong>横向（transversal）的</strong>，天然容错。</li>
+  <li><strong>"QRAM工厂"流水线模式：</strong>一个资源态被查询消耗的同时，下一个资源态正在被组装——实现连续的QRAM操作。</li>
+  <li><strong>错误可检测可纠正：</strong>查询结束后可通过经典后处理综合症进行纠错。</li>
+  <li><strong>利用光镊原子重排：</strong>资源态组装明确依赖原子搬运和重排——这正是光镊平台（而非光学晶格）的核心能力。</li>
+</ul>
+
+<div class="info-box">
+<strong>为什么资源态QRAM适合光镊平台？</strong><br>
+资源态的制备需要将原子按特定图结构排列，执行并行Rydberg门，然后将纠缠原子通过光镊搬运到QRAM二叉树中的位置。这种<strong>动态原子重排</strong>能力是光镊平台独有的优势——光学晶格中的原子被固定在周期性势阱中，无法灵活移动。因此可以说，资源态QRAM路线<strong>天然适合光镊架构的中性原子量子计算机</strong>，中科酷原的技术路线恰好处在这一方向上。
+</div>
+
+<h4>4.2.3 清华大学2019年先驱实验</h4>
+
+<p>
+虽然严格来说不属于斗链QRAM，但清华大学Duan团队的2019年实验在<strong>冷原子系综</strong>中实现了关键QRAM功能：
+</p>
+
+<table>
+  <thead><tr><th>指标</th><th>数值</th></tr></thead>
+  <tbody>
+    <tr><td>量子比特数</td><td>105 量子比特</td></tr>
+    <tr><td>存储单元</td><td>210 存储单元（15×14 二维阵列, dual-rail编码）</td></tr>
+    <tr><td>物理平台</td><td>\(^{87}\text{Rb}\) 冷原子系综（MOT），交叉AOD寻址</td></tr>
+    <tr><td>存储机制</td><td>电磁感应透明（EIT），光子量子比特→集体自旋波激发</td></tr>
+    <tr><td>平均条件保真度</td><td>94.45 ± 0.06%</td></tr>
+    <tr><td>存储时间</td><td>1/e衰减时间 ~27.8 μs</td></tr>
+    <tr><td>经典边界超越</td><td>全部105比特至少4个标准差超越经典边界</td></tr>
+  </tbody>
+</table>
+
+<h4>4.2.4 优势与挑战</h4>
+<table>
+  <thead><tr><th>优势</th><th>挑战</th></tr></thead>
+  <tbody>
+    <tr><td>✅ 原子重排能力（光镊特有）</td><td>❌ 原子寿命有限（真空+激光冷却约束）</td></tr>
+    <tr><td>✅ Rydberg门保真度持续提升（当前 ~99.5%）</td><td>❌ 远程门的保真度和速度需要进一步优化</td></tr>
+    <tr><td>✅ 天然的大规模扩展性（~1000原子已演示）</td><td>❌ 资源态QRAM尚未实验验证</td></tr>
+    <tr><td>✅ 资源态QRAM提供明确的容错路径</td><td>❌ 光镊的原子重排速度（~100 μs/atom）是流水线瓶颈</td></tr>
+    <tr><td>✅ 二维/三维阵列天然匹配二叉树拓扑</td><td>❌ Rydberg态的有限寿命限制了门序列长度</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- --- Trapped Ions --- -->
+<h3 id="s4c">4.3 离子阱平台</h3>
+
+<div class="arch-card trapped-ion">
+<h4><span class="tag theory">理论</span> 离子阱 QRAM</h4>
+
+<div class="warn-box">
+<strong>当前状态：</strong>与超导和中性原子平台相比，离子阱平台的QRAM研究<strong>明显较少</strong>。目前尚未有离子阱平台上的QRAM实验演示报道。已有工作主要集中在量子路由的理论探索和离子-光子接口方面。
+</div>
+
+<h4>4.3.1 技术基础</h4>
+<ul>
+  <li><strong>离子量子比特：</strong>使用 \(^{171}\text{Yb}^+\)、\(^{40}\text{Ca}^+\) 等离子的超精细或Zeeman能级编码量子信息，具有<strong>极长的相干时间</strong>（秒到分钟量级）。</li>
+  <li><strong>声子总线：</strong>离子阱中通过集体振动模式（声子）实现离子之间的量子信息传输和纠缠门，具有<strong>全连通</strong>特性。</li>
+  <li><strong>光子接口：</strong>离子可以高效地发射和吸收单光子，适合构建量子网络中的远程纠缠。</li>
+  <li><strong>穿梭（Shuttling）：</strong>在分段离子阱或QCCD架构中，离子可以在不同区域之间物理移动。</li>
+</ul>
+
+<h4>4.3.2 潜在的QRAM实现路径</h4>
+
+<p><strong>路径一：声子总线斗链QRAM</strong></p>
+<p>
+离子阱的全连通声子总线理论上可以直接实现斗链二叉树的路由操作——每个路由器是一个离子，路由器之间的"边"由声子模式中介。然而，声子模式的数目随离子数线性增长，模式拥挤和频率拥挤限制了可扩展性。目前尚未有针对离子阱的专用斗链QRAM理论方案被提出。
+</p>
+
+<p><strong>路径二：光子中介的模块化QRAM</strong></p>
+<p>
+2024年，Oxford团队展示了离子阱网络中的量子存储演示。利用光子接口连接多个离子阱模块，每个模块作为一个QRAM节点，通过光子互联构建QRAM网络。这是一条有前景的路线，但距离完整的QRAM功能还有相当长的路。
+</p>
+
+<p><strong>路径三：离子穿梭QRAM（QCCD架构）</strong></p>
+<p>
+在QCCD（Quantum Charge-Coupled Device）架构中，离子可在不同陷阱区域之间物理穿梭。这在概念上类似于光镊中的原子搬运，可以用于构建QRAM的资源态。然而，离子穿梭速度（~10 μs/区域）和加热效应限制了这种方案的效率。
+</p>
+
+<h4>4.3.3 优势与挑战</h4>
+<table>
+  <thead><tr><th>优势</th><th>挑战</th></tr></thead>
+  <tbody>
+    <tr><td>✅ 极长的相干时间（秒-分钟）</td><td>❌ 尚无QRAM实验演示</td></tr>
+    <tr><td>✅ 全连通声子总线</td><td>❌ 门速度慢（10–100 μs）</td></tr>
+    <tr><td>✅ 高保真度门操作（>99.9%）</td><td>❌ 声子模式拥挤限制可扩展性</td></tr>
+    <tr><td>✅ 天然的光子接口</td><td>❌ 离子穿梭速度慢，加热问题</td></tr>
+    <tr><td>✅ 适合模块化量子网络</td><td>❌ 缺乏专用的QRAM架构理论</td></tr>
+  </tbody>
+</table>
+
+<div class="info-box">
+<strong>评价：</strong>离子阱平台在QRAM方面的主要价值可能在于其<strong>长相干时间和高保真度门</strong>——这两个特性对QRAM储能单元的质量至关重要。然而，门操作速度较慢和缺乏专用的QRAM架构理论使得该平台在短期内不太可能成为QRAM的主要实现平台。未来可能在<strong>模块化量子网络QRAM</strong>（多个离子阱模块通过光子互联）中找到自己的定位。
+</div>
+</div>
+
+<!-- --- Photonic --- -->
+<h3 id="s4d">4.4 光子平台（线性光学 / 集成光子学）</h3>
+
+<div class="arch-card photonic">
+<h4><span class="tag exp">实验</span><span class="tag theory">理论</span> 光子 QRAM</h4>
+
+<h4>4.4.1 技术基础</h4>
+<ul>
+  <li><strong>光子量子比特：</strong>以偏振、路径、时间-bin或频率编码量子信息。</li>
+  <li><strong>Dual-rail编码：</strong>用一个光子存在于两条路径中的哪一条来表示量子比特——在前容错时代的QRAM中具有独特优势。</li>
+  <li><strong>线性光学元件：</strong>分束器、移相器、波片等被动元件，以及单光子探测器和光子源。</li>
+  <li><strong>集成光子学：</strong>在硅、氮化硅或铌酸锂平台上实现大规模可编程光子电路。</li>
+  <li><strong>融合基量子计算（FBQC）：</strong>通过融合测量将小规模资源态拼接成大规模纠缠态。</li>
+</ul>
+
+<h4>4.4.2 关键技术路线</h4>
+
+<p><strong>路线一：光子斗链QRAM</strong></p>
+<p>
+光子平台天然支持斗链QRAM——二叉树结构可以直接映射到集成光子电路中的定向耦合器和光开关网络。光子量子比特沿波导传播，在每一个分叉节点根据地址信息被路由。关键挑战在于：光子损耗随路径长度指数增长，且被动光子器件的路由操作需要与地址量子比特纠缠——这在实际实现中极其困难。
+</p>
+
+<p><strong>路线二：冷原子系综EIT存储QRAM（最成熟的光子QRAM实验）</strong></p>
+<p>
+2019年<strong>清华大学</strong>的105量子比特实验即属于此类。通过电磁感应透明（EIT）将光子量子比特转换为冷原子系综中的集体自旋波激发，实现量子存储和按需读出。交叉AOD提供二维寻址能力。保真度94.45%，但存储时间受限于~27.8 μs（热原子运动和残余磁场梯度）。这是<strong>目前规模最大的QRAM实验演示</strong>。
+</p>
+
+<p><strong>路线三：融合基量子计算（FBQC）中的QRAM</strong></p>
+<p>
+光子融合基量子计算的最新发展提供了QRAM的另一种视角。在FBQC中，量子计算是通过对小规模资源态（如4环或6环cluster态）进行融合测量来实现的。2024年Sahay et al.展示了XZZX cluster态上的容错方案，融合失败阈值超过<strong>25%</strong>。虽然这些工作并非显式地关注QRAM，但融合基架构中的图态路由和控制操作与QRAM的数据访问模式高度相似。
+</p>
+
+<div class="info-box">
+<strong>Dual-rail编码的关键作用：</strong>无论是超导腔方案还是光子方案，dual-rail编码都被证明对QRAM具有独特的价值——它可以<strong>在不增加额外硬件的情况下</strong>检测光子损耗错误。这使得dual-rail编码成为前容错时代QRAM实现的核心技术之一。
+</div>
+
+<h4>4.4.3 优势与挑战</h4>
+<table>
+  <thead><tr><th>优势</th><th>挑战</th></tr></thead>
+  <tbody>
+    <tr><td>✅ 最大规模的QRAM实验（105 qubit）</td><td>❌ 存储时间极短（~μs）</td></tr>
+    <tr><td>✅ 光子损耗可检测（dual-rail）</td><td>❌ 确定性光子-光子门极难实现</td></tr>
+    <tr><td>✅ 集成光子学可扩展性好</td><td>❌ 光子损耗随路径长度指数增长</td></tr>
+    <tr><td>✅ FBQC提供容错路径</td><td>❌ 单光子源的不确定性</td></tr>
+    <tr><td>✅ 天然匹配二叉树拓扑</td><td>❌ 大规模确定性光子QRAM尚未演示</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- --- Hybrid --- -->
+<h3 id="s4e">4.5 混合架构</h3>
+
+<div class="arch-card" style="border-top:4px solid #e67e22;">
+<h4><span class="tag theory">理论</span> 混合量子平台 QRAM</h4>
+
+<p>
+混合架构结合不同量子平台的互补优势，代表了QRAM实现的另一类重要路线：
+</p>
+
+<ul>
+  <li><strong>超导-声子混合：</strong>Chicago的transmon控制SAW声子路由方案（Wang et al., 2024）。Transmon提供长寿命控制和存储，声子提供快速的路由通道。</li>
+  <li><strong>自旋-光子混合：</strong>固态自旋量子比特（NV色心、稀土离子）与光子接口的结合。自旋提供长寿命存储，光子提供低损耗传输。已有的理论方案包括通过量子隐形传态实现的自旋-光子网络QRAM。</li>
+  <li><strong>离子-光子混合：</strong>离子作为处理节点，光子作为通信通道——适合构建分布式/模块化QRAM。</li>
+  <li><strong>原子-光子混合（EIT方案）：</strong>清华大学2019年实验即属此类——原子系综提供存储，光子提供传输和寻址。</li>
+</ul>
+
+<div class="info-box">
+<strong>混合架构的核心思想：</strong>量子存储需要<strong>长相干时间</strong>（原子、离子、自旋），量子路由/传输需要<strong>低损耗通道</strong>（光子、声子）。将两者结合可能是实现实用QRAM的最可行路径。
+</div>
+</div>
+
+<!-- ========== SECTION 5 ========== -->
+<h2 id="s5">五、替代性QRAM架构</h2>
+
+<p>
+除了基于斗链二叉树的主流架构外，近年还涌现了若干完全不同的QRAM设计方案。
+</p>
+
+<!-- --- Quantum Walk --- -->
+<h3 id="s5a">5.1 量子行走 QRAM</h3>
+
+<div class="arch-card" style="border-top:4px solid #8e44ad;">
+<h4><span class="tag theory">理论</span> 基于量子行走的QRAM</h4>
+
+<p>
+<strong>Asaka, Sakai & Yahagi（东京理科大学，2021–2023）</strong>提出了一种全新的QRAM范式，用<strong>离散时间量子行走</strong>取代传统的门序列路由。
+</p>
+
+<h4>核心原理</h4>
+<ul>
+  <li><strong>步行者取代路由器：</strong>不再在二叉树节点放置量子设备（qutrit路由器），而是用一个具有"手性"（左/右内态）的量子步行者在二叉树上行走。</li>
+  <li><strong>Roundabout Gate（环岛门）：</strong>在有向加权图上通过单粒子散射实现的路由门，根据步行者的内部状态将其引导到左或右子节点。</li>
+  <li><strong>编码器门 \(\mathcal{E}\)：</strong>在树的每一层之间，将路径位置信息转换为步行者的内部状态，使步行者无需纠缠任何树节点即可自动路由到目标存储单元。</li>
+  <li><strong>Dual-rail编码：</strong>每个量子比特由两条平行路径上的一个步行者表示，\(n+m\) 个步行者在 \(2(n+m)\) 个平行片上运行。</li>
+</ul>
+
+<h4>性能</h4>
+<table>
+  <thead><tr><th>指标</th><th>量子行走QRAM</th><th>传统斗链QRAM (GLM)</th></tr></thead>
+  <tbody>
+    <tr><td>电路深度</td><td>\(O(n \log(n+m))\)</td><td>\(O(n^2 + nm)\)</td></tr>
+    <tr><td>量子比特资源</td><td>\(O(n+m)\)</td><td>\(O(2^n + m)\)</td></tr>
+    <tr><td>时间依赖控制</td><td>❌ 不需要</td><td>✅ 需要（顺序注入）</td></tr>
+    <tr><td>与树节点纠缠</td><td>❌ 无</td><td>✅ 有（qutrit）</td></tr>
+  </tbody>
+</table>
+
+<div class="key-box">
+<strong>关键优势：</strong>步行者<strong>从不与二叉树的任何器件纠缠</strong>，这从根本上消除了斗链架构中路由器退相干的问题。整个过程是<strong>自动的、无时间依赖控制的</strong>——只需让步行者穿过两颗二叉树（输入树和输出树）即可完成QRAM操作。
+</div>
+
+<p>
+该架构发表于 <em>Quantum Science and Technology</em> (2021) 和 <em>Physical Review A</em> (2023)。目前仍为<strong>纯理论方案</strong>，尚未在任何物理平台上实验验证。
+</p>
+</div>
+
+<!-- --- Resource-State --- -->
+<h3 id="s5b">5.2 资源态 QRAM（Resource-State QRAM）⭐</h3>
+
+<div class="arch-card" style="border-top:4px solid #27ae60;">
+<h4><span class="tag theory">理论</span><span class="tag proposal">2025最新</span> 资源态QRAM</h4>
+
+<p>
+<strong>Cesa, Bernien & Pichler (2025)</strong> 的这项工作已在上述中性原子部分详细介绍。此处从跨平台视角补充其通用意义。
+</p>
+
+<h4>根本创新</h4>
+
+<p>
+资源态QRAM将QRAM重构为<strong>态制备 + Clifford电路</strong>的双阶段过程：
+</p>
+
+<ol>
+  <li><strong>离线阶段：</strong>独立于存储数据制备资源态（一个多体纠缠态）。此阶段可以使用任意复杂的操作和纠错——因为它是离线进行的，不影响查询延迟。</li>
+  <li><strong>在线查询阶段：</strong>消耗一个资源态来执行查询。查询电路完全由Clifford门组成，这些门是<strong>横向的</strong>（每个物理量子比特独立操作），天然兼容任何标准QEC编码。</li>
+</ol>
+
+<h4>适用于哪些平台？</h4>
+<ul>
+  <li>✅ <strong>中性原子（光镊）：</strong>作者提供了详细的原子重排蓝图——最直接的应用平台。</li>
+  <li>🔶 <strong>超导电路：</strong>原理上可行，但资源态组装（需要大量并行纠缠门）在超导平台上更具挑战性。</li>
+  <li>🔶 <strong>离子阱：</strong>全连通声子总线理论上有利于资源态制备，但门速度较慢。</li>
+  <li>✅ <strong>光子/FBQC：</strong>融合基架构天然支持资源态的制备和消耗——资源态QRAM的范式与FBQC高度一致。</li>
+</ul>
+
+<div class="key-box">
+<strong>为什么这是一个范式的转变？</strong><br>
+传统QRAM将路由视为一个需要实时纠错的动态过程——这是一个极其困难的问题。资源态QRAM将困难的部分（资源态制备）移到离线阶段，查询本身只需要容易纠错的Clifford操作。这使得QRAM"<strong>可能首次进入当前可用技术范围</strong>"（原文表述）。该工作得到了ERC QARA资助、Horizon Europe PASQuanS2.1项目、AFOSR、ONR和ARO的支持。
+</div>
+</div>
+
+<!-- --- Polynomial --- -->
+<h3 id="s5c">5.3 多项式编码 QRAM</h3>
+
+<div class="arch-card" style="border-top:4px solid #2980b9;">
+<h4><span class="tag theory">理论</span> 多项式编码QRAM</h4>
+
+<p>
+<strong>Mukhopadhyay (2024, Nature Sci. Reports 2025)</strong> 提出了QRAM<sub>poly</sub>和qLUT<sub>poly</sub>两种方案，通过多项式编码对二进制串进行压缩存储和快速查询。
+</p>
+
+<table>
+  <thead><tr><th>架构</th><th>T-depth</th><th>T-count</th><th>逻辑量子比特</th></tr></thead>
+  <tbody>
+    <tr><td>传统斗链（Bucket Brigade）</td><td>\(O(\log N)\)</td><td>\(O(N)\)</td><td>\(O(N)\)</td></tr>
+    <tr><td><strong>QRAM<sub>poly</sub></strong></td><td><strong>\(O(\log\log N)\)</strong></td><td>\(O(N - \log N)\)</td><td>\(O(N)\)</td></tr>
+    <tr><td><strong>qLUT<sub>poly</sub></strong></td><td><strong>\(O(\log\log N)\)</strong></td><td>\(O(\sqrt{N})\)</td><td>\(O(\sqrt{N})\)</td></tr>
+  </tbody>
+</table>
+
+<div class="info-box">
+<strong>核心价值：</strong>在容错量子计算中，T门的成本远超Clifford门（约100倍或更多），因为T门需要魔态蒸馏。将T-depth从 \(O(\log N)\) 降低到 \(O(\log\log N)\) 是<strong>指数级改进</strong>，大幅减少了容错QRAM的实际执行时间。
+</div>
+</div>
+
+<!-- ========== SECTION 6 ========== -->
+<h2 id="s6">六、容错与纠错</h2>
+
+<p>
+QRAM是否需要对量子纠错（QEC）进行编码保护，以及如何以合理的开销实现这种保护，是决定QRAM实用性的核心问题。2023–2025年间，多个团队从不同角度提出了解决方案。
+</p>
+
+<h3>6.1 斗链的天然噪声鲁棒性</h3>
+
+<p>
+在讨论主动纠错之前，必须首先认识到斗链架构自身的噪声鲁棒性。Hann et al. (2021, <em>PRX Quantum</em>) 证明：
+</p>
+<ul>
+  <li>斗链的噪声鲁棒性源于<strong>有限纠缠</strong>而非有限的活跃路由器数。</li>
+  <li>该鲁棒性对<strong>任意噪声通道</strong>（退极化、相干错误等）均成立。</li>
+  <li>在每开关0.1%的错误率下，可寻址多达 \(2^{100} \approx 10^{30}\) 个存储单元，查询错误仅约10%。</li>
+</ul>
+
+<h3>6.2 主动纠错方案对比</h3>
+
+<table>
+  <thead>
+    <tr><th>方案</th><th>核心思想</th><th>开销</th><th>年份</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>冗余修复</strong><br>(Kim et al., 2023)</td>
+      <td>在QRAM中加入备用逻辑量子比特，替换制造缺陷导致的坏单元</td>
+      <td>~1% 额外物理量子比特；1024逻辑量子比特下良率提升95.92%</td>
+      <td>2023</td>
+    </tr>
+    <tr>
+      <td><strong>异质表面编码</strong><br>(Singal & Smith, 2024)</td>
+      <td>在QRAM树的不同深度使用<strong>不同的码距</strong>——根部高码距，叶部低码距或无编码</td>
+      <td>常数因子开销；查询不保真度<strong>多对数级降低</strong></td>
+      <td>2024</td>
+    </tr>
+    <tr>
+      <td><strong>分段容错（Pieceable FT）</strong><br>(IEEE QCE, 2024)</td>
+      <td>将非横向CSWAP/Toffoli门分解为<strong>可分段执行的组件</strong>，无需魔态蒸馏</td>
+      <td>多项式深度桶链QRAM，<strong>零魔态开销</strong></td>
+      <td>2024</td>
+    </tr>
+    <tr>
+      <td><strong>BB LDPC编码</strong><br>(Bravyi et al., Nature 2024)</td>
+      <td>使用双变量自行车LDPC码替代表面编码</td>
+      <td><strong>~1/10</strong> 的表面编码量子比特开销；0.7%阈值</td>
+      <td>2024</td>
+    </tr>
+    <tr>
+      <td><strong>资源态QRAM的Clifford查询</strong><br>(Cesa et al., 2025)</td>
+      <td>将查询电路限制在Clifford门，天然横向，兼容所有标准QEC码</td>
+      <td>查询本身<strong>无额外容错开销</strong>；纠错在经典后处理中完成</td>
+      <td>2025</td>
+    </tr>
+    <tr>
+      <td><strong>QRAM<sub>poly</sub></strong><br>(Mukhopadhyay, 2024)</td>
+      <td>通过多项式编码指数级降低T-depth</td>
+      <td>T-depth: \(O(\log N) \to O(\log\log N)\)</td>
+      <td>2024</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>6.3 容错策略的核心权衡</h3>
+
+<div class="warn-box">
+<strong>关键洞察：</strong>均匀纠错是浪费的。QRAM树的根节点错误比叶节点错误更具破坏性（根节点错误影响所有后续路由），因此<strong>非均匀异质纠错</strong>（根部高保护，叶部低保护或无保护）是最有效的策略。这在概念上类似于经典存储系统中的层次化纠错（L1/L2/L3缓存有不同的纠错需求）。
+</div>
+
+<!-- ========== SECTION 7 ========== -->
+<h2 id="s7">七、关键争论与批评</h2>
+
+<h3>7.1 Aaronson的批评（2015）</h3>
+
+<div class="critique-box">
+<p>
+Scott Aaronson 在 "Read the Fine Print" (<em>Nature Physics</em>, 2015) 中指出：<strong>被动式QRAM依赖"可疑的物理假设"</strong>——即量子信息可以在不进行主动纠错的情况下通过大规模二叉树无错误地传播。Aaronson认为：
+</p>
+<ul>
+  <li>弹道传播（无源器件的自然演化）在量子域中不可避免地积累错误。</li>
+  <li>"便宜"的被动式QRAM如果可以实现，将意味着量子纠错本身可以被绕过——这与我们对量子退相干的根本理解相矛盾。</li>
+  <li>因此，<strong>大规模廉价被动QRAM极不可能实现</strong>。</li>
+</ul>
+</div>
+
+<h3>7.2 Jaques & Rattew 的系统性批评（2023/2025）</h3>
+
+<p>
+这是目前最全面的QRAM批评。核心论点是"<strong>机会成本论证</strong>"：
+</p>
+
+<div class="critique-box">
+<strong>机会成本论证（Opportunity Cost Argument）：</strong><br>
+运行电路基（主动式）QRAM所需的<strong>经典协处理器</strong>（用于控制QRAM的门序列、纠错等）本身就足以解决QRAM加速的许多问题。例如，如果QRAM被用来加速HHL算法中的矩阵向量乘法，那么控制和纠错QRAM所需的经典计算资源可能<strong>已经足以经典地求解同一线性系统</strong>——量子加速被经典控制开销抵消。
+</div>
+
+<p>
+Jaques & Rattew将QRAM提案分为两大类：
+</p>
+<ul>
+  <li><strong>主动式QRAM：</strong>需要外部干预/控制的电路模型。门开销 \(O(N)\)，经典控制器开销显著。许多应用<strong>仍然有用</strong>，但不能在大多数场景中提供指数级量子优势。</li>
+  <li><strong>被动式QRAM：</strong>启动后无需外部干预。理论上可达到 \(O(\log N)\) 时间，但需要"近零噪声的完美物理组件"——这在现实中不可实现。</li>
+</ul>
+
+<h3>7.3 对批评的回应</h3>
+
+<p>
+QRAM社区对这些批评的回应集中在以下几个方面：
+</p>
+<ol>
+  <li><strong>斗链的噪声鲁棒性（Hann et al., 2021）：</strong>斗链QRAM的噪声不随 \(N\) 线性恶化，而是对数恶化。Aaronson的批评主要针对扇出架构，对斗链架构不完全适用。</li>
+  <li><strong>资源态QRAM（Cesa et al., 2025）：</strong>通过将查询限制在Clifford门，绕过了机会成本论证——经典协处理器不需要执行与QRAM查询同级别的量子操作。</li>
+  <li><strong>具体应用场景论证：</strong>即使QRAM不能提供指数级加速，在许多实际场景中（量子化学中的分子积分加载、量子机器学习中的训练数据加载），<strong>多项式加速仍然具有实际价值</strong>。</li>
+  <li><strong>异质纠错策略：</strong>通过非均匀分配纠错资源，可以在保持合理物理开销的同时实现高保真度查询。</li>
+</ol>
+
+<!-- ========== SECTION 8 ========== -->
+<h2 id="s8">八、各路线综合对比</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>路线</th>
+      <th>硬件平台</th>
+      <th>实验验证</th>
+      <th>理论成熟度</th>
+      <th>容错路径</th>
+      <th>最大优势</th>
+      <th>最大瓶颈</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>传统斗链QRAM</strong><br>(GLM 2008)</td>
+      <td>超导、光子</td>
+      <td>✅ 4/8位（超导）<br>✅ 105 qubit（光子EIT）</td>
+      <td>⭐⭐⭐⭐⭐</td>
+      <td>🔶 异质表面编码</td>
+      <td>理论最成熟，已有实验验证</td>
+      <td>路由器保真度不足（60–80%）</td>
+    </tr>
+    <tr>
+      <td><strong>3D超导腔QRAM</strong><br>(Weiss et al. 2023)</td>
+      <td>超导腔</td>
+      <td>❌ 理论蓝图</td>
+      <td>⭐⭐⭐⭐</td>
+      <td>✅ dual-rail + 玻色子QEC</td>
+      <td>毫秒级相干时间</td>
+      <td>腔制造复杂，尚未实验</td>
+    </tr>
+    <tr>
+      <td><strong>声子路由QRAM</strong><br>(Wang et al. 2024)</td>
+      <td>超导-声子混合</td>
+      <td>❌ 理论提案</td>
+      <td>⭐⭐⭐</td>
+      <td>✅ dual-rail损耗检测</td>
+      <td>混合编码的损耗检测</td>
+      <td>声子T₁仅~2 μs</td>
+    </tr>
+    <tr>
+      <td><strong>资源态QRAM</strong><br>(Cesa et al. 2025)</td>
+      <td><strong>中性原子（光镊）</strong></td>
+      <td>❌ 理论蓝图</td>
+      <td>⭐⭐⭐⭐</td>
+      <td>✅✅ 天然横向Clifford</td>
+      <td>查询天然容错</td>
+      <td>资源态制备离线开销</td>
+    </tr>
+    <tr>
+      <td><strong>冷原子EIT QRAM</strong><br>(Duan 2019)</td>
+      <td>冷原子系综</td>
+      <td>✅ 105 qubit</td>
+      <td>⭐⭐⭐⭐</td>
+      <td>🔶 有限</td>
+      <td>最大规模的实验演示</td>
+      <td>存储时间极短（~μs）</td>
+    </tr>
+    <tr>
+      <td><strong>量子行走QRAM</strong><br>(Asaka et al. 2021)</td>
+      <td>通用（理论）</td>
+      <td>❌ 纯理论</td>
+      <td>⭐⭐⭐</td>
+      <td>❓ 未探索</td>
+      <td>无节点纠缠</td>
+      <td>物理实现路径不明确</td>
+    </tr>
+    <tr>
+      <td><strong>多项式编码QRAM</strong><br>(Mukhopadhyay 2024)</td>
+      <td>通用（容错）</td>
+      <td>❌ 纯理论</td>
+      <td>⭐⭐⭐</td>
+      <td>✅ T-depth指数级降低</td>
+      <td>对数-对数T-depth</td>
+      <td>逻辑量子比特开销不变</td>
+    </tr>
+    <tr>
+      <td><strong>离子阱QRAM</strong></td>
+      <td>离子阱</td>
+      <td>❌ 无</td>
+      <td>⭐</td>
+      <td>❓ 未探索</td>
+      <td>长相干时间</td>
+      <td>无专用理论、门速度慢</td>
+    </tr>
+    <tr>
+      <td><strong>光子融合QRAM</strong></td>
+      <td>光子（FBQC）</td>
+      <td>❌ 无</td>
+      <td>⭐⭐</td>
+      <td>✅ FBQC容错框架</td>
+      <td>融合基架构天然支持</td>
+      <td>光子损耗、概率性操作</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ========== SECTION 9 ========== -->
+<h2 id="s9">九、对中科酷原的启示</h2>
+
+<div class="key-box">
+<p>
+中科酷原（中科酷原量子科技有限公司）是国内领先的中性原子量子计算公司，其技术路线基于<strong>光镊阵列</strong>（而非光学晶格）捕获和操控中性原子。结合本报告的调研，以下是针对该技术路线的最相关QRAM发展方向：
+</p>
+</div>
+
+<h3>9.1 最匹配的QRAM架构</h3>
+
+<p>
+在光镊中性原子平台上，<strong>资源态QRAM（Cesa, Bernien & Pichler, 2025）</strong>是目前最匹配、最有前景的架构：
+</p>
+
+<ol>
+  <li><strong>原子重排是关键：</strong>资源态QRAM的资源态组装步骤明确依赖<strong>光镊中的原子搬运和重排</strong>。这是光镊平台独有的能力，光学晶格中的原子无法被灵活移动。</li>
+  <li><strong>并行Rydberg门：</strong>中性原子平台的标志性能力（如Harvard/Lukin组、Innsbruck/Pichler组、以及国内的多个研究组）是实现资源态中大规模并行纠缠门的核心技术。</li>
+  <li><strong>二维/三维阵列的拓扑优势：</strong>光镊阵列可以灵活配置为任意二维（甚至三维）几何构型，这为QRAM二叉树的物理嵌入提供了极大的灵活性。</li>
+  <li><strong>容错路径清晰：</strong>Clifford查询电路在原子量子比特上可以通过全局激光脉冲横向实现，天然与QEC兼容。</li>
+</ol>
+
+<h3>9.2 需要关注的技术挑战</h3>
+
+<ul>
+  <li><strong>原子重排速度：</strong>目前光镊搬运一个原子的时间约100 μs量级。对于大规模QRAM的资源态组装，这可能是流水线的瓶颈。需要发展更快的重排技术或多路并行搬运。</li>
+  <li><strong>Rydberg门保真度：</strong>资源态制备需要多个并行Rydberg门。当前中性原子两量子比特门保真度约99.5%，继续提升至99.9%以上对于大规模资源态至关重要。</li>
+  <li><strong>原子加热与损耗：</strong>Rydberg激发和原子搬运都会导致原子加热甚至损耗，在大规模操作中需要更完善的冷却和重载策略。</li>
+  <li><strong>经典控制系统的复杂性：</strong>大规模光镊阵列（1000+原子）的实时控制、AOD/SLM的精确校准、以及激光相位稳定等都是工程上需要持续攻关的方向。</li>
+</ul>
+
+<h3>9.3 建议的技术路线</h3>
+
+<div class="info-box">
+<strong>短期（1–2年）：</strong>小规模资源态QRAM的原理验证（4–8个存储单元），重点验证原子重排 + 并行Rydberg门制备资源态的可行性。<br><br>
+<strong>中期（2–5年）：</strong>中等规模演示（16–64单元），整合dual-rail编码或等效损耗检测方案，实现heralded operation。<br><br>
+<strong>长期（5+年）：</strong>与容错架构整合，利用表面编码或LDPC编码保护逻辑量子比特，实现包含纠错的完整QRAM流水线。
+</div>
+
+<!-- ========== SECTION 10 ========== -->
+<h2 id="s10">十、总结与展望</h2>
+
+<p>
+QRAM技术从2007年Giovannetti-Lloyd-Maccone的开创性工作至今，经历了近二十年的发展。可以总结出以下几个关键趋势：
+</p>
+
+<h3>10.1 关键发现</h3>
+
+<ol>
+  <li><strong>斗链架构确立为基本范式：</strong>所有现代QRAM方案都在斗链架构或其变体的框架下工作。扇出架构已被放弃。</li>
+  <li><strong>硬件分化明显：</strong>超导平台在实验演示方面领先（已有4位/8位QRAM实验），中性原子平台在理论创新方面领先（资源态QRAM），光子平台在规模方面领先（105 qubit EIT实验），离子阱平台在QRAM方面相对滞后。</li>
+  <li><strong>容错是关键转折点：</strong>2024–2025年间容错QRAM方案的爆发（异质表面编码、分段容错、LDPC编码、资源态Clifford查询、多项式编码T-depth优化）表明该领域正在从"QRAM可行吗？"转向"如何以最低开销实现容错QRAM？"</li>
+  <li><strong>资源态QRAM可能是范式转变：</strong>将QRAM重构为态制备问题，利用Clifford查询的天然容错性，提供了一条清晰且物理上可行的实现路径——尤其适合光镊中性原子平台。</li>
+</ol>
+
+<h3>10.2 开放问题</h3>
+
+<ul>
+  <li>资源态QRAM的实验验证——能否在小规模（4–16单元）系统中展示其核心原理？</li>
+  <li>异质纠错的实际性能——非均匀码距的容错能力在实验条件下是否与理论预测一致？</li>
+  <li>机会成本论证的最终定论——QRAM在某些具体应用（量子化学、量子机器学习）中是否确实能提供超越经典控制的净加速？</li>
+  <li>跨平台混合QRAM的可行性——是否能通过结合不同平台的互补优势（如原子存储 + 光子传输 + 超导控制）来规避单一平台的瓶颈？</li>
+</ul>
+
+<h3>10.3 展望</h3>
+
+<p>
+QRAM正处于一个关键的发展节点。一方面，基础理论和多种容错方案已经到位；另一方面，实验验证仍然滞后——目前的实验保真度和规模距离实用化还有显著差距。未来2–3年的核心任务是<strong>将最新的理论方案（特别是资源态QRAM和异质纠错）转化为实验演示</strong>。
+</p>
+
+<p>
+对于中科酷原而言，<strong>光镊中性原子平台天然契合资源态QRAM的技术要求</strong>——这一优势是超导和离子阱平台所不具备的。如果能够在1–2年内完成小规模原理验证，中科酷原将有机会在QRAM这一量子计算的关键瓶颈技术上占据国际领先地位。
+</p>
+
+<p style="text-align:center; margin-top:40px; color:#888; font-style:italic;">
+— 报告完 —
+</p>
+
+<!-- ========== REFERENCES ========== -->
+<h2 id="refs">参考文献</h2>
+
+<div style="font-size:0.9em; line-height:1.8;">
+
+<p><strong>奠基性论文</strong></p>
+<ol>
+  <li>V. Giovannetti, S. Lloyd, and L. Maccone, "Quantum Random Access Memory," <em>Phys. Rev. Lett.</em> <strong>100</strong>, 160501 (2008). <a href="https://arxiv.org/abs/0708.1879" target="_blank">arXiv:0708.1879</a></li>
+  <li>V. Giovannetti, S. Lloyd, and L. Maccone, "Architectures for a Quantum Random Access Memory," <em>Phys. Rev. A</em> <strong>78</strong>, 052310 (2008). <a href="https://arxiv.org/abs/0807.4994" target="_blank">arXiv:0807.4994</a></li>
+</ol>
+
+<p><strong>综述与批评</strong></p>
+<ol start="3">
+  <li>S. Jaques and A. G. Rattew, "QRAM: A Survey and Critique," <em>Quantum</em> <strong>9</strong>, 1922 (2025). <a href="https://arxiv.org/abs/2305.10310" target="_blank">arXiv:2305.10310</a></li>
+  <li>S. Aaronson, "Read the Fine Print," <em>Nature Physics</em> <strong>11</strong>, 291–293 (2015).</li>
+  <li>K. Phalak, A. Chatterjee, and K. Ghosh, "Quantum Random Access Memory for Dummies," <em>Sensors</em> (2023).</li>
+  <li>G. Kuperberg, "Another Subexponential-Time Quantum Algorithm for the Dihedral Hidden Subgroup Problem," (2013) — 包含四分类法.</li>
+</ol>
+
+<p><strong>噪声与容错分析</strong></p>
+<ol start="7">
+  <li>C. T. Hann, G. Lee, S. M. Girvin, and L. Jiang, "Resilience of Quantum Random Access Memory to Generic Noise," <em>PRX Quantum</em> <strong>2</strong>, 020311 (2021).</li>
+  <li>S. Arunachalam, V. Gheorghiu, T. Jochym-O'Connor, M. Mosca, and P. V. Srinivasan, "On the Robustness of Bucket Brigade Quantum RAM," <em>New J. Phys.</em> <strong>17</strong>, 123010 (2015).</li>
+  <li>C. T. Hann, "Practicality of Quantum Random Access Memory," <em>Yale PhD Thesis</em> (2021).</li>
+  <li>T. Singal and J. Smith, "Heterogeneously error-corrected QRAMs," arXiv:2504.21687 (2024).</li>
+  <li>S. Bravyi et al., "High-threshold and low-overhead fault-tolerant quantum memory," <em>Nature</em> <strong>627</strong>, 778–782 (2024).</li>
+  <li>"Reduction of Resources for a Fault-tolerant qRAM using Pieceable Bucket-Brigade Schemes," <em>IEEE QCE</em> (2024).</li>
+  <li>J. Kim et al., "Maximizing the Yield of Bucket Brigade Quantum Random Access Memory using Redundancy Repair," (2023).</li>
+</ol>
+
+<p><strong>超导平台QRAM</strong></p>
+<ol start="14">
+  <li>C. Miao, G. Lee, L. Jiang, and D. Schuster, "Implementation of a Quantum Addressable Router Using Superconducting Qubits," <em>PRX Quantum</em> (2025). APS March Meeting 2023.</li>
+  <li>H. Wang et al. (Zhejiang Univ.), "Bucket-Brigade QRAM on a Superconducting Processor," (2023).</li>
+  <li>T. Roy, Z. Li, E. Kapit, and D. Schuster, "Two-Qutrit Quantum Algorithms on a Programmable Superconducting Processor," <em>Phys. Rev. Applied</em> <strong>19</strong>, 064024 (2023).</li>
+  <li>UNSW, "Entanglement of Signal Paths via Noisy Superconducting Quantum Devices," <em>Entropy</em> <strong>25</strong>(1), 153 (2023).</li>
+  <li>D. K. Weiss, S. Puri, and S. M. Girvin, "Quantum Random Access Memory Architectures Using 3D Superconducting Cavities," <em>PRX Quantum</em> <strong>5</strong>, 020312 (2024).</li>
+  <li>Z. Wang, H. Qiao, A. N. Cleland, and L. Jiang, "Quantum Random Access Memory with Transmon-Controlled Phonon Routing," <em>Phys. Rev. Lett.</em> (2025); arXiv:2411.00719 (2024).</li>
+  <li>Z. Zhang et al. (USTC), "Demonstrating Coherent Quantum Routers for Bucket-Brigade QRAM on a Superconducting Processor," arXiv:2505.13958 (2025).</li>
+</ol>
+
+<p><strong>中性原子平台QRAM</strong></p>
+<ol start="21">
+  <li>F. Cesa, H. Bernien, and H. Pichler, "Resource-state quantum RAM for fast and error-correctable queries," <em>Nature Communications</em> (2026); arXiv:2503.19172 (2025). ⭐</li>
+  <li>N. Jiang, Y.-F. Pu, W. Chang, C. Li, S. Zhang, and L.-M. Duan, "Experimental realization of 105-qubit random access quantum memory," <em>npj Quantum Information</em> <strong>5</strong>, 28 (2019).</li>
+  <li>C. Doultsinos and D. Petrosyan, "Quantum gates between distant atoms mediated by a Rydberg excitation antiferromagnet," <em>Phys. Rev. Research</em> <strong>7</strong>, 023246 (2025).</li>
+  <li>A. Delakouras, C. Doultsinos, and D. Petrosyan, "Multi-qubit Rydberg gates between distant atoms," arXiv:2507.16602 (2025).</li>
+  <li>T. Bergonzoni, M. Riso, and G. Pupillo, "Fast iSWAP Gates Using Resonant Dipolar Exchange," arXiv:2511.20437 (2025).</li>
+  <li>"High-fidelity parallel entangling gates on a neutral-atom quantum computer," <em>Nature</em> (2023).</li>
+  <li>"Quantum computing with neutral atoms," <em>Reviews of Modern Physics</em> (2022).</li>
+  <li>"A dual-species Rydberg array," <em>Nature Physics</em> (2024).</li>
+</ol>
+
+<p><strong>替代架构</strong></p>
+<ol start="29">
+  <li>R. Asaka, K. Sakai, and R. Yahagi, "Quantum random access memory via quantum walk," <em>Quantum Sci. Technol.</em> <strong>6</strong>, 035004 (2021).</li>
+  <li>R. Asaka, K. Sakai, and R. Yahagi, "Two-level quantum walkers on directed graphs. II. Application to QRAM," <em>Phys. Rev. A</em> <strong>107</strong>, 022416 (2023).</li>
+  <li>P. Mukhopadhyay, "A quantum random access memory (QRAM) using a polynomial encoding of binary strings," <em>Sci. Reports</em> (2025); arXiv:2408.16794 (2024).</li>
+</ol>
+
+<p><strong>光子与融合基QRAM</strong></p>
+<ol start="32">
+  <li>K. Sahay, J. Claes, and S. Puri, "Tailoring fusion-based error correction for high thresholds to biased fusion failures," arXiv:2301.00019 (2024).</li>
+  <li>Y. Liu and M. B. Plenio, "Resource state generation in a hybrid matter-photon quantum information processor," arXiv:2408.17265 (2024).</li>
+  <li>S. Singh, A. Lund, and P. Rohde, "Optical cluster-state generation with unitary averaging," <em>Phys. Rev. A</em> <strong>110</strong>, 012457 (2024).</li>
+</ol>
+
+<p><strong>相关算法与背景</strong></p>
+<ol start="35">
+  <li>A. W. Harrow, A. Hassidim, and S. Lloyd, "Quantum Algorithm for Linear Systems of Equations," <em>Phys. Rev. Lett.</em> <strong>103</strong>, 150502 (2009).</li>
+  <li>R. P. Feynman, "Quantum Mechanical Computers," <em>Optics News</em> (1985).</li>
+  <li>G. Brassard, P. Høyer, and A. Tapp, "Quantum Cryptanalysis of Hash and Claw-Free Functions," (1997).</li>
+  <li>M. A. Nielsen and I. L. Chuang, <em>Quantum Computation and Quantum Information</em>, Cambridge University Press (2000).</li>
+</ol>
+
+<p><strong>其他参考</strong></p>
+<ol start="39">
+  <li>D. K. Weiss et al., "Efficient and Error-Resilient Data Access Protocols for a Limited-Sized QRAM" (参考文件夹中的论文).</li>
+  <li>"A bucket-brigade quantum random access memory" (参考文件夹中的论文).</li>
+  <li>"Resource-State Quantum RAM for Fast and Error-Correctable Queries" (参考文件夹中的论文).</li>
+</ol>
+
+</div>
+
+</div><!-- .content -->
+
+</body>
+</html>

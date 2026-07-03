@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>傅里叶分解 + QRC 图像识别工作流 • 调研与实验设计报告</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #d2991d;
+    --red: #f85149;
+    --purple: #a371f7;
+    --cyan: #39c5cf;
+    --code-bg: #1a1f2b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+    counter-reset: section;
+  }
+  .hero {
+    background: linear-gradient(135deg, #0d1117 0%, #1a1f2b 50%, #0d2460 100%);
+    padding: 60px 40px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero h1 { font-size: 2.4em; background: linear-gradient(90deg, #58a6ff, #a371f7, #39c5cf); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px; }
+  .hero .subtitle { color: var(--text-muted); font-size: 1.1em; max-width: 800px; margin: 0 auto; }
+  .hero .meta { color: var(--text-muted); font-size: 0.9em; margin-top: 20px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+
+  nav.toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 40px;
+  }
+  nav.toc h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 16px; }
+  nav.toc ol { padding-left: 24px; }
+  nav.toc li { margin: 8px 0; color: var(--text-muted); }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  h2.section-title {
+    font-size: 1.6em;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin: 48px 0 20px;
+    counter-reset: subsection;
+  }
+  h3 { font-size: 1.2em; color: var(--purple); margin: 28px 0 12px; }
+  h4 { color: var(--cyan); margin: 20px 0 8px; font-size: 1.05em; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 20px 0;
+  }
+  .card.accent-left { border-left: 4px solid var(--accent); }
+  .card.green-left { border-left: 4px solid var(--green); }
+  .card.orange-left { border-left: 4px solid var(--orange); }
+  .card.purple-left { border-left: 4px solid var(--purple); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.92em;
+  }
+  th, td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  th { background: var(--code-bg); color: var(--accent); font-weight: 600; }
+  tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.85em;
+    line-height: 1.5;
+    margin: 16px 0;
+  }
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  pre code { background: none; padding: 0; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.78em;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  .badge-feasible { background: #238636; color: #fff; }
+  .badge-theory { background: #1f6feb; color: #fff; }
+  .badge-risky { background: #9e6a03; color: #fff; }
+  .badge-exp { background: #6e40c9; color: #fff; }
+
+  .pipeline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 20px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+  }
+  .pipeline .box {
+    background: var(--code-bg);
+    border: 1.5px solid var(--accent);
+    border-radius: 6px;
+    padding: 8px 14px;
+    white-space: nowrap;
+  }
+  .pipeline .arrow { color: var(--text-muted); font-size: 1.2em; }
+
+  .highlight-box {
+    background: rgba(88, 166, 255, 0.08);
+    border: 1px solid rgba(88, 166, 255, 0.3);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+
+  .reference { font-size: 0.85em; color: var(--text-muted); }
+  .reference a { color: var(--cyan); }
+
+  @media (max-width: 768px) {
+    .hero { padding: 40px 20px; }
+    .hero h1 { font-size: 1.6em; }
+    .container { padding: 20px 16px; }
+    .pipeline { font-size: 0.7em; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== HERO ==================== -->
+<div class="hero">
+  <h1>傅里叶分解 + QRC 图像识别工作流</h1>
+  <p class="subtitle">
+    频域特征提取 × 量子储备池计算 × 图像分类 —— 方法论调研、可行性分析与完整实验设计
+  </p>
+  <p class="meta">📅 2026年7月 · 调研报告 · v1.0</p>
+</div>
+
+<div class="container">
+
+<!-- ==================== TOC ==================== -->
+<nav class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">背景与问题定义</a></li>
+    <li><a href="#s2">核心方法调研</a> — QRC/QELM 理论基础、傅里叶分解与 QML 的谱联系</li>
+    <li><a href="#s3">方案 A：频段分解 + 多通道 QRC 拼接</a> — 低频8维 / 中频8维 / 高频8维</li>
+    <li><a href="#s4">方案 B：辅助记忆比特 + 多步序贯输入</a> — 时序化频带信息输入</li>
+    <li><a href="#s5">方案 C：傅里叶结构信息 + QRC 演化</a> — 频域结构特征驱动储备池状态</li>
+    <li><a href="#s6">可行性与风险矩阵</a></li>
+    <li><a href="#s7">完整实验设计</a> — 推荐主方案、数据集、基线、评估指标</li>
+    <li><a href="#s8">实验代码框架</a> — Python + Julia 实现指引</li>
+    <li><a href="#s9">预期结果与里程碑</a></li>
+    <li><a href="#s10">参考文献</a></li>
+  </ol>
+</nav>
+
+<!-- ==================== SECTION 1 ==================== -->
+<h2 class="section-title" id="s1">1. 背景与问题定义</h2>
+
+<h3>1.1 核心问题</h3>
+<div class="card accent-left">
+  <p><strong>目标：</strong>利用傅里叶分解（Fourier Decomposition）提取图像的频域信息，将其与量子储备池计算（Quantum Reservoir Computing, QRC）结合，实现高效、可解释的图像识别。</p>
+</div>
+
+<h3>1.2 研究动机</h3>
+<ul>
+  <li><strong>频域信息的互补性：</strong>傅里叶频谱天然地分离了图像的全局结构（低频频谱）、纹理细节（中频频谱）和边缘/噪声（高频频谱）。这与CNN学习的空间特征形成互补。</li>
+  <li><strong>QRC 的固定动态特性：</strong>QRC使用固定的量子动力学作为特征映射，避免了梯度训练中的贫瘠高原（Barren Plateaus）。但其输入编码方案直接决定了模型的表达力上限。</li>
+  <li><strong>理论统一性：</strong>Xiong et al. (2025) 证明 QELM 的预测可精确分解为傅里叶级数——频域特征与量子储备池之间存在深层的数学对应关系。</li>
+  <li><strong>新兴机会：</strong>傅里叶预处理 + 储备池计算的组合在文献中几乎未被研究，代表一个具有探索价值的方向。</li>
+</ul>
+
+<h3>1.3 原始设想</h3>
+<div class="pipeline">
+  <span class="box">图像</span><span class="arrow">→</span>
+  <span class="box">FFT/DCT</span><span class="arrow">→</span>
+  <span class="box">频段分割</span><span class="arrow">→</span>
+  <span class="box">8D 低频</span><span class="arrow">+</span>
+  <span class="box">8D 中频</span><span class="arrow">+</span>
+  <span class="box">8D 高频</span><span class="arrow">→</span>
+  <span class="box">QRC 编码</span><span class="arrow">→</span>
+  <span class="box">特征拼接</span><span class="arrow">→</span>
+  <span class="box">线性读出</span>
+</div>
+<p>以及替代方案：辅助记忆比特多步输入、频域结构驱动QRC演化。</p>
+
+<!-- ==================== SECTION 2 ==================== -->
+<h2 class="section-title" id="s2">2. 核心方法调研</h2>
+
+<h3>2.1 QRC / QELM 理论基础</h3>
+
+<div class="card accent-left">
+  <h4>QELM 流水线</h4>
+  <table>
+    <tr><th>阶段</th><th>描述</th></tr>
+    <tr><td><strong>编码 (Encoding)</strong></td><td>经典数据 x → 量子态 ρ(x) = U(x)ρ₀U†(x)，通过参数化酉算子</td></tr>
+    <tr><td><strong>储备池 (Reservoir)</strong></td><td>固定量子动力学演化，通常由 XY 模型、Ising 模型或交错ZZ相互作用实现</td></tr>
+    <tr><td><strong>测量 (Measurement)</strong></td><td>多项式可观测集 {Oₖ}，提取期望值 ⟨Oₖ⟩</td></tr>
+    <tr><td><strong>读出 (Readout)</strong></td><td>线性回归（Ridge / 伪逆），仅此层可训练</td></tr>
+  </table>
+</div>
+
+<div class="highlight-box">
+  <strong>🔬 关键理论发现 (Xiong et al., 2025)：</strong><br>
+  QELM输出 f(x) 可精确表示为有限傅里叶级数：<br>
+  <code>f(x) = Σ_{ω∈Ω} a_ω · exp(iωx)</code><br>
+  其中：<strong>频率集合 Ω</strong> 由编码哈密顿量的特征值差决定；<strong>傅里叶系数 a_ω</strong> 由初始态、储备池和测量共同决定。<br>
+  这一发现表明：<strong>频域信息的引入与QRC的数学结构天然相容。</strong>
+</div>
+
+<h3>2.2 编码方案与傅里叶频谱</h3>
+<table>
+  <tr><th>编码类型</th><th>傅里叶频率数</th><th>经典可模拟性</th><th>适用场景</th></tr>
+  <tr><td>Pauli生成子 (exp(-ixP))</td><td>线性 ∼ O(N)</td><td>✅ 高效经典模拟</td><td>中等复杂度任务</td></tr>
+  <tr><td>多量子比特编码</td><td>指数级 ∼ O(2^N)</td><td>❌ 可能实现量子优势</td><td>高维复杂模式</td></tr>
+  <tr><td>残余连接编码 (QResNet)</td><td>O(L²) 频率组合</td><td>部分可模拟</td><td>增强表达力</td></tr>
+  <tr><td>ZZ-旋转 + 随机置换</td><td>可调节 N_f</td><td>低预处理成本</td><td>Fashion-MNIST ~89%</td></tr>
+</table>
+
+<h3>2.3 现有 QRC 图像分类结果</h3>
+<table>
+  <tr><th>方法</th><th>数据集</th><th>编码方式</th><th>准确率</th><th>来源</th></tr>
+  <tr><td>QELM + PCA</td><td>MNIST (二分类)</td><td>角度编码 + Ising</td><td>~96%</td><td>De Lorenzis et al. (2025)</td></tr>
+  <tr><td>Modular QERC</td><td>MNIST / FMNIST / CIFAR-10</td><td>PCA + Y/Z旋转</td><td>~97% / ~88% / ~50%</td><td>Lau et al. (2025)</td></tr>
+  <tr><td>Quantum Random Features</td><td>Fashion-MNIST</td><td>ZZ + 随机置换</td><td>~89.3%</td><td>QRP论文</td></tr>
+  <tr><td>QResNet (12 qubits)</td><td>MNIST (0/1)</td><td>残余编码</td><td>~97.66%</td><td>Wen et al. (2024)</td></tr>
+  <tr><td><strong>基线: 经典RC + Conv</strong></td><td>MNIST</td><td>未训练Conv→RC</td><td>~96.4%</td><td>UC论文</td></tr>
+</table>
+
+<h3>2.4 傅里叶频段特征提取（经典方法）</h3>
+<table>
+  <tr><th>方法</th><th>核心机制</th><th>效果</th></tr>
+  <tr><td>TANet (2025)</td><td>FFT幅度+相位 → 频域注意力 → 与空间特征加权融合</td><td>频域特征主导 (α=0.4)</td></tr>
+  <tr><td>FreqNet</td><td>多级分块FFT → 径向频率滤波器 → 全频段堆叠</td><td>全局+局部频域特征结合</td></tr>
+  <tr><td>Low-Freq Injection (2024)</td><td>低通FFT → IFFT → ResNet skip连接</td><td>CIFAR-100 +3.66%</td></tr>
+  <tr><td>FT Preprocessing (Stanford)</td><td>FFT幅度作为3通道CNN输入</td><td>浅层模型 +13%</td></tr>
+  <tr><td>Dual-Branch DCT</td><td>空间CNN + 频域CNN → 特征拼接</td><td>Few-shot大幅提升</td></tr>
+</table>
+
+<div class="highlight-box">
+  <strong>💡 关键发现：</strong>频域预处理对<strong>浅层/简单模型</strong>的提升最为显著（+13%），而对深层模型的提升有限。<br>
+  由于 QRC 的线性读出层本质上是一个<strong>浅层分类器</strong>，频域特征的引入有望带来类似的显著增益。
+</div>
+
+<!-- ==================== SECTION 3 ==================== -->
+<h2 class="section-title" id="s3">3. 方案 A：频段分解 + 多通道 QRC 拼接</h2>
+
+<h3>3.1 方案描述</h3>
+<div class="card purple-left">
+  <p><span class="badge badge-feasible">可行</span> <span class="badge badge-exp">推荐实验</span></p>
+  <p>将图像的2D-FFT频谱按半径划分为三个频段，每个频段降维到8维特征，分别送入独立的QRC单元，最后拼接三个QRC的输出特征进行线性分类。</p>
+</div>
+
+<h3>3.2 详细流程</h3>
+<div class="pipeline">
+  <span class="box">28×28 图像</span><span class="arrow">→</span>
+  <span class="box">2D FFT</span><span class="arrow">→</span>
+  <span class="box">频谱幅度</span><span class="arrow">→</span>
+</div>
+<div style="display:flex; gap:12px; margin:12px 0; flex-wrap:wrap;">
+  <div style="flex:1; min-width:200px; background:var(--code-bg); padding:14px; border-radius:8px; border:1px solid var(--border);">
+    <strong style="color:#3fb950;">🔵 低频 (r ≤ 4)</strong><br>
+    全局结构/光照<br>
+    <code>PCA → 8D</code>
+  </div>
+  <div style="flex:1; min-width:200px; background:var(--code-bg); padding:14px; border-radius:8px; border:1px solid var(--border);">
+    <strong style="color:#d2991d;">🟡 中频 (4 < r ≤ 8)</strong><br>
+    纹理/形状<br>
+    <code>PCA → 8D</code>
+  </div>
+  <div style="flex:1; min-width:200px; background:var(--code-bg); padding:14px; border-radius:8px; border:1px solid var(--border);">
+    <strong style="color:#f85149;">🔴 高频 (8 < r ≤ 14)</strong><br>
+    边缘/细节<br>
+    <code>PCA → 8D</code>
+  </div>
+</div>
+<div class="pipeline">
+  <span class="box">QRC₁ (4Q)</span><span class="arrow">→</span>
+  <span class="box">QRC₂ (4Q)</span><span class="arrow">→</span>
+  <span class="box">QRC₃ (4Q)</span><span class="arrow">→</span>
+  <span class="box">拼接 3×(2⁴−1)</span><span class="arrow">→</span>
+  <span class="box">Ridge 分类器</span>
+</div>
+
+<h3>3.3 QRC 编码设计</h3>
+<pre><code># 每个8D频段特征 → 4量子比特 QRC
+# 编码: angle encoding (RY rotation per feature, 2 features per qubit)
+for i in range(4):
+    qml.RY(features[2*i], wires=i)
+    qml.RZ(features[2*i+1], wires=i)
+
+# 储备池: XY模型固定演化
+H_res = Σᵢⱼ Jᵢⱼ(σˣᵢσˣⱼ + σʸᵢσʸⱼ)   # Jᵢⱼ ~ N(0, 0.3²)
+
+# 测量: 所有Pauli-Z期望值 (2⁴−1=15维)
+measurements = [qml.expval(qml.PauliZ(i)) for i in range(4)]
+# + 2-qubit correlations for enhanced expressivity</code></pre>
+
+<h3>3.4 理论依据与风险</h3>
+<table>
+  <tr><th>优势</th><th>风险</th></tr>
+  <tr><td>✅ 频段分离提供解耦的特征空间</td><td>⚠️ PCA降维可能损失相位信息</td></tr>
+  <tr><td>✅ QRC的固定动态不需要梯度训练</td><td>⚠️ 4量子比特的频段编码可能表达能力不足</td></tr>
+  <tr><td>✅ 多通道架构天然可并行化</td><td>⚠️ 频率半径阈值需要网格搜索</td></tr>
+  <tr><td>✅ 与FreqNet/TANet的设计理念一致</td><td>⚠️ 三个独立QRC缺少跨频段交互</td></tr>
+</table>
+
+<!-- ==================== SECTION 4 ==================== -->
+<h2 class="section-title" id="s4">4. 方案 B：辅助记忆比特 + 多步序贯输入</h2>
+
+<h3>4.1 方案描述</h3>
+<div class="card orange-left">
+  <p><span class="badge badge-risky">中等风险</span> <span class="badge badge-theory">有理论基础</span></p>
+  <p>不将三个频段并行输入，而是将频段信息按时间顺序依次输入同一个QRC，利用储备池的记忆效应累积多尺度频域信息。同时引入辅助记忆量子比特来增强长期记忆。</p>
+</div>
+
+<h3>4.2 时序化方案</h3>
+<pre><code># 时间步1: 输入低频8D特征
+state₁ = QRC_reservoir(encode(LF_8D), initial_state=|0⟩)
+
+# 时间步2: 输入中频8D特征（储备池保留t1的记忆）
+state₂ = QRC_reservoir(encode(MF_8D), initial_state=state₁)
+
+# 时间步3: 输入高频8D特征
+state₃ = QRC_reservoir(encode(HF_8D), initial_state=state₂)
+
+# 输出: 读取最终状态 + 辅助记忆比特
+output = concat([measure(state₃), memory_qubits])</code></pre>
+
+<h3>4.3 辅助记忆比特设计</h3>
+<div class="card">
+  <h4>方案 B1: 量子寄存器记忆</h4>
+  <p>额外分配 M=2 个"记忆量子比特"，在每一步结束时将部分储备池状态通过受控门写入记忆比特。</p>
+  <pre><code># 每步结束时:
+for i in range(M):
+    qml.CRY(α * state_measurement(active_qubit), active_qubit, memory_qubit[i])</code></pre>
+
+  <h4>方案 B2: 时间延迟嵌入</h4>
+  <p>借鉴经典RC的 delay embedding 技术，将前k步的测量结果显式拼接为"历史向量"。</p>
+  <pre><code># 输出特征 = [当前测量 | t-1测量 | t-2测量 | 记忆比特]
+output_features = concat([O_current, O_prev1, O_prev2, mem_bits])</code></pre>
+</div>
+
+<h3>4.4 理论依据</h3>
+<ul>
+  <li><strong>Delay-based RC 的记忆容量：</strong>Köster et al. (2020) 证明延迟耦合储备池在 τ ≈ 1.6T 时记忆最优，且存在特定的"可回忆时间步"共振窗口。</li>
+  <li><strong>序列记忆任务：</strong>线性激活储备池可在宽耦合范围内实现近乎完美的延迟重建（记忆 ≥20步）。</li>
+  <li><strong>Long-Short Term TDR (2026)：</strong>长时间延迟模块 + 短期选择性遗忘模块的组合架构超越了Deep-ESN等基线。</li>
+  <li><strong>量子记忆：</strong>量子Zeno效应或离散时间晶体 (arXiv:2508.15230) 可用于增强量子态的持久性。</li>
+</ul>
+
+<h3>4.5 优势与风险</h3>
+<table>
+  <tr><th>优势</th><th>风险</th></tr>
+  <tr><td>✅ 天然跨频段交互（同一QRC处理所有频段）</td><td>⚠️ 量子噪声导致的退相干可能破坏记忆</td></tr>
+  <tr><td>✅ 参数量更少（仅一个QRC）</td><td>⚠️ 时序化增加了推理时间 (3×步骤)</td></tr>
+  <tr><td>✅ 与 delay-based RC 理论体系对接</td><td>⚠️ 频段间的顺序依赖可能不合理（HF不应依赖于MF）</td></tr>
+  <tr><td>✅ 辅助记忆比特有量子信息理论基础</td><td>⚠️ 量子储备池的记忆容量尚无严格下界</td></tr>
+</table>
+
+<!-- ==================== SECTION 5 ==================== -->
+<h2 class="section-title" id="s5">5. 方案 C：傅里叶结构信息 + QRC 演化</h2>
+
+<h3>5.1 方案描述</h3>
+<div class="card orange-left">
+  <p><span class="badge badge-risky">探索性</span> <span class="badge badge-theory">理论新颖</span></p>
+  <p>不直接使用频域特征作为QRC的输入编码，而是利用傅里叶分解提取的结构信息（如相位谱、频谱对比度、方向性特征）来<strong>调制QRC的演化哈密顿量参数</strong>，使储备池动力学自适应于输入图像的结构特性。</p>
+</div>
+
+<h3>5.2 核心思想</h3>
+<div class="pipeline">
+  <span class="box">图像 → FFT</span><span class="arrow">→</span>
+  <span class="box">结构特征提取</span><span class="arrow">→</span>
+  <span class="box">谱各向异性</span><span class="arrow">→</span>
+  <span class="box">耦合矩阵 J(θ)</span>
+</div>
+<div class="pipeline">
+  <span class="box">图像 → FFT</span><span class="arrow">→</span>
+  <span class="box">结构特征提取</span><span class="arrow">→</span>
+  <span class="box">相位一致性</span><span class="arrow">→</span>
+  <span class="box">局域场 h(φ)</span>
+</div>
+
+<h3>5.3 可提取的频域结构特征</h3>
+<table>
+  <tr><th>特征</th><th>计算方法</th><th>物理意义</th><th>QRC参数调制</th></tr>
+  <tr><td><strong>频谱各向异性</strong></td><td>环形区域能量比 (水平/垂直)</td><td>方向性纹理（横纹 vs 竖纹）</td><td>耦合矩阵 Jᵢⱼ 的各向异性</td></tr>
+  <tr><td><strong>谱衰减指数</strong></td><td>log(|F(ω)|) vs log(ω) 斜率</td><td>图像粗糙度/自然度</td><td>相互作用强度 ||J||</td></tr>
+  <tr><td><strong>相位一致性</strong></td><td>局部相位方差的逆</td><td>边缘/角点显著性</td><td>局域磁场 hᵢ 的强度</td></tr>
+  <tr><td><strong>频谱熵</strong></td><td>−Σ p(ω) log p(ω)</td><td>纹理复杂度</td><td>演化时间 T</td></tr>
+  <tr><td><strong>径向频谱对比度</strong></td><td>max/min 环形能量</td><td>频段主导性</td><td>量子比特数目分配</td></tr>
+  <tr><td><strong>环形傅里叶能量矩</strong></td><td>E(r) = Σ_{|ω|=r} |F(ω)|²</td><td>多尺度结构谱</td><td>多层QRC的层间权重</td></tr>
+</table>
+
+<h3>5.4 进化式储备池（EvoESN 量子类比）</h3>
+<div class="highlight-box">
+  <strong>🔗 与经典方法对接：</strong>Basterrech & Rubino (2022) 的 EvoESN 证明了在 DCT 域优化储备池权重的有效性。<br>
+  <strong>量子类比：</strong>方案C可以视为在该工作基础上的量子推广 —— 频域结构特征 <strong>不是被优化</strong>，而是<strong>由输入图像的傅里叶谱自适应决定</strong>。
+</div>
+
+<h3>5.5 自适应哈密顿量设计</h3>
+<pre><code># 提取结构参数
+anisotropy = compute_anisotropy(fft_magnitude)       # ∈ [0, 1]
+decay_rate  = compute_spectral_decay(fft_magnitude)   # ∈ [0.5, 2.5]
+entropy     = compute_spectral_entropy(fft_magnitude)  # normalized
+
+# 调制QRC哈密顿量
+J_horizontal = J_base * (1 + β * anisotropy)
+J_vertical   = J_base * (1 - β * anisotropy)
+interaction_strength = J_max * (1 - decay_rate / 2.5)
+evolution_time = T_base * entropy
+
+# QRC演化
+H = build_XY_hamiltonian(J_horizontal, J_vertical, interaction_strength)
+evolved_state = expm(-1j * H * evolution_time) @ initial_state</code></pre>
+
+<h3>5.6 优势与风险</h3>
+<table>
+  <tr><th>优势</th><th>风险</th></tr>
+  <tr><td>✅ 最充分利用频域信息的方案</td><td>⚠️ 结构参数 → 哈密顿量映射函数需要大量调参</td></tr>
+  <tr><td>✅ 自适应储备池，理论上有更好的泛化能力</td><td>⚠️ 量子硬件上动态修改哈密顿量困难</td></tr>
+  <tr><td>✅ 可与方案A或方案B结合</td><td>⚠️ 可复现性依赖参数选择</td></tr>
+  <tr><td>✅ 理论创新性强</td><td>⚠️ 缺乏直接可比的文献基线</td></tr>
+</table>
+
+<!-- ==================== SECTION 6 ==================== -->
+<h2 class="section-title" id="s6">6. 可行性与风险矩阵</h2>
+
+<table>
+  <tr>
+    <th>维度</th>
+    <th>方案 A：并行频段QRC</th>
+    <th>方案 B：序贯记忆QRC</th>
+    <th>方案 C：结构调制QRC</th>
+  </tr>
+  <tr>
+    <td><strong>理论基础</strong></td>
+    <td><span class="badge badge-feasible">⭐⭐⭐⭐⭐</span></td>
+    <td><span class="badge badge-feasible">⭐⭐⭐⭐</span></td>
+    <td><span class="badge badge-risky">⭐⭐⭐</span></td>
+  </tr>
+  <tr>
+    <td><strong>实现复杂度</strong></td>
+    <td><span class="badge badge-feasible">低</span></td>
+    <td><span class="badge badge-risky">中</span></td>
+    <td><span class="badge badge-risky">高</span></td>
+  </tr>
+  <tr>
+    <td><strong>量子硬件兼容</strong></td>
+    <td><span class="badge badge-feasible">✅ 好</span></td>
+    <td><span class="badge badge-risky">⚠️ 需长相干时间</span></td>
+    <td><span class="badge badge-risky">⚠️ 需动态调参</span></td>
+  </tr>
+  <tr>
+    <td><strong>预期性能</strong></td>
+    <td><span class="badge badge-feasible">中等偏上</span></td>
+    <td><span class="badge badge-risky">不确定</span></td>
+    <td><span class="badge badge-risky">不确定</span></td>
+  </tr>
+  <tr>
+    <td><strong>创新性</strong></td>
+    <td><span class="badge badge-feasible">中</span></td>
+    <td><span class="badge badge-risky">高</span></td>
+    <td><span class="badge badge-risky">很高</span></td>
+  </tr>
+  <tr>
+    <td><strong>可扩展性</strong></td>
+    <td><span class="badge badge-feasible">✅ 易扩展</span></td>
+    <td><span class="badge badge-risky">⚠️ 步数×量子比特</span></td>
+    <td><span class="badge badge-risky">⚠️ 特征数×参数空间</span></td>
+  </tr>
+  <tr>
+    <td><strong>文献支撑</strong></td>
+    <td><span class="badge badge-feasible">丰富</span></td>
+    <td><span class="badge badge-risky">中等</span></td>
+    <td><span class="badge badge-risky">较少</span></td>
+  </tr>
+  <tr>
+    <td><strong>推荐优先级</strong></td>
+    <td><span class="badge badge-feasible">🥇 第一优先</span></td>
+    <td><span class="badge badge-risky">🥈 第二优先</span></td>
+    <td><span class="badge badge-risky">🥉 探索阶段</span></td>
+  </tr>
+</table>
+
+<div class="highlight-box">
+  <strong>🎯 推荐策略：</strong>以 <strong>方案 A 为主实验</strong>（可行性最高、最快出结果），将方案 B 的"时间延迟嵌入"作为方案 A 的<strong>增强变体</strong>（在QRC输出层拼接多步历史），将方案 C 的"频谱结构特征"作为方案 A 的<strong>附加输入通道</strong>。这样三个方案的优点可以渐进式整合。
+</div>
+
+<!-- ==================== SECTION 7 ==================== -->
+<h2 class="section-title" id="s7">7. 完整实验设计</h2>
+
+<h3>7.1 推荐主方案：渐进式多通道频段QRC (Progressive Multi-Band QRC)</h3>
+
+<div class="card green-left">
+  <p>整合方案A+B+C的最优设计：以方案A为骨架，引入方案B的延迟嵌入增强记忆，并加入方案C的频谱结构特征作为全局先验。</p>
+</div>
+
+<h3>7.2 数据集</h3>
+<table>
+  <tr><th>数据集</th><th>图像尺寸</th><th>类别数</th><th>样本量</th><th>用途</th></tr>
+  <tr><td>MNIST</td><td>28×28</td><td>10</td><td>70,000</td><td>主实验</td></tr>
+  <tr><td>Fashion-MNIST</td><td>28×28</td><td>10</td><td>70,000</td><td>增补验证</td></tr>
+  <tr><td>CIFAR-10 (灰度)</td><td>32×32→28×28</td><td>10</td><td>60,000</td><td>更高难度</td></tr>
+  <tr><td>KMNIST</td><td>28×28</td><td>10</td><td>70,000</td><td>跨领域泛化</td></tr>
+</table>
+
+<h3>7.3 实验条件矩阵</h3>
+<table>
+  <tr><th>维度</th><th>条件</th><th>说明</th></tr>
+  <tr><td rowspan="2"><strong>频段划分</strong></td><td>均匀: r ≤ 4 / 4<r ≤ 8 / 8<r ≤ 14</td><td>基于 28×28 FFT</td></tr>
+  <tr><td>自适应: 能量等分</td><td>按累积能量33%/66%分界</td></tr>
+  <tr><td rowspan="2"><strong>降维方法</strong></td><td>PCA → 8D</td><td>主方法</td></tr>
+  <tr><td>环形能量统计 → 8D</td><td>8个环形bin的能量</td></tr>
+  <tr><td rowspan="3"><strong>QRC深度</strong></td><td>1层 (浅)</td><td>仅编码→测量，无储层演化</td></tr>
+  <tr><td>2层 (中)</td><td>编码→1步演化→测量</td></tr>
+  <tr><td>3层 (深)</td><td>编码→2步演化→测量</td></tr>
+  <tr><td rowspan="2"><strong>频段通道</strong></td><td>3通道 (LF/MF/HF)</td><td>主条件</td></tr>
+  <tr><td>+1 全局频谱结构通道</td><td>方案C增强 (4D结构特征)</td></tr>
+  <tr><td rowspan="3"><strong>储备池哈密顿量</strong></td><td>XY模型 (全连接)</td><td>主条件</td></tr>
+  <tr><td>XY模型 (有限程 R≈4)</td><td>硬件友好</td></tr>
+  <tr><td>Ising ZZ模型</td><td>对照</td></tr>
+  <tr><td rowspan="2"><strong>延迟嵌入 (方案B)</strong></td><td>无延迟</td><td>仅当前状态</td></tr>
+  <tr><td>k=2 延迟</td><td>拼接t, t-1, t-2测量</td></tr>
+</table>
+
+<h3>7.4 基线方法</h3>
+<table>
+  <tr><th>基线</th><th>类型</th><th>说明</th></tr>
+  <tr><td>原始像素 + Ridge</td><td>朴素基线</td><td>验证频域特征的必要性</td></tr>
+  <tr><td>PCA-24D + Ridge</td><td>经典线性</td><td>相同输入维度的线性分类</td></tr>
+  <tr><td>FFT幅度 + Ridge</td><td>频域线性</td><td>全频谱幅度直接分类</td></tr>
+  <tr><td>原始像素 + QRC (12 qubits)</td><td>量子基线</td><td>不使用频段分解的QRC</td></tr>
+  <tr><td>经典ESN (500 neurons) + 频段PCA</td><td>经典RC</td><td>验证量子vs经典RC的差异</td></tr>
+  <tr><td>Small CNN (2 Conv + FC)</td><td>深度学习</td><td>可训练神经网络的性能天花板</td></tr>
+  <tr><td>QELM (De Lorenzis et al.) 复现</td><td>文献基线</td><td>与已发表QRC方法对比</td></tr>
+</table>
+
+<h3>7.5 评估指标</h3>
+<ul>
+  <li><strong>分类准确率 (Accuracy)：</strong>主指标，在测试集上报告</li>
+  <li><strong>F1-Score (Macro)：</strong>类别不平衡的鲁棒指标</li>
+  <li><strong>混淆矩阵：</strong>错误模式分析</li>
+  <li><strong>训练时间：</strong>与深度学习方法对比效率</li>
+  <li><strong>参数量：</strong>可训练参数 vs 总参数</li>
+  <li><strong>Ablation中每个频段的单独准确率：</strong>分析各频段的贡献</li>
+  <li><strong>频段半径阈值的敏感性：</strong>超参数鲁棒性分析</li>
+</ul>
+
+<h3>7.6 消融实验 (Ablation Studies)</h3>
+<table>
+  <tr><th>消融条件</th><th>目的</th></tr>
+  <tr><td>仅低频通道</td><td>验证低频信息的独立判别力</td></tr>
+  <tr><td>仅中频通道</td><td>验证纹理特征的独立判别力</td></tr>
+  <tr><td>仅高频通道</td><td>验证边缘/细节的独立判别力</td></tr>
+  <tr><td>移除PCA (直接降采样频谱)</td><td>验证PCA对信息保留的影响</td></tr>
+  <tr><td>移除QRC (仅频段PCA + Ridge)</td><td>验证QRC非线性映射的增益</td></tr>
+  <tr><td>随机化频段分配</td><td>验证频段划分的必要性</td></tr>
+  <tr><td>单一12Q QRC vs 3×4Q QRC</td><td>验证多通道架构的优势</td></tr>
+</table>
+
+<!-- ==================== SECTION 8 ==================== -->
+<h2 class="section-title" id="s8">8. 实验代码框架</h2>
+
+<h3>8.1 环境配置</h3>
+<pre><code># 激活 Anaconda ml 环境
+conda activate ml
+
+# 已有依赖:
+# - PyTorch 2.12.1 + torchvision 0.27.1
+# - PennyLane 0.42.3 (量子电路模拟)
+# - NumPy 2.2.6, SciPy 1.15.2
+# - scikit-learn 1.7.2
+# - matplotlib 3.10.8, seaborn 0.13.2
+# - Pillow 12.1.1, h5py 3.14.0
+
+# Julia 1.10.10 已有 (可选用于Bloqade模拟):
+# - Bloqade 0.2.3 (中性原子量子计算)
+# - MLJ 0.20.0, DataFrames 1.8.1</code></pre>
+
+<h3>8.2 Python 主代码结构</h3>
+<pre><code># === fourier_qrc_pipeline.py ===
+"""傅里叶分解 + QRC 图像识别完整流水线"""
+
+import numpy as np
+import torch
+import torch.fft
+import pennylane as qml
+from sklearn.decomposition import PCA
+from sklearn.linear_model import RidgeClassifier
+from sklearn.metrics import accuracy_score, f1_score
+from torchvision import datasets, transforms
+
+# ========== 模块1: 傅里叶频段分解 ==========
+class FourierBandSplitter:
+    """将图像FFT频谱分解为低/中/高三个频段"""
+
+    def __init__(self, img_size=28, bands=[(0,4), (5,8), (9,14)]):
+        self.img_size = img_size
+        self.bands = bands  # (r_min, r_max) per band
+        self._build_masks()
+
+    def _build_masks(self):
+        """构建频段掩膜"""
+        Y, X = np.ogrid[:self.img_size, :self.img_size]
+        cy, cx = self.img_size // 2, self.img_size // 2
+        self.radius = np.sqrt((X - cx)**2 + (Y - cy)**2)
+
+        self.masks = []
+        for r_min, r_max in self.bands:
+            mask = (self.radius >= r_min) & (self.radius <= r_max)
+            self.masks.append(mask)
+
+    def extract(self, image):
+        """输入: (H, W) 灰度图像, 输出: [band1_mag, band2_mag, band3_mag]"""
+        fft = torch.fft.fft2(image)
+        fft_shifted = torch.fft.fftshift(fft)
+        magnitude = torch.abs(fft_shifted)
+
+        band_features = []
+        for mask in self.masks:
+            mask_t = torch.tensor(mask, dtype=torch.bool)
+            band_mag = magnitude * mask_t
+            band_features.append(band_mag)
+        return band_features
+
+
+# ========== 模块2: 频段编码 → QRC ==========
+class BandQRC:
+    """单频段的量子储备池编码器"""
+
+    def __init__(self, n_qubits=4, n_features=8, n_layers=2):
+        self.n_qubits = n_qubits
+        self.n_features = n_features
+        self.n_layers = n_layers
+        self.pca = PCA(n_components=n_features)
+        self._init_qnode()
+
+    def _init_qnode(self):
+        """构建Pennylane量子节点"""
+        dev = qml.device("lightning.qubit", wires=self.n_qubits)
+
+        @qml.qnode(dev)
+        def circuit(features, J_matrix, h_field):
+            # === 编码层 ===
+            for i in range(self.n_qubits):
+                qml.RY(features[2*i % len(features)], wires=i)
+                qml.RZ(features[2*i+1 % len(features)], wires=i)
+
+            # === 储备池层 (XY模型) ===
+            for _ in range(self.n_layers):
+                # XX + YY 相互作用
+                for i in range(self.n_qubits):
+                    for j in range(i+1, self.n_qubits):
+                        qml.IsingXX(2 * J_matrix[i,j], wires=[i,j])
+                        qml.IsingYY(2 * J_matrix[i,j], wires=[i,j])
+                # 局域场
+                for i in range(self.n_qubits):
+                    qml.RZ(h_field[i], wires=i)
+
+            # === 测量 ===
+            return [qml.expval(qml.PauliZ(i)) for i in range(self.n_qubits)]
+
+        self.circuit = circuit
+
+    def fit_pca(self, X_band):
+        """在训练集上拟合PCA"""
+        # X_band: (N, H*W) 展平的频段幅度
+        return self.pca.fit_transform(X_band)
+
+    def transform(self, X_band, J_matrix, h_field):
+        """将频段特征通过QRC映射"""
+        X_pca = self.pca.transform(X_band)
+        results = []
+        for x in X_pca:
+            # 归一化到 [0, π] 用于角度编码
+            x_norm = np.pi * (x - x.min()) / (x.max() - x.min() + 1e-8)
+            result = self.circuit(x_norm, J_matrix, h_field)
+            results.append(result)
+        return np.array(results)
+
+
+# ========== 模块3: 全局频谱结构提取 (方案C) ==========
+class SpectralStructureExtractor:
+    """提取傅里叶频谱的结构特征"""
+
+    def __init__(self, img_size=28):
+        self.img_size = img_size
+
+    def extract(self, image):
+        """输入: (H,W), 输出: 结构特征向量"""
+        fft = torch.fft.fft2(image)
+        fft_shifted = torch.fft.fftshift(fft)
+        mag = torch.abs(fft_shifted)
+
+        # 1. 频谱各向异性
+        h_energy = mag[:, mag.shape[1]//2].sum()
+        v_energy = mag[mag.shape[0]//2, :].sum()
+        anisotropy = (h_energy / (v_energy + 1e-8)).log().item()
+
+        # 2. 谱衰减指数
+        radial_energy = []
+        for r in range(1, self.img_size//2):
+            ring = mag[(torch.abs(Y_global - cy) <= 1) & ...]
+            radial_energy.append(ring.sum().item())
+        decay = np.polyfit(np.log(range(1, len(radial_energy)+1)),
+                          np.log(np.array(radial_energy)+1e-8), 1)[0]
+
+        # 3. 频谱熵
+        mag_norm = mag / (mag.sum() + 1e-8)
+        entropy = -(mag_norm * torch.log(mag_norm + 1e-8)).sum().item()
+
+        # 4. 高低频能量比
+        lf_energy = mag[:4, :4].sum() / (mag.sum() + 1e-8)
+
+        return np.array([anisotropy, decay, entropy, lf_energy.item()])
+
+
+# ========== 模块4: 完整流水线 ==========
+class FourierQRCClassifier:
+    """傅里叶分解 + QRC 图像分类器"""
+
+    def __init__(self, img_size=28, n_qubits_per_band=4,
+                 use_structural=True, use_delay_embed=False):
+        self.splitter = FourierBandSplitter(img_size)
+        self.qrc_bands = [
+            BandQRC(n_qubits=n_qubits_per_band, n_features=8),
+            BandQRC(n_qubits=n_qubits_per_band, n_features=8),
+            BandQRC(n_qubits=n_qubits_per_band, n_features=8),
+        ]
+        self.use_structural = use_structural
+        if use_structural:
+            self.struct_extractor = SpectralStructureExtractor(img_size)
+        self.use_delay_embed = use_delay_embed
+        self.classifier = RidgeClassifier(alpha=1.0)
+
+        # 初始化固定储备池参数
+        self.J_matrices = [np.random.randn(4,4) * 0.3 for _ in range(3)]
+        self.h_fields = [np.random.randn(4) * 0.1 for _ in range(3)]
+
+    def fit(self, images, labels):
+        """训练 (仅拟合PCA和线性分类器)"""
+        N = len(images)
+        all_band_features = [[], [], []]
+        struct_features = []
+
+        for img in images:
+            bands = self.splitter.extract(img)
+            for i, band in enumerate(bands):
+                all_band_features[i].append(band.flatten())
+            if self.use_structural:
+                struct_features.append(self.struct_extractor.extract(img))
+
+        # 对每个频段拟合PCA并做QRC映射
+        qrc_outputs = []
+        for i in range(3):
+            X_band = np.array(all_band_features[i])
+            self.qrc_bands[i].pca.fit(X_band)
+            qrc_out = self.qrc_bands[i].transform(
+                X_band, self.J_matrices[i], self.h_fields[i])
+            qrc_outputs.append(qrc_out)
+
+        # 拼接所有特征
+        X_train = np.concatenate(qrc_outputs, axis=1)
+        if self.use_structural:
+            X_train = np.concatenate([X_train, np.array(struct_features)], axis=1)
+
+        self.classifier.fit(X_train, labels)
+        return self
+
+    def predict(self, images):
+        """推理"""
+        all_band_features = [[], [], []]
+        struct_features = []
+
+        for img in images:
+            bands = self.splitter.extract(img)
+            for i, band in enumerate(bands):
+                all_band_features[i].append(band.flatten())
+            if self.use_structural:
+                struct_features.append(self.struct_extractor.extract(img))
+
+        qrc_outputs = []
+        for i in range(3):
+            X_band = np.array(all_band_features[i])
+            qrc_out = self.qrc_bands[i].transform(
+                X_band, self.J_matrices[i], self.h_fields[i])
+            qrc_outputs.append(qrc_out)
+
+        X_test = np.concatenate(qrc_outputs, axis=1)
+        if self.use_structural:
+            X_test = np.concatenate([X_test, np.array(struct_features)], axis=1)
+
+        return self.classifier.predict(X_test)
+
+
+# ========== 主实验脚本 ==========
+def main():
+    # 加载 MNIST
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    train_set = datasets.MNIST('./data', train=True, download=True,
+                                transform=transform)
+    test_set = datasets.MNIST('./data', train=False, transform=transform)
+
+    # 采样 (QRC模拟开销大)
+    n_train, n_test = 2000, 500
+    X_train = train_set.data[:n_train].float() / 255.0
+    y_train = train_set.targets[:n_train].numpy()
+    X_test = test_set.data[:n_test].float() / 255.0
+    y_test = test_set.targets[:n_test].numpy()
+
+    # 训练
+    model = FourierQRCClassifier(use_structural=True)
+    model.fit(X_train, y_train)
+
+    # 评估
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred, average='macro')
+    print(f"Accuracy: {acc:.4f}, F1: {f1:.4f}")
+
+    return model, acc
+
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+<h3>8.3 Julia 辅助代码 (Bloqade 中性原子模拟)</h3>
+<pre><code># === fourier_qrc_bloqade.jl ===
+using Bloqade
+using LinearAlgebra
+
+"""
+利用 Bloqade 模拟基于中性原子的量子储备池。
+中性原子的Rydberg阻塞效应天然提供 Ising 型相互作用，
+适合作为 QRC 的物理储备池。
+"""
+
+function build_rydberg_qrc(n_qubits::Int, features::Vector{Float64};
+                          blockade_radius::Float64=8.5,
+                          evolution_time::Float64=2.0)
+    # 1D 原子链, 间距 ~6μm
+    atoms = [(i * 6.0, 0.0) for i in 0:(n_qubits-1)]
+
+    # 编码: 频域特征 → 原子失谐图案
+    # 每个原子获得独立的失谐参数 δᵢ = f(features)
+    detunings = features[1:n_qubits] .* 2π .* 10.0  # MHz scale
+
+    # Rydberg哈密顿量
+    h = rydberg_h(atoms;
+                  Ω=2π*1.5,           # Rabi频率
+                  Δ=detunings,        # 特征编码的失谐
+                  blockade_radius=blockade_radius)
+
+    # 演化
+    state = zero_state(n_qubits)
+    prob = SchrodingerProblem(state, evolution_time, h)
+
+    # 模拟
+    emulate!(prob)
+
+    # 测量: 每个原子的Rydberg占据概率
+    densities = [rydberg_density(prob, i) for i in 1:n_qubits]
+    return densities
+end
+
+# 使用示例
+features = rand(8) .* π  # 模拟的8D频段特征
+result = build_rydberg_qrc(8, features)
+println("QRC outputs: ", result)</code></pre>
+
+<h3>8.4 实验运行清单</h3>
+<pre><code># === 一键运行所有实验 ===
+# conda activate ml
+
+# 1. 主实验 - 方案A: 频段分解 + 多通道QRC
+python experiments/exp_a_multiband_qrc.py --dataset mnist --n_train 2000
+
+# 2. 消融实验 - 单频段贡献
+python experiments/exp_ablation.py --band low
+python experiments/exp_ablation.py --band mid
+python experiments/exp_ablation.py --band high
+
+# 3. 基线实验
+python experiments/exp_baselines.py  # 所有基线方法
+
+# 4. 方案B增强 - 延迟嵌入
+python experiments/exp_b_delay_embed.py --delay_k 2
+
+# 5. 方案C增强 - 频谱结构
+python experiments/exp_c_structural.py
+
+# 6. 超参数敏感性
+python experiments/exp_hyperparams.py --param band_radius
+
+# 7. Julia中性原子模拟 (可选)
+julia experiments/fourier_qrc_bloqade.jl</code></pre>
+
+<!-- ==================== SECTION 9 ==================== -->
+<h2 class="section-title" id="s9">9. 预期结果与里程碑</h2>
+
+<h3>9.1 预期结果</h3>
+
+<table>
+  <tr><th>实验</th><th>预期准确率 (MNIST)</th><th>关键假设</th></tr>
+  <tr><td>原始像素 + Ridge</td><td>~85%</td><td>线性不可分</td></tr>
+  <tr><td>FFT幅度 + Ridge</td><td>~88%</td><td>频域幅度提供更好线性可分性</td></tr>
+  <tr><td>频段PCA + Ridge (无QRC)</td><td>~89%</td><td>频段分解本身带来收益</td></tr>
+  <tr><td>单QRC (12Q, 无频段分解)</td><td>~92%</td><td>QRC非线性映射的有效性</td></tr>
+  <tr><td><strong>方案A: 3×4Q频段QRC</strong></td><td><strong>~94-96%</strong></td><td>频段分离+多通道QRC的协同增益</td></tr>
+  <tr><td>方案A + 频谱结构 (C增强)</td><td>~95-96%</td><td>结构特征提供额外判别信息</td></tr>
+  <tr><td>方案A + 延迟嵌入 (B增强)</td><td>~94-95%</td><td>延迟嵌入在静态图像上增益有限</td></tr>
+  <tr><td>Small CNN (2 Conv + FC)</td><td>~98%</td><td>可训练网络的性能上界</td></tr>
+</table>
+
+<div class="highlight-box">
+  <strong>📊 核心假设：</strong>频段分解 + QRC的组合可以匹配或超越单一大QRC的性能，同时提供更好的<strong>可解释性</strong>（每个频段的贡献可单独量化）和<strong>硬件灵活性</strong>（小量子比特数的模块更容易在真实量子硬件上运行）。
+</div>
+
+<h3>9.2 里程碑计划</h3>
+<table>
+  <tr><th>阶段</th><th>时间</th><th>交付物</th></tr>
+  <tr><td>M1: 代码框架完成</td><td>第1-2天</td><td>FourierBandSplitter, BandQRC, 基线方法全部可运行</td></tr>
+  <tr><td>M2: 主实验结果</td><td>第3-4天</td><td>方案A vs 所有基线的准确率对比表</td></tr>
+  <tr><td>M3: 消融分析</td><td>第5-6天</td><td>各频段贡献度、QRC深度敏感性、频段半径敏感性</td></tr>
+  <tr><td>M4: 增强方案</td><td>第7-8天</td><td>方案B延迟嵌入、方案C结构特征的结果</td></tr>
+  <tr><td>M5: 跨数据集</td><td>第9-10天</td><td>Fashion-MNIST, KMNIST 结果</td></tr>
+  <tr><td>M6: 分析与写作</td><td>第11-14天</td><td>完整的实验结果分析、可视化、论文草稿</td></tr>
+</table>
+
+<h3>9.3 成功判定标准</h3>
+<ul>
+  <li><strong>最低标准：</strong>方案A在MNIST上 > 单QRC基线（~92%），证明频段分解有增益</li>
+  <li><strong>目标标准：</strong>方案A在MNIST上 > 94%，在Fashion-MNIST上 > 85%</li>
+  <li><strong>优秀标准：</strong>方案A的消融实验揭示清晰的"频段分工"模式（低频主导全局结构、中频主导纹理、高频主导边缘）</li>
+  <li><strong>额外加分：</strong>延迟嵌入或频谱结构增强带来统计显著的额外提升</li>
+</ul>
+
+<!-- ==================== SECTION 10 ==================== -->
+<h2 class="section-title" id="s10">10. 参考文献</h2>
+
+<div class="reference">
+<ol>
+  <li><strong>Xiong, Facelli, Sahebi et al. (2025).</strong> "On fundamental aspects of quantum extreme learning machines." <em>Quantum Machine Intelligence</em> 7:20. <a href="https://link.springer.com/article/10.1007/s42484-025-00239-7">link</a> — QELM的傅里叶分解、四种指数集中源</li>
+
+  <li><strong>De Lorenzis et al. (2025).</strong> "Harnessing quantum extreme learning machines for image classification." <em>Phys. Rev. Applied</em> 23, 044024. <a href="https://journals.aps.org/prapplied/abstract/10.1103/PhysRevApplied.23.044024">link</a> — QELM图像分类实验结果</li>
+
+  <li><strong>Lau, Hayashi, Sakurai et al. (2025).</strong> "Modular quantum extreme reservoir computing." arXiv:2412.19336. <a href="https://arxiv.org/abs/2412.19336">link</a> — 模块化量子储备池、有限程相互作用</li>
+
+  <li><strong>Wen et al. (2024).</strong> "Enhancing the expressivity of quantum neural networks with residual connections." <em>Communications Physics</em> 7, 220. — 残余编码增强傅里叶频谱</li>
+
+  <li><strong>Fong, Li, Tino (2024).</strong> "Linear SCR at the edge of stability." arXiv:2412.00295. — 线性储备池=Fourier基分解</li>
+
+  <li><strong>Laha (2025).</strong> "Random Fourier Features Reservoir Computing." arXiv:2511.02877. — 随机傅里叶特征RC</li>
+
+  <li><strong>Laha (2025).</strong> "Multi-Scale RFF-RC." arXiv:2511.14775. — 多尺度RFF-RC</li>
+
+  <li><strong>Basterrech & Rubino (2022).</strong> "Evolutionary Echo State Network: evolving reservoirs in the Fourier space." arXiv:2206.04951. — DCT域进化储备池</li>
+
+  <li><strong>Clabaut et al. (2025).</strong> "A mathematical framework for time-delay reservoir computing analysis." arXiv:2603.18706. — 延迟RC的Fourier分析</li>
+
+  <li><strong>Yokota et al. (2025).</strong> "Techniques for Enhancing Memory Capacity of Reservoir Computing." arXiv:2502.17923. — RC记忆增强技术</li>
+
+  <li><strong>Nemoto, Munro et al. (2025).</strong> "Effective quantum feature maps in quantum extreme reservoir computation from the XY model." <em>Phys. Rev. A</em> 111, 022431. — XY模型QRC特征映射</li>
+
+  <li><strong>Köster et al. (2020).</strong> "Memory in Hopf-normal-form delay reservoir." <em>Cognitive Computation</em>. — 延迟储备池记忆分析</li>
+
+  <li><strong>FreqNet:</strong> "Frequency learning for image classification." arXiv:2006.15476. — 全频域神经网络</li>
+
+  <li><strong>TANet:</strong> "Two-Domain Feature Association Networks for Image Classification." <em>Pattern Recognition & AI</em>, 2025. — 双域特征关联网络</li>
+
+  <li><strong>Quantum Random Features.</strong> <a href="https://inspirehep.net/literature/3113093">InspireHEP 3113093</a>. — 量子随机特征的谱框架</li>
+
+  <li><strong>Hybrid Convolutional Reservoir Computing.</strong> UC eScholarship. — 混合卷积RC图像分类</li>
+
+  <li><strong>Florez & Frager (2021).</strong> "Signal Processing Transformations in Scene Recognition." Stanford CS230. — FT预处理+CNN</li>
+
+  <li><strong>Deep Delay Feedback Reservoir Computing (2020).</strong> <em>Computers & Electrical Engineering</em>. — 深度延迟反馈RC</li>
+</ol>
+</div>
+
+<hr style="border-color:var(--border); margin: 40px 0;">
+
+<div class="card green-left" style="text-align:center;">
+  <h3 style="color:var(--green);">🚀 下一步行动</h3>
+  <p style="font-size:1.05em;">
+    1. <code>conda activate ml</code> 激活环境<br>
+    2. 实现 <code>FourierBandSplitter</code> + <code>BandQRC</code> 核心模块<br>
+    3. 在 MNIST 子集（n=2000）上跑通主实验<br>
+    4. 对照本报告的消融矩阵逐项验证
+  </p>
+</div>
+
+</div><!-- .container -->
+
+</body>
+</html>

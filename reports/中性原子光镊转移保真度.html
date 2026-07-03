@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中性原子光镊转移保真度 — 文献调研报告</title>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']]
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+  :root {
+    --accent: #2563eb;
+    --accent-light: #3b82f6;
+    --highlight: #f59e0b;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 16px;
+  }
+
+  /* ── Cover ── */
+  .cover {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #1a56db 100%);
+    color: #ffffff;
+    padding: 100px 60px 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(59,130,246,0.15) 0%, transparent 60%),
+                radial-gradient(circle at 70% 30%, rgba(245,158,11,0.1) 0%, transparent 50%);
+  }
+  .cover h1 {
+    font-size: 2.8em;
+    font-weight: 800;
+    margin-bottom: 16px;
+    position: relative;
+    letter-spacing: -0.5px;
+  }
+  .cover .subtitle {
+    font-size: 1.3em;
+    opacity: 0.85;
+    margin-bottom: 40px;
+    position: relative;
+  }
+  .cover .badge {
+    display: inline-flex;
+    gap: 24px;
+    position: relative;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .cover .badge span {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 100px;
+    padding: 8px 24px;
+    font-size: 0.95em;
+    backdrop-filter: blur(4px);
+  }
+  .cover .date {
+    margin-top: 30px;
+    opacity: 0.6;
+    position: relative;
+  }
+
+  /* ── TOC ── */
+  nav.toc {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 32px 40px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  nav.toc h2 {
+    font-size: 1.4em;
+    margin-bottom: 20px;
+    color: var(--accent);
+  }
+  nav.toc ol {
+    counter-reset: toc-counter;
+    list-style: none;
+    padding-left: 0;
+  }
+  nav.toc ol li {
+    counter-increment: toc-counter;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  nav.toc ol li::before {
+    content: counter(toc-counter) '. ';
+    font-weight: 700;
+    color: var(--accent);
+  }
+  nav.toc ol li a {
+    color: var(--text);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  nav.toc ol li a:hover { color: var(--accent); }
+
+  /* ── Section ── */
+  .content {
+    max-width: 900px;
+    margin: 0 auto 60px;
+    padding: 0 20px;
+  }
+  section {
+    margin-bottom: 48px;
+    padding: 32px 40px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  section h2 {
+    font-size: 1.6em;
+    color: var(--accent);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+  }
+  section h3 {
+    font-size: 1.2em;
+    margin: 24px 0 12px;
+    color: #334155;
+  }
+  section p { margin-bottom: 14px; }
+  section ul, section ol { margin-left: 24px; margin-bottom: 14px; }
+  section li { margin-bottom: 6px; }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 20px;
+    font-size: 0.93em;
+  }
+  thead th {
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  thead th:first-child { border-radius: 6px 0 0 0; }
+  thead th:last-child { border-radius: 0 6px 0 0; }
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr:nth-child(even) { background: #f1f5f9; }
+  tbody tr:hover { background: #e0f2fe; }
+
+  /* ── Cards ── */
+  .card {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 16px 0;
+    border-left: 4px solid;
+  }
+  .card.note  { background: #eff6ff; border-color: var(--info); }
+  .card.tip   { background: #f0fdf4; border-color: var(--success); }
+  .card.warn  { background: #fffbeb; border-color: var(--warning); }
+  .card.info  { background: #fef2f2; border-color: var(--danger); }
+  .card strong { display: block; margin-bottom: 4px; }
+
+  /* ── ASCII diagrams ── */
+  pre.diagram {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.85em;
+    line-height: 1.5;
+    margin: 16px 0;
+  }
+
+  /* ── References ── */
+  ol.refs {
+    counter-reset: ref-counter;
+    list-style: none;
+    padding-left: 0;
+  }
+  ol.refs > li {
+    counter-increment: ref-counter;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.93em;
+  }
+  ol.refs > li::before {
+    content: '[' counter(ref-counter) '] ';
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.78em;
+    font-weight: 600;
+    margin-left: 4px;
+  }
+  .tag.oa  { background: #d1fae5; color: #065f46; }
+  .tag.pw  { background: #fee2e2; color: #991b1b; }
+  .tag.key { background: #dbeafe; color: #1e40af; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .cover { padding: 60px 24px 50px; }
+    .cover h1 { font-size: 1.8em; }
+    section { padding: 20px 24px; }
+    nav.toc { padding: 20px 24px; margin: 20px 12px; }
+    .content { padding: 0 12px; }
+  }
+
+  /* ── Print ── */
+  @media print {
+    body { background: #fff; }
+    .cover { background: #0f172a !important; -webkit-print-color-adjust: exact; }
+    section { break-inside: avoid; border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 封面 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="cover">
+  <h1>中性原子光镊转移保真度<br>文献调研报告</h1>
+  <div class="subtitle">Transfer Fidelity of Neutral Atoms in Optical Tweezers:<br>A Comprehensive Literature Survey (2024–2026)</div>
+  <div class="badge">
+    <span>📄 核心论文 12 篇</span>
+    <span>🔬 覆盖 6 个研究团队</span>
+    <span>📊 最高保真度 99.992%</span>
+  </div>
+  <div class="date">调研日期：2026 年 7 月 2 日</div>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 目录 -->
+<!-- ═══════════════════════════════════════════ -->
+<nav class="toc" id="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">引言：为何转移保真度至关重要</a></li>
+    <li><a href="#s2">当前最高保真度基准（2024–2026）</a></li>
+    <li><a href="#s3">主要技术路线</a>
+      <ol style="margin-top:4px;">
+        <li><a href="#s3a">Shortcuts-to-Adiabaticity (STA)</a></li>
+        <li><a href="#s3b">光纤阵列架构</a></li>
+        <li><a href="#s3c">相位空间最优控制</a></li>
+        <li><a href="#s3d">机器学习和 AI 优化</a></li>
+        <li><a href="#s3e">算法冷却与辅助比特读出</a></li>
+      </ol>
+    </li>
+    <li><a href="#s4">限制保真度的主要因素</a></li>
+    <li><a href="#s5">技术路线对比</a></li>
+    <li><a href="#s6">里程碑时间线</a></li>
+    <li><a href="#s7">关键技术公式与物理机制</a></li>
+    <li><a href="#s8">未来展望</a></li>
+    <li><a href="#s9">参考文献</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 1. 引言 -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="s1">
+  <h2>1. 引言：为何转移保真度至关重要</h2>
+
+  <p>在中性原子量子计算平台中，<strong>光镊（optical tweezers）</strong>是实现单原子捕获、寻址和操控的核心工具。原子在光镊阵列之间的<strong>转移（transport / transfer / shuttling）</strong>操作是构建大规模量子处理器的关键使能技术——它允许在空间分离的存储区、相互作用区和读出区之间移动量子比特，从而突破局域门操作的几何限制。</p>
+
+  <div class="card note">
+    <strong>📘 核心概念</strong>
+    <strong>转移保真度（Transfer Fidelity）</strong> 衡量原子在光镊之间移动后，其内部量子态（超精细态或基态-里德堡态叠加）与初始态的保真程度。通常通过 randomized benchmarking（随机基准测试）或 Ramsey/ spin-echo 干涉测量来标定。
+  </div>
+
+  <p>转移保真度的意义在于：</p>
+  <ul>
+    <li><strong>容错量子纠错（FTQC）要求</strong>：所有基本操作的错误率需低于约 \(10^{-3}\)（即保真度 > 99.9%）才能进入容错区。转移作为最频繁的原子操作之一，其保真度直接决定了量子纠错码的有效性。</li>
+    <li><strong>并行扩展需求</strong>：大规模量子处理器需要在数千个光镊位点之间以极高保真度并发移动原子。每一步转移的累积误差会在深度电路中指数膨胀。</li>
+    <li><strong>相干性保持</strong>：理想的转移应在不破坏量子比特相干性的前提下完成——即不仅要原子"到达"目标位置，还要其量子叠加态完好无损。</li>
+  </ul>
+
+  <p>2024–2026 年间，该领域取得了突破性进展，单次转移保真度已从 2023 年的约 99%–99.5% 跃升至 <strong>99.992%（Wang et al., 2026）</strong>，转移时间缩短至 <strong>10 μs</strong> 量级，已远超容错阈值要求。本报告系统梳理这些最新成果。</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 2. 当前最高保真度基准 -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="s2">
+  <h2>2. 当前最高保真度基准（2024–2026）</h2>
+
+  <h3>2.1 全局概览</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>操作类型</th>
+        <th>最佳保真度</th>
+        <th>实现团队</th>
+        <th>时间</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>原位转移 (in situ transfer)</strong></td><td><strong>99.992(5)%</strong></td><td>Wang 等 (武汉物数所, CAS)</td><td>2026</td></tr>
+      <tr><td><strong>位点间转移 (inter-site transfer)</strong></td><td><strong>99.98(1)%</strong></td><td>Wang 等 (武汉物数所, CAS)</td><td>2026</td></tr>
+      <tr><td><strong>相干长距离传输 (610 μm)</strong></td><td><strong>~99.95%</strong></td><td>Manetsch/Endres (Caltech)</td><td>2025</td></tr>
+      <tr><td><strong>SLM↔AOD 阱转移</strong></td><td><strong>99.81(3)%</strong></td><td>Manetsch/Endres (Caltech)</td><td>2025</td></tr>
+      <tr><td><strong>成像保真度</strong></td><td><strong>99.99374(8)%</strong></td><td>Manetsch/Endres (Caltech)</td><td>2025</td></tr>
+      <tr><td><strong>单比特门保真度</strong></td><td><strong>99.9834(2)%</strong></td><td>Manetsch/Endres (Caltech)</td><td>2025</td></tr>
+      <tr><td><strong>双比特门保真度（纠错后）</strong></td><td><strong>99.78(4)%</strong></td><td>Senoo/Kaufman (JILA)</td><td>2025</td></tr>
+      <tr><td><strong>超精细相干时间 T₂</strong></td><td><strong>12.6(1) s</strong></td><td>Manetsch/Endres (Caltech)</td><td>2025</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 深度解析：Wang 等的 99.992% 纪录（2026）</h3>
+  <p>这是目前<strong>已报道的最高单次原子转移保真度</strong>，来自中国科学院武汉物理与数学研究所的 Wang 等（arXiv:2604.07862, <em>Chinese Physics Letters</em> 43, 060601, 2026）。</p>
+
+  <table>
+    <thead><tr><th>指标</th><th>原位转移 (in situ)</th><th>位点间转移 (inter-site)</th></tr></thead>
+    <tbody>
+      <tr><td>保真度</td><td>0.99992(5)</td><td>0.9998(1)</td></tr>
+      <tr><td>转移时间</td><td>10 μs</td><td>120 μs</td></tr>
+      <tr><td>加热率</td><td>0.156(9) μK/cycle</td><td>0.783(17) μK/cycle</td></tr>
+      <tr><td>无损耗循环数</td><td>500+</td><td>100+</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card tip">
+    <strong>💡 关键突破</strong>
+    使用<strong>光纤阵列架构（fiber-array architecture）</strong>实现了每个静态阱深度的独立、位点分辨控制，结合<strong>shortcuts-to-adiabaticity (STA)</strong> 深度调制波形，将运动加热压制到极低水平。
+  </div>
+
+  <h3>2.3 深度解析：Caltech 的 6100 原子系统（2025）</h3>
+  <p>Manetsch 等（Manuel Endres 组）在 <em>Nature</em> <strong>647</strong>, 60–67 (2025) 上报道了迄今最大规模的高相干中性原子阵列。关键数字：</p>
+  <ul>
+    <li>~12,000 个光镊位点，囚禁 <strong>超 6,100 个</strong> 铯-133 原子</li>
+    <li>相干传输距离 <strong>610 μm</strong>，保真度 ~99.95%（通过 interleaved randomized benchmarking 标定）</li>
+    <li>SLM 到 AOD 的阱转移保真度 <strong>99.81(3)%</strong></li>
+    <li>真空极限寿命 <strong>22.9 分钟</strong>（室温装置中创纪录）</li>
+    <li>采用分区架构：存储区 → 相互作用区 → 读出区，通过 AOD 传输连接</li>
+  </ul>
+
+  <h3>2.4 中国团队的其他进展</h3>
+  <table>
+    <thead><tr><th>团队</th><th>成果</th><th>期刊</th><th>时间</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>潘建伟/陆朝阳/钟翰森 (USTC)</td>
+        <td>2024 原子无缺陷阵列，AI 驱动 60 ms 重排；单比特门 99.97%，双比特门 99.5%</td>
+        <td>Phys. Rev. Lett. (Editors' Suggestion)</td>
+        <td>2025</td>
+      </tr>
+      <tr>
+        <td>詹明生/许鹏 (中科院精测院)</td>
+        <td>光纤共路架构，10 原子独立操控，单比特门 0.9966(3)</td>
+        <td>Nature Communications</td>
+        <td>2025</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 3. 主要技术路线 -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="s3">
+  <h2>3. 主要技术路线</h2>
+
+  <!-- 3a. STA -->
+  <h3 id="s3a">3.1 Shortcuts-to-Adiabaticity (STA) —— 当前主流范式</h3>
+
+  <p>STA 是当前实现高速、高保真原子转移的<strong>核心理论框架</strong>。传统绝热转移要求在远长于 \(1/\omega\)（阱频倒数）的时间尺度上缓慢改变阱参数以避免运动激发；STA 通过设计非绝热轨迹，在远短于绝热条件的时间内达到相同的末态。</p>
+
+  <div class="card note">
+    <strong>📘 STA 的基本思想</strong>
+    给定一个含时哈密顿量 \(H_0(t)\)，如果它沿绝热轨迹演化太慢，可以构造一个"反绝热"驱动项 \(H_{\text{CD}}(t)\) （counter-diabatic driving），使得 \(H(t) = H_0(t) + H_{\text{CD}}(t)\) 精确遵循瞬时本征态。在实际实验中，更常见的是直接设计阱深或阱位的时变波形使其满足 STA 边界条件。
+  </div>
+
+  <h4>Wang 等的 STA 深度调制波形（2026）</h4>
+  <p>在静态阱（S-trap）与移动阱（M-trap）之间交换原子时，使用多项式 STA 轨迹：</p>
+
+  \[
+  x(t) = -20t^7 + 70t^6 - 84t^5 + 35t^4
+  \]
+
+  <p>该轨迹的关键优势在于其高阶光滑性使加热率按极陡的幂律衰减：</p>
+
+  \[
+  \Delta T \propto \frac{D^2}{\omega^{7} t^{8}}
+  \]
+
+  <p>相比之下，常加加速度(constant jerk)轨迹为 \(\Delta T \propto t^{-4}\)，绝热正弦轨迹为 \(\Delta T \propto t^{-6}\)。STA 的 \(t^{-8}\) 标度意味着在相同时间内可以将加热压低数个数量级。</p>
+
+  <h4>Cicali 等的理论 STA 框架（2025）</h4>
+  <p>Cicali 等（Forschungszentrum Jülich / Univ. Cologne）在 <em>Phys. Rev. Applied</em> <strong>24</strong>, 024070 (2025) 中对四种实验常用脉冲形状进行了系统比较：</p>
+
+  <table>
+    <thead><tr><th>脉冲形状</th><th>特点</th><th>相对性能</th></tr></thead>
+    <tbody>
+      <tr><td>分段线性 (piecewise linear)</td><td>最简单，实验中最易实现</td><td>基准（最慢）</td></tr>
+      <tr><td>分段二次 (piecewise quadratic)</td><td>更光滑的加加速度剖面</td><td>中等</td></tr>
+      <tr><td>最小加加速度 (minimum jerk)</td><td>经典最优控制方法</td><td>较好</td></tr>
+      <tr><td>线性+最小加加速度</td><td>混合策略</td><td>接近 STA</td></tr>
+      <tr><td><strong>STA（含深度调制）</strong></td><td><strong>反制静态阱效应</strong></td><td><strong>最优（≥8× 更快）</strong></td></tr>
+    </tbody>
+  </table>
+
+  <p>关键发现：<strong>调制移动阱深度以时变地抵消静态阱效应</strong>，是减少误差和缩短脉冲时长的最关键因素。STA 的协议时长下界比近期实验快至少 <strong>8 倍</strong>。</p>
+
+  <h4>KAIST 团队的厘米级 STA 传输（2025）</h4>
+  <p>Hwang, Ahn 等（KAIST）在 <em>Optica Quantum</em> <strong>3</strong>, 64–71 (2025) 中实验验证了基于 STA 的传输：</p>
+  <ul>
+    <li>STA 传输后保持了原子的 <strong>Maxwell-Boltzmann 能量分布</strong>（即统计性质不变）</li>
+    <li>沿 S 形曲线和 90° 拐角的<strong>弯曲轨迹</strong>，通过拼接 STA 段实现</li>
+    <li>STA 成功率 <strong>98%</strong> vs. 匀速传输 <strong>80%</strong></li>
+    <li>原则上可扩展到<strong>厘米级</strong>传输距离，连接不同的量子信息设备</li>
+  </ul>
+
+  <pre class="diagram">
+  ┌─────────────────────────────────────────────────────┐
+  │         STA 原子传输的原理示意图                      │
+  │                                                       │
+  │  初始态 (M-trap)          末态 (S-trap)               │
+  │       │                       ▲                       │
+  │       │   ┌───────────────┐   │                       │
+  │       └──►│  STA 深度调制  ├───┘                       │
+  │           │  波形驱动      │                           │
+  │           └───────┬───────┘                           │
+  │                   │                                   │
+  │           ┌───────▼───────┐                           │
+  │           │  阱间振幅交换  │                           │
+  │           │  （相干隧穿）   │                           │
+  │           └───────────────┘                           │
+  │                                                       │
+  │  加热率 ΔT ∝ D²/(ω⁷·t⁸) → 极低的运动激发              │
+  └─────────────────────────────────────────────────────┘
+  </pre>
+
+  <!-- 3b. 光纤阵列 -->
+  <h3 id="s3b">3.2 光纤阵列架构 —— 2026 年的范式突破</h3>
+
+  <p>Wang 等（2026）提出的<strong>光纤阵列架构</strong>是 2026 年最重要的硬件创新。其核心思想是：</p>
+
+  <pre class="diagram">
+  ┌──────────────────────────────────────────────┐
+  │         光纤阵列架构 (Fiber Array)             │
+  │                                                │
+  │   光纤 1 ──► 原子 1  (独立阱深控制)            │
+  │   光纤 2 ──► 原子 2  (独立阱深控制)            │
+  │   光纤 3 ──► 原子 3  (独立阱深控制)            │
+  │     ...       ...                              │
+  │   光纤 N ──► 原子 N  (独立阱深控制)            │
+  │                                                │
+  │  每根光纤 = 独立光镊 + 独立光强调制器          │
+  │  → 位点分辨的完全并行操控                      │
+  │  → 消除传统 AOD 寻址中的串扰和失准             │
+  └──────────────────────────────────────────────┘
+  </pre>
+
+  <p>与传统的声光偏转器（AOD）或空间光调制器（SLM）方案相比，光纤阵列架构的核心优势：</p>
+  <ul>
+    <li><strong>位点分辨的独立阱深控制</strong>：每个原子对应一根独立光纤，可单独调制其阱深波形</li>
+    <li><strong>自然的共路共纤几何</strong>：囚禁光和操控光通过同一根光纤传输，原子始终精准对准光斑</li>
+    <li><strong>可并行扩展</strong>：增加光纤数量即可扩展阵列规模（当前演示 10 原子，正推进至 >100）</li>
+  </ul>
+
+  <div class="card warn">
+    <strong>⚠️ 当前瓶颈：阵列非均匀性</strong>
+    光纤定位误差导致的阱间空间失配会产生额外加热，其幅度正比于 \((\delta x)^2\)。团队正利用飞秒激光直写三维光子波导技术将空间非均匀性压制到 &lt;10 nm。
+  </div>
+
+  <p>中科院精测院詹明生/许鹏团队（2025, <em>Nature Communications</em>）独立提出了类似的<strong>光纤共路架构</strong>——囚禁光和操控光通过同一根光纤传输，在 64 光纤阵列中实现了 10 个原子的独立操控，单比特门保真度 0.9966(3)。</p>
+
+  <!-- 3c. 最优控制 -->
+  <h3 id="s3c">3.3 相位空间最优控制</h3>
+
+  <p>当原子不在基态时（例如处于有限温度 \(\sim 1\ \mu\text{K}\)），需要用相位空间方法处理。两个重要的理论工作：</p>
+
+  <p><strong>Morandi 等（2025, <em>Phys. Rev. A</em> 111, 063312）</strong>：将经典 Liouville 方程（含时相空间分布）与量子 Wigner 方程结合，建立了一个统一的最优控制框架：</p>
+
+  \[
+  \frac{\partial \rho}{\partial t} = \{H, \rho\} + \underbrace{\gamma \frac{\partial^2 \rho}{\partial p^2}}_{\text{噪声引起的扩散}}
+  \]
+
+  <p>该框架将实验噪声建模为 Fokker-Planck 随机项，可最小化传输时间同时保证高保真度。这对大规模阵列初始化尤为重要。</p>
+
+  <p><strong>Pagano 等（2024, <em>Phys. Rev. Research</em>）</strong>：演示了在 1 µK 温度下，开环最优控制可将 3 µm 距离内的传输保真度<strong>最高提升 89%</strong>，并分析了激光噪声对转移保真度的影响。</p>
+
+  <!-- 3d. ML/AI -->
+  <h3 id="s3d">3.4 机器学习和 AI 优化</h3>
+
+  <p>2025 年见证了两个引人注目的 AI 驱动进展：</p>
+
+  <ul>
+    <li><strong>Manetsch 等（Caltech, Nature 2025）</strong>：使用<strong>机器学习优化</strong>的轨迹在 195 个动态 AOD 阱与 1,061 nm 静态 SLM 阱之间实现高存活率的单向转移。这是 AI 优化的转移策略首次在大规模量子处理器上得到验证。</li>
+    <li><strong>潘建伟/陆朝阳/钟翰森等（USTC, PRL 2025）</strong>：使用<strong>AI 驱动算法</strong>实现 2024 个原子的无缺陷重排，耗时仅 <strong>60 ms</strong>（与阵列规模无关的常数时间）。该方法的可扩展性允许直接推广到数万个原子。</li>
+  </ul>
+
+  <!-- 3e. 算法冷却 -->
+  <h3 id="s3e">3.5 算法冷却与辅助比特读出</h3>
+
+  <p>Tsai 等（Caltech, 2025, arXiv:2603.21643）展示了一系列对转移保真度有间接但深远影响的技术：</p>
+
+  <table>
+    <thead><tr><th>技术</th><th>原理</th><th>关键结果</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>算法冷却 (algorithmic cooling)</strong></td>
+        <td>通过量子电路将数据原子的运动熵相干地转移到辅助原子上</td>
+        <td>冷却至 \(\bar{n} \approx 0.002\) 运动量子；首次在中性原子中实现</td>
+      </tr>
+      <tr>
+        <td><strong>辅助比特原子损耗检测</strong></td>
+        <td>单次纠缠门将数据原子存在性映射到辅助电子态，快速成像辅助原子而不扰动数据原子</td>
+        <td>重复检测保真度提升至 ~0.99</td>
+      </tr>
+      <tr>
+        <td><strong>擦除冷却 (erasure cooling)</strong></td>
+        <td>选择性移除高能"热"原子</td>
+        <td>进一步提升阵列纯度和转移成功率</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>这些技术与高保真转移相辅相成：转移前冷却可降低对 STA 波形的苛刻要求；转移后的辅助比特检测可在不破坏相干性的前提下确认原子是否成功到达目标位点。</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 4. 限制保真度的主要因素 -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="s4">
+  <h2>4. 限制保真度的主要因素</h2>
+
+  <h3>4.1 转移操作中的损耗与加热机制</h3>
+  <table>
+    <thead><tr><th>机制</th><th>物理根源</th><th>影响程度</th><th>缓解措施</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>空间失配</strong></td>
+        <td>S 阱与 M 阱的空间对准误差 \(\delta x\)</td>
+        <td>主导加热：\(\Delta T \propto (\delta x)^2\)</td>
+        <td>飞秒激光直写波导（&lt;10 nm 精度）</td>
+      </tr>
+      <tr>
+        <td><strong>非绝热激发</strong></td>
+        <td>转移波形不满足 STA 边界条件</td>
+        <td>残余运动激发</td>
+        <td>高阶 STA 多项式轨迹、量子最优控制</td>
+      </tr>
+      <tr>
+        <td><strong>光强波动和干涉</strong></td>
+        <td>阱光束之间的功率涨落与干涉</td>
+        <td>原位转移中的额外加热</td>
+        <td>功率稳定、更大失谐</td>
+      </tr>
+      <tr>
+        <td><strong>光子散射加热</strong></td>
+        <td>偶极阱中的光子散射导致动量扩散</td>
+        <td>20 ms 内 ~7% 保真度损失 @ 1 mK 阱深</td>
+        <td>远失谐阱光、降低阱深</td>
+      </tr>
+      <tr>
+        <td><strong>参数加热</strong></td>
+        <td>AOD 晶体中的声学驻波导致 ~1.5% 功率调制</td>
+        <td>特定传输条件下可能严重</td>
+        <td>优化 AOD 驱动频率和布局</td>
+      </tr>
+      <tr>
+        <td><strong>背景气体碰撞</strong></td>
+        <td>残余气体分子碰撞弹出阱中原子</td>
+        <td>寿命上限 ~23 min（室温）</td>
+        <td>低温装置、更高真空</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 转移过程中量子相干性的退化</h3>
+  <p>Yu 等（2014, <em>Phys. Rev. A</em> 90, 062335）的早期研究表明：原子在光晶格/光镊位点间转移时，<strong>本征态保真度</strong>较好（~95%），但<strong>叠加态</strong>在传输中会经历严重退相干。Spin-echo 实验确认了两种主导退相机制：</p>
+
+  <ol>
+    <li><strong>阱光指向不稳定性</strong>——导致传输过程中差分光位移的随机涨落</li>
+    <li><strong>运动加热</strong>——运动量子态的热激发会通过运动-自旋耦合转化为量子比特退相干</li>
+  </ol>
+
+  <h3>4.3 规模化并行转移中的新挑战</h3>
+  <p>当从单原子演示扩展到数千个原子并行转移时，新的限制因素出现：</p>
+  <ul>
+    <li><strong>阵列非均匀性</strong>：光镊阵列中不同位点的阱频差异导致 STA 波形在不同位点不再同时最优</li>
+    <li><strong>串扰</strong>：相邻光镊之间的倏逝场耦合和散射光可能导致相邻原子的意外激发</li>
+    <li><strong>累积加热</strong>：单次转移的加热率虽然极低（0.156 μK/cycle），但在数百万次操作的深度电路中会累积到显著水平</li>
+  </ul>
+
+  <div class="card info">
+    <strong>🔴 关键瓶颈迁移</strong>
+    当前阶段的瓶颈已从"单次操作保真度不够高"转变为"<strong>大规模并行操作中的均匀性</strong>"和"<strong>深度电路中的累积加热</strong>"。Wang 等的 99.992% 单次保真度已远超容错阈值（~99.9%），剩余误差主要来自并行化带来的非均匀性。
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 5. 技术路线对比 -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="s5">
+  <h2>5. 技术路线综合对比</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>技术路线</th>
+        <th>代表团队</th>
+        <th>最佳保真度</th>
+        <th>转移时间</th>
+        <th>可扩展性</th>
+        <th>成熟度</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>光纤阵列 + STA</strong></td>
+        <td>Wang (武汉物数所)</td>
+        <td>99.992% (原位)</td>
+        <td>10 μs</td>
+        <td>中（波导写入精度受限）</td>
+        <td>实验室演示</td>
+      </tr>
+      <tr>
+        <td><strong>SLM + AOD + ML</strong></td>
+        <td>Manetsch/Endres (Caltech)</td>
+        <td>99.95% (长距离)<br>99.81% (阱转移)</td>
+        <td>~100 μs</td>
+        <td>高（已演示 6100 原子）</td>
+        <td>接近工程化</td>
+      </tr>
+      <tr>
+        <td><strong>STA 理论框架</strong></td>
+        <td>Cicali (Jülich/Cologne)</td>
+        <td>理论下界 ≥8× 更快</td>
+        <td>&lt;1 μs (理论)</td>
+        <td>通用（适配任意平台）</td>
+        <td>理论/待实验验证</td>
+      </tr>
+      <tr>
+        <td><strong>STA + 弯曲轨迹</strong></td>
+        <td>Hwang/Ahn (KAIST)</td>
+        <td>98%（成功率）</td>
+        <td>ms 级</td>
+        <td>中（cm 尺度可行）</td>
+        <td>原理验证</td>
+      </tr>
+      <tr>
+        <td><strong>光纤共路架构</strong></td>
+        <td>Zhan/Xu (精测院)</td>
+        <td>99.66% (单比特门)</td>
+        <td>—（门操作）</td>
+        <td>中（64 光纤演示）</td>
+        <td>实验室演示</td>
+      </tr>
+      <tr>
+        <td><strong>AI 驱动重排</strong></td>
+        <td>Pan/Lu/Zhong (USTC)</td>
+        <td>99.97% (单比特门)</td>
+        <td>60 ms（整阵列重排）</td>
+        <td>极高（已演示 2024 原子）</td>
+        <td>实验室演示</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="card note">
+    <strong>📘 技术路线的互补性</strong>
+    这些路线并非互斥。理想的大规模量子处理器可能会在<strong>SLM/AOD 分区架构</strong>（Caltech 路线）的基础上，融合<strong>STA 最优波形</strong>（Jülich 理论）、<strong>光纤阵列的位点分辨控制</strong>（武汉方案）和<strong>AI 驱动的实时优化</strong>（USTC 方案）。
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 6. 里程碑时间线 -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="s6">
+  <h2>6. 里程碑时间线</h2>
+
+  <table>
+    <thead><tr><th>年份</th><th>里程碑</th><th>团队</th><th>保真度</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>2014</td>
+        <td>环形光晶格中单原子转移，首次量化转移中叠加态退相干</td>
+        <td>Yu 等 (Maryland/JQI)</td>
+        <td>~95%</td>
+      </tr>
+      <tr>
+        <td>2021–2022</td>
+        <td>中性原子量子处理器进入百原子时代（256 原子阵列）</td>
+        <td>多团队</td>
+        <td>转移 ~99%</td>
+      </tr>
+      <tr>
+        <td>2024.09</td>
+        <td>有限温度下最优控制将转移保真度提升 89%</td>
+        <td>Pagano 等</td>
+        <td>相对提升 89%</td>
+      </tr>
+      <tr>
+        <td>2025.02</td>
+        <td>STA 弯曲轨迹传输保真度 ~98%，厘米级潜力</td>
+        <td>Hwang/Ahn (KAIST)</td>
+        <td>~98%</td>
+      </tr>
+      <tr>
+        <td>2025.05</td>
+        <td>6100 原子阵列，相干传输 ~99.95%，阱转移 99.81%</td>
+        <td>Manetsch/Endres (Caltech)</td>
+        <td>~99.95%</td>
+      </tr>
+      <tr>
+        <td>2025.08</td>
+        <td>2024 原子无缺陷 AI 重排，单比特门 99.97%</td>
+        <td>Pan/Lu/Zhong (USTC)</td>
+        <td>99.97% (门)</td>
+      </tr>
+      <tr>
+        <td>2025.08</td>
+        <td>STA 协议下界比实验快 ≥8×（理论）</td>
+        <td>Cicali 等 (Jülich)</td>
+        <td>理论下界</td>
+      </tr>
+      <tr>
+        <td>2025.11</td>
+        <td>光纤共路架构，10 原子独立操控</td>
+        <td>Zhan/Xu (精测院)</td>
+        <td>99.66% (门)</td>
+      </tr>
+      <tr>
+        <td>2025</td>
+        <td>算法冷却和辅助比特读出首次在原子阵列中演示</td>
+        <td>Tsai 等 (Caltech)</td>
+        <td>\(\bar{n} \approx 0.002\)</td>
+      </tr>
+      <tr>
+        <td>2025</td>
+        <td>¹⁷¹Yb 双比特门纠缠保真度 99.78% (erasure-detected)</td>
+        <td>Senoo/Kaufman (JILA)</td>
+        <td>99.78%</td>
+      </tr>
+      <tr>
+        <td><strong>2026.06</strong></td>
+        <td><strong>光纤阵列 + STA：原位转移 99.992%，10 μs，500+ 无损循环</strong></td>
+        <td><strong>Wang 等 (武汉)</strong></td>
+        <td><strong>99.992% 🏆</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 7. 关键技术公式与物理机制 -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="s7">
+  <h2>7. 关键技术公式与物理机制</h2>
+
+  <h3>7.1 STA 加热率标度</h3>
+  <p>对于空间维度 \(D\)、阱频 \(\omega\) 和转移时间 \(t\)，不同的轨迹设计给出不同的加热率渐近行为：</p>
+
+  <table>
+    <thead><tr><th>轨迹类型</th><th>加热率标度</th><th>备注</th></tr></thead>
+    <tbody>
+      <tr><td>常加加速度 (constant jerk)</td><td>\(\Delta T \propto t^{-4}\)</td><td>最简单可行方案</td></tr>
+      <tr><td>绝热正弦</td><td>\(\Delta T \propto t^{-6}\)</td><td>传统慢速方案</td></tr>
+      <tr><td><strong>STA 多项式 (7 阶)</strong></td><td>\(\Delta T \propto D^2/(\omega^7 t^8)\)</td><td><strong>最优</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 光镊中的差分光位移</h3>
+  <p>中性原子光镊中，量子比特通常编码在两个超精细基态上。不同超精细态感受到的光位移差异决定了阱对量子比特的非扰性：</p>
+
+  \[
+  \Delta U = \frac{3\pi c^2}{2\omega_0^3} \frac{\Gamma}{\Delta_{\text{FS}}} I(\mathbf{r}) \times (\alpha_g - \alpha_e)
+  \]
+
+  <p>其中 \(\omega_0\) 为原子跃迁频率，\(\Gamma\) 为线宽，\(\Delta_{\text{FS}}\) 为精细结构分裂，\(I(\mathbf{r})\) 为局域光强。当阱光波长接近"魔数波长"(magic wavelength，例如 Cs 的 935 nm)，差分光位移 \(\to 0\)，此时量子比特在阱中不经历不均匀退相。</p>
+
+  <h3>7.3 阱间转移的三步协议</h3>
+  <pre class="diagram">
+  ┌────────────────────────────────────────────────────┐
+  │  标准阱间转移三步协议                                │
+  │                                                      │
+  │  Step 1: 原位转移 (in situ transfer)                 │
+  │  ┌──────┐    STA 深度调制    ┌──────┐               │
+  │  │S-trap│ ◄────────────────► │M-trap│               │
+  │  │(静态)│   10 μs, 99.992%   │(移动)│               │
+  │  └──────┘                    └──────┘               │
+  │                                                      │
+  │  Step 2: 传输 (transport)                            │
+  │  ┌──────┐  ─────────────────  ┌──────┐              │
+  │  │M-trap│   AOD 空间移动      │M-trap│              │
+  │  │位置A │   110 μs, ~610 μm   │位置B │              │
+  │  └──────┘  ─────────────────  └──────┘              │
+  │                                                      │
+  │  Step 3: 原位转移 (in situ transfer)                 │
+  │  ┌──────┐    STA 深度调制    ┌──────┐               │
+  │  │M-trap│ ◄────────────────► │S-trap│               │
+  │  │(移动)│   10 μs, 99.992%   │(静态)│               │
+  │  └──────┘                    └──────┘               │
+  │                                                      │
+  │  总计: 130 μs, 总保真度 ~99.98%                      │
+  └────────────────────────────────────────────────────┘
+  </pre>
+
+  <h3>7.4 算法冷却的量子电路模型</h3>
+  <p>Tsai 等（2025）的算法冷却协议的核心电路步骤：</p>
+  <ol>
+    <li><strong>红边带 π 脉冲</strong>：将运动激发映射到电子态 \(|g, n\rangle \to |e, n-1\rangle\)</li>
+    <li><strong>CNOT + SWAP 门</strong>：将熵从数据原子转移到辅助原子</li>
+    <li><strong>辅助原子重置</strong>：辅助原子被丢弃或重置，带走一个运动量子的熵</li>
+  </ol>
+  <p>每轮冷却将运动量子数减少 1，多轮冷却可实现 \(\bar{n} \to 0\)。</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 8. 未来展望 -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="s8">
+  <h2>8. 未来展望</h2>
+
+  <p>基于当前趋势，我们对 2026–2028 年的发展做出以下预判：</p>
+
+  <h3>8.1 近期（2026–2027）</h3>
+  <ul>
+    <li><strong>单次转移保真度逼近 99.999%</strong>：结合飞秒激光直写波导的 ＜10 nm 定位精度和更高阶 STA 波形，有望将保真度再提升一个数量级</li>
+    <li><strong>大规模并行 STA</strong>：机器学习优化的并行 STA 波形将适配数千个位点的非均匀阵列，使全局转移保真度接近单次极限</li>
+    <li><strong>光纤阵列扩展至 >100 原子</strong>：光纤阵列架构从 10 原子演示向百原子级扩展</li>
+  </ul>
+
+  <h3>8.2 中期（2027–2028）</h3>
+  <ul>
+    <li><strong>100,000 物理量子比特阵列</strong>：QuEra/Vuletić 的路线图预计"几年内"达到此规模</li>
+    <li><strong>转移操作实现逻辑保真度 >99.99%</strong>：通过量子纠错码和转移操作的联合优化</li>
+    <li><strong>厘米级量子互连</strong>：STA 弯曲轨迹传输连接空间分离的量子处理模块，实现模块化量子计算</li>
+  </ul>
+
+  <h3>8.3 核心挑战</h3>
+  <ul>
+    <li><strong>从单次保真度到百万次累积保真度</strong>：深度量子电路需要数百万次转移操作，哪怕单次保真度 99.999%，经过 \(10^6\) 次后的累积成功概率仅为 \(\sim 37\%\)</li>
+    <li><strong>阵列均匀性</strong>：在数千个位点上同时实现 99.99%+ 的转移保真度需要亚纳米级的空间对准精度</li>
+    <li><strong>实时反馈与纠错</strong>：转移失败后的原子替换和中途纠错需要与量子纠错码深度整合</li>
+  </ul>
+
+  <div class="card tip">
+    <strong>💡 总结</strong>
+    中性原子光镊的转移保真度在 2024–2026 年间实现了质的飞跃——从 ~99.5% 提升至 <strong>99.992%</strong>。Shortcuts-to-Adiabaticity (STA) 已成为主导范式，光纤阵列架构代表了硬件层面的关键突破。当前瓶颈已从单次操作保真度转移到大规模并行均匀性和深度电路累积加热。该领域正从"证明可行"阶段快速进入"工程化容错量子计算"阶段。
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 9. 参考文献 -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="s9">
+  <h2>9. 参考文献</h2>
+
+  <ol class="refs">
+    <li>
+      <strong>J.-C. Wang et al.</strong>, "Fast and Coherent Transfer of Atomic Qubits in Optical Tweezers Using Fiber Array Architecture," <em>Chinese Physics Letters</em> <strong>43</strong>, 060601 (2026).
+      <span class="tag oa">OA</span> <span class="tag key">KEY</span>
+      <br>arXiv: 2604.07862 &nbsp;|&nbsp; DOI: <a href="https://doi.org/10.1088/0256-307X/43/6/060601" target="_blank">10.1088/0256-307X/43/6/060601</a>
+      <br>▸ 当前最高转移保真度记录：原位 99.992(5)%，10 μs；位点间 99.98(1)%，120 μs。首次展示光纤阵列架构+STA的转移方案。
+    </li>
+
+    <li>
+      <strong>C. Cicali, T. Calarco, S. Montangero et al.</strong>, "Fast neutral-atom transport and transfer between optical tweezers," <em>Physical Review Applied</em> <strong>24</strong>, 024070 (2025).
+      <span class="tag oa">OA</span> <span class="tag key">KEY</span>
+      <br>arXiv: 2412.15173 &nbsp;|&nbsp; DOI: <a href="https://doi.org/10.1103/PhysRevApplied.24.024070" target="_blank">10.1103/PhysRevApplied.24.024070</a>
+      <br>▸ STA协议系统性理论分析，协议时长下界至少比实验快8倍。移动阱深度时变调制是核心。
+    </li>
+
+    <li>
+      <strong>J. Manetsch, M. Endres et al.</strong>, "A tweezer array with 6,100 highly coherent atomic qubits," <em>Nature</em> <strong>647</strong>, 60–67 (2025).
+      <span class="tag oa">OA</span> <span class="tag key">KEY</span>
+      <br>arXiv: 2403.12021 &nbsp;|&nbsp; DOI: <a href="https://doi.org/10.1038/s41586-025-09641-4" target="_blank">10.1038/s41586-025-09641-4</a>
+      <br>▸ 最大规模高相干原子阵列（6100+原子）。相干传输~99.95%，阱转移99.81%，T₂=12.6 s，成像>99.99%。
+    </li>
+
+    <li>
+      <strong>S. Hwang, J. Ahn et al.</strong>, "Fast and reliable atom transport by optical tweezers," <em>Optica Quantum</em> <strong>3</strong>, 64–71 (2025).
+      <span class="tag oa">OA</span>
+      <br>DOI: <a href="https://doi.org/10.1364/OPTICAQ.539123" target="_blank">10.1364/OPTICAQ.539123</a>
+      <br>▸ STA弯曲轨迹传输，保持Maxwell-Boltzmann分布，98%成功率（vs 匀速80%），厘米级扩展潜力。
+    </li>
+
+    <li>
+      <strong>O. Morandi, L. Nicoletti, V. Gavryusev, L. Fallani et al.</strong>, "Optimal control in phase space applied to minimal-time transfer of thermal atoms in optical traps," <em>Physical Review A</em> <strong>111</strong>, 063312 (2025).
+      <br>DOI: <a href="https://doi.org/10.1103/PhysRevA.111.063312" target="_blank">10.1103/PhysRevA.111.063312</a>
+      <br>▸ 相位空间最优控制框架。Liouville方程+Fokker-Planck噪声项，统一处理经典与量子效应。
+    </li>
+
+    <li>
+      <strong>A. Pagano et al.</strong>, "Optimal control for coherent transfer of neutral atoms in optical tweezers at finite temperature," <em>Physical Review Research</em> (2024).
+      <br>DOI: <a href="https://doi.org/10.1103/PhysRevResearch.6.033288" target="_blank">10.1103/PhysRevResearch.6.033288</a>
+      <br>▸ 开环最优控制将3 μm传输保真度最高提升89%，分析激光噪声对转移保真度的影响。
+    </li>
+
+    <li>
+      <strong>潘建伟, 陆朝阳, 钟翰森等 (USTC)</strong>, "2024-atom defect-free array via AI-driven rearrangement," <em>Physical Review Letters</em> (Editors' Suggestion, 2025).
+      <span class="tag key">KEY</span>
+      <br>▸ AI驱动60 ms完成2024原子无缺陷重排，与阵列规模无关。单比特门99.97%，双比特门99.5%。
+    </li>
+
+    <li>
+      <strong>詹明生, 许鹏等 (中科院精测院)</strong>, "Fiber common-path architecture for individual atom addressing," <em>Nature Communications</em> (2025).
+      <span class="tag key">KEY</span>
+      <br>▸ 光纤共路架构。64光纤阵列中10原子独立操控，单比特门0.9966(3)，支持完全并行操控。
+    </li>
+
+    <li>
+      <strong>S. Tsai, M. Endres et al.</strong>, "Gate-based Readout and Cooling of Neutral Atoms," arXiv:2603.21643 (2025).
+      <span class="tag oa">OA</span>
+      <br>▸ 算法冷却首次在中性原子中演示（冷却至 n̄≈0.002），辅助比特损耗检测保真度~0.99。
+    </li>
+
+    <li>
+      <strong>Y. Senoo, A. Kaufman et al.</strong>, "High-fidelity entanglement and coherent multi-qubit mapping in an atom array," (JILA, 2025).
+      <span class="tag oa">OA</span>
+      <br>▸ ¹⁷¹Yb双比特门纠错后保真度99.78(4)%，20原子GHZ态。
+    </li>
+
+    <li>
+      <strong>V. Vuletić / QuEra</strong>, "Neutral-atom arrays for cavity QED and quantum computing," AQC 2025.
+      <br>▸ QuEra路线图：3000+原子连续补充，96逻辑量子比特演示，目标逻辑错误率10⁻⁶。
+    </li>
+
+    <li>
+      <strong>S. Yu et al.</strong>, "Qubit fidelity of a single atom transferred among the sites of a ring optical lattice," <em>Physical Review A</em> <strong>90</strong>, 062335 (2014).
+      <br>DOI: <a href="https://doi.org/10.1103/PhysRevA.90.062335" target="_blank">10.1103/PhysRevA.90.062335</a>
+      <br>▸ 早期开创性工作，首次量化转移中叠加态的退相干（转移效率~95%）。确立了加热+指向不稳定性作为退相主导机制。
+    </li>
+  </ol>
+</section>
+
+</div><!-- .content -->
+
+</body>
+</html>

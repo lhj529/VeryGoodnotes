@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大鱼吃小鱼 🐟</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    overflow: hidden;
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: #001a33;
+    user-select: none;
+  }
+  #game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+  canvas {
+    display: block;
+    cursor: none;
+  }
+
+  /* HUD */
+  #hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .hud-item {
+    background: rgba(0,20,40,0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(100,200,255,0.2);
+    border-radius: 12px;
+    padding: 8px 18px;
+    color: #cfeeff;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hud-item .label { opacity: 0.6; font-size: 12px; }
+  .hud-item .value { font-weight: bold; font-size: 20px; color: #7fdbff; }
+
+  /* Level bar */
+  #level-bar {
+    position: absolute;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    z-index: 10;
+    pointer-events: none;
+  }
+  #level-bar .bar-bg {
+    width: 100%;
+    height: 10px;
+    background: rgba(0,20,40,0.5);
+    border: 1px solid rgba(100,200,255,0.2);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  #level-bar .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00d4ff, #00ff88);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+  #level-bar .bar-label {
+    text-align: center;
+    color: #7fdbff;
+    font-size: 12px;
+    margin-top: 6px;
+    opacity: 0.8;
+  }
+
+  /* Screens */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(0,30,60,0.85), rgba(0,10,25,0.95));
+    z-index: 20;
+    cursor: default;
+  }
+  .screen.hidden { display: none; }
+
+  .title {
+    font-size: 64px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #00d4ff, #00ff88, #ffd700);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 40px rgba(0,212,255,0.3);
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+  }
+  .subtitle {
+    color: #7fdbff;
+    font-size: 18px;
+    margin-bottom: 40px;
+    opacity: 0.7;
+  }
+  .instructions {
+    color: #a0cfee;
+    font-size: 15px;
+    line-height: 2;
+    text-align: center;
+    margin-bottom: 36px;
+    background: rgba(0,40,80,0.4);
+    padding: 20px 36px;
+    border-radius: 16px;
+    border: 1px solid rgba(100,200,255,0.15);
+  }
+  .instructions .key {
+    display: inline-block;
+    background: rgba(0,212,255,0.15);
+    border: 1px solid rgba(0,212,255,0.3);
+    border-radius: 6px;
+    padding: 2px 10px;
+    color: #7fdbff;
+    font-weight: bold;
+  }
+
+  .btn {
+    padding: 14px 48px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #002244;
+    background: linear-gradient(135deg, #00d4ff, #00ff88);
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 20px rgba(0,212,255,0.4);
+  }
+  .btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 30px rgba(0,212,255,0.6);
+  }
+  .btn:active { transform: translateY(0) scale(1); }
+
+  .final-score {
+    color: #ffd700;
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  .final-level {
+    color: #7fdbff;
+    font-size: 18px;
+    margin-bottom: 30px;
+  }
+
+  .floating {
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+</style>
+</head>
+<body>
+<div id="game-container">
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-item">
+      <span class="label">得分</span>
+      <span class="value" id="score">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="label">等级</span>
+      <span class="value" id="level">1</span>
+    </div>
+    <div class="hud-item">
+      <span class="label">最高分</span>
+      <span class="value" id="highscore">0</span>
+    </div>
+  </div>
+
+  <!-- Level Progress Bar -->
+  <div id="level-bar" class="hidden">
+    <div class="bar-bg"><div class="bar-fill" id="bar-fill"></div></div>
+    <div class="bar-label" id="bar-label">升级进度</div>
+  </div>
+
+  <!-- Start Screen -->
+  <div class="screen" id="start-screen">
+    <div class="title floating">大鱼吃小鱼 🐟</div>
+    <div class="subtitle">在深海中成长，成为海洋霸主</div>
+    <div class="instructions">
+      <div>移动鼠标 — 控制你的鱼游动</div>
+      <div>吃掉比你<span style="color:#00ff88">小</span>的鱼 — 获得分数和成长</div>
+      <div>躲开比你<span style="color:#ff6b6b">大</span>的鱼 — 否则会被吃掉！</div>
+    </div>
+    <button class="btn" id="start-btn">开始游戏</button>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div class="screen hidden" id="gameover-screen">
+    <div class="title" style="font-size:48px">游戏结束 🦈</div>
+    <div class="final-score" id="final-score">得分：0</div>
+    <div class="final-level" id="final-level">成长等级：1</div>
+    <button class="btn" id="restart-btn">再来一局</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  大鱼吃小鱼 — 完整游戏逻辑
+// ============================================================
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ---- 工具函数 ----
+const rand = (a, b) => a + Math.random() * (b - a);
+const dist = (x1, y1, x2, y2) => Math.hypot(x2 - x1, y2 - y1);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+// ---- 游戏状态 ----
+let gameState = 'menu'; // 'menu' | 'playing' | 'gameover'
+let score = 0;
+let level = 1;
+let highScore = parseInt(localStorage.getItem('fishHighScore') || '0');
+let eatCount = 0;        // 当前等级吃了几条
+let eatToLevelUp = 5;    // 升级需要吃几条
+let player = null;
+let fishes = [];
+let bubbles = [];
+let particles = [];
+let mouse = { x: 0, y: 0 };
+let time = 0;
+
+document.getElementById('highscore').textContent = highScore;
+
+// ============================================================
+//  玩家鱼
+// ============================================================
+class Player {
+  constructor() {
+    this.x = W / 2;
+    this.y = H / 2;
+    this.size = 22;          // 当前半径
+    this.targetSize = 22;
+    this.vx = 0;
+    this.vy = 0;
+    this.angle = 0;
+    this.maxSpeed = 5;
+    this.tailWag = 0;
+  }
+
+  update() {
+    // 平滑跟随鼠标
+    const dx = mouse.x - this.x;
+    const dy = mouse.y - this.y;
+    const d = Math.hypot(dx, dy);
+    if (d > 2) {
+      const speed = Math.min(this.maxSpeed, d * 0.08);
+      this.vx = (dx / d) * speed;
+      this.vy = (dy / d) * speed;
+      this.angle = Math.atan2(dy, dx);
+    } else {
+      this.vx *= 0.8;
+      this.vy *= 0.8;
+    }
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // 边界
+    this.x = clamp(this.x, this.size, W - this.size);
+    this.y = clamp(this.y, this.size, H - this.size);
+
+    // 尺寸过渡
+    this.size += (this.targetSize - this.size) * 0.1;
+
+    // 尾巴摆动
+    this.tailWag += 0.2 + Math.abs(this.vx + this.vy) * 0.03;
+  }
+
+  draw() {
+    drawFish(this.x, this.y, this.size, this.angle, this.tailWag, '#ff8c00', '#ff6347', '#ffd700', true);
+  }
+}
+
+// ============================================================
+//  AI 鱼
+// ============================================================
+class Fish {
+  constructor() {
+    this.size = rand(8, 50);
+    this.assignBySize();
+
+    // 从屏幕边缘进入
+    const side = Math.floor(rand(0, 4));
+    if (side === 0)      { this.x = -40;     this.y = rand(0, H); this.angle = 0; }
+    else if (side === 1) { this.x = W + 40;  this.y = rand(0, H); this.angle = Math.PI; }
+    else if (side === 2) { this.x = rand(0,W); this.y = -40;      this.angle = Math.PI/2; }
+    else                 { this.x = rand(0,W); this.y = H + 40;   this.angle = -Math.PI/2; }
+
+    this.speed = rand(0.8, 2.2) * (50 / (this.size + 20)); // 小鱼更快
+    this.vx = Math.cos(this.angle) * this.speed;
+    this.vy = Math.sin(this.angle) * this.speed;
+    this.tailWag = rand(0, Math.PI * 2);
+    this.changeTimer = rand(80, 200);
+    this.alive = true;
+    this.fadeIn = 0;
+  }
+
+  // 根据大小分配颜色和危险等级
+  assignBySize() {
+    if (this.size < 16) {
+      // 小鱼 — 安全食物
+      const palette = [
+        ['#4dd0e1','#26c6da','#80deea'],
+        ['#81c784','#66bb6a','#a5d6a7'],
+        ['#ffb74d','#ffa726','#ffcc80'],
+      ];
+      const p = palette[Math.floor(rand(0, palette.length))];
+      this.color = p[0]; this.colorDark = p[1]; this.colorLight = p[2];
+    } else if (this.size < 28) {
+      // 中等鱼 — 可能食物也可能威胁，取决于玩家
+      const palette = [
+        ['#7986cb','#5c6bc0','#9fa8da'],
+        ['#ba68c8','#ab47bc','#ce93d8'],
+        ['#4db6ac','#26a69a','#80cbc4'],
+      ];
+      const p = palette[Math.floor(rand(0, palette.length))];
+      this.color = p[0]; this.colorDark = p[1]; this.colorLight = p[2];
+    } else if (this.size < 42) {
+      // 大鱼 — 通常危险
+      const palette = [
+        ['#ef5350','#e53935','#ef9a9a'],
+        ['#8d6e63','#6d4c41','#bcaaa4'],
+        ['#78909c','#546e7a','#b0bec5'],
+      ];
+      const p = palette[Math.floor(rand(0, palette.length))];
+      this.color = p[0]; this.colorDark = p[1]; this.colorLight = p[2];
+    } else {
+      // 巨鱼 — Boss级危险
+      this.color = '#37474f'; this.colorDark = '#263238'; this.colorLight = '#607d8b';
+    }
+  }
+
+  update() {
+    this.fadeIn = Math.min(1, this.fadeIn + 0.03);
+
+    // 随机改变方向
+    this.changeTimer--;
+    if (this.changeTimer <= 0) {
+      const turn = rand(-0.5, 0.5);
+      const cos = Math.cos(turn);
+      const sin = Math.sin(turn);
+      const nvx = this.vx * cos - this.vy * sin;
+      const nvy = this.vx * sin + this.vy * cos;
+      this.vx = nvx; this.vy = nvy;
+      this.angle = Math.atan2(this.vy, this.vx);
+      this.changeTimer = rand(80, 200);
+    }
+
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // 边界反弹
+    if (this.x < -60 || this.x > W + 60 || this.y < -60 || this.y > H + 60) {
+      this.alive = false; // 游出屏幕则消失
+    }
+
+    this.tailWag += 0.15 + Math.hypot(this.vx, this.vy) * 0.04;
+  }
+
+  draw() {
+    ctx.globalAlpha = this.fadeIn;
+    drawFish(this.x, this.y, this.size, this.angle, this.tailWag, this.color, this.colorDark, this.colorLight, false);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ============================================================
+//  绘制鱼（通用）
+// ============================================================
+function drawFish(x, y, size, angle, tailWag, color, colorDark, colorLight, isPlayer) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+
+  // 因为鱼朝右画，如果朝左需要垂直翻转
+  const facingLeft = Math.abs(angle) > Math.PI / 2;
+  if (facingLeft) ctx.scale(1, -1);
+
+  const s = size;
+
+  // 尾巴
+  const wag = Math.sin(tailWag) * 0.5;
+  ctx.fillStyle = colorDark;
+  ctx.beginPath();
+  ctx.moveTo(-s * 0.7, 0);
+  ctx.quadraticCurveTo(-s * 1.4, -s * 0.7 + wag * s, -s * 1.5, -s * 0.5 + wag * s);
+  ctx.quadraticCurveTo(-s * 1.2, 0, -s * 1.5, s * 0.5 + wag * s);
+  ctx.quadraticCurveTo(-s * 1.4, s * 0.7 + wag * s, -s * 0.7, 0);
+  ctx.fill();
+
+  // 身体渐变
+  const grad = ctx.createLinearGradient(0, -s, 0, s);
+  grad.addColorStop(0, colorLight);
+  grad.addColorStop(0.5, color);
+  grad.addColorStop(1, colorDark);
+  ctx.fillStyle = grad;
+
+  // 身体椭圆
+  ctx.beginPath();
+  ctx.ellipse(0, 0, s, s * 0.62, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 背鳍
+  ctx.fillStyle = colorDark;
+  ctx.beginPath();
+  ctx.moveTo(-s * 0.2, -s * 0.55);
+  ctx.quadraticCurveTo(0, -s * 1.0, s * 0.3, -s * 0.5);
+  ctx.quadraticCurveTo(0, -s * 0.7, -s * 0.2, -s * 0.55);
+  ctx.fill();
+
+  // 腹鳍
+  ctx.beginPath();
+  ctx.moveTo(-s * 0.1, s * 0.5);
+  ctx.quadraticCurveTo(-s * 0.3, s * 0.85, -s * 0.4, s * 0.5);
+  ctx.fill();
+
+  // 条纹/花纹
+  ctx.strokeStyle = colorDark;
+  ctx.lineWidth = s * 0.04;
+  ctx.globalAlpha = 0.3;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    const px = -s * 0.3 + i * s * 0.3;
+    ctx.moveTo(px, -s * 0.4);
+    ctx.quadraticCurveTo(px + s * 0.05, 0, px, s * 0.4);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // 眼睛
+  const eyeX = s * 0.45;
+  const eyeY = -s * 0.15;
+  const eyeR = s * 0.13;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(eyeX, eyeY, eyeR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(eyeX + eyeR * 0.3, eyeY, eyeR * 0.6, 0, Math.PI * 2);
+  ctx.fill();
+  // 眼睛高光
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(eyeX + eyeR * 0.45, eyeY - eyeR * 0.2, eyeR * 0.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 嘴
+  ctx.strokeStyle = colorDark;
+  ctx.lineWidth = s * 0.06;
+  ctx.beginPath();
+  ctx.arc(s * 0.75, s * 0.05, s * 0.18, -0.8, 0.5);
+  ctx.stroke();
+
+  // 玩家光环
+  if (isPlayer) {
+    ctx.strokeStyle = 'rgba(255,215,0,0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s + 6, s * 0.62 + 6, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+// ============================================================
+//  气泡（背景装饰）
+// ============================================================
+class Bubble {
+  constructor() {
+    this.reset();
+    this.y = rand(0, H);
+  }
+  reset() {
+    this.x = rand(0, W);
+    this.y = H + rand(10, 100);
+    this.r = rand(2, 8);
+    this.speed = rand(0.5, 2);
+    this.wobble = rand(0, Math.PI * 2);
+  }
+  update() {
+    this.y -= this.speed;
+    this.wobble += 0.05;
+    this.x += Math.sin(this.wobble) * 0.5;
+    if (this.y < -20) this.reset();
+  }
+  draw() {
+    ctx.strokeStyle = 'rgba(180,230,255,0.2)';
+    ctx.fillStyle = 'rgba(180,230,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+}
+
+// ============================================================
+//  粒子（吃鱼效果）
+// ============================================================
+class Particle {
+  constructor(x, y, color) {
+    this.x = x; this.y = y;
+    const a = rand(0, Math.PI * 2);
+    const sp = rand(1, 5);
+    this.vx = Math.cos(a) * sp;
+    this.vy = Math.sin(a) * sp;
+    this.life = 1;
+    this.size = rand(2, 5);
+    this.color = color;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vx *= 0.93;
+    this.vy *= 0.93;
+    this.life -= 0.03;
+  }
+  draw() {
+    if (this.life <= 0) return;
+    ctx.globalAlpha = this.life;
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+// 飘字
+class FloatText {
+  constructor(x, y, text, color) {
+    this.x = x; this.y = y;
+    this.text = text;
+    this.color = color;
+    this.life = 1;
+    this.vy = -1.5;
+  }
+  update() {
+    this.y += this.vy;
+    this.vy *= 0.96;
+    this.life -= 0.02;
+  }
+  draw() {
+    if (this.life <= 0) return;
+    ctx.globalAlpha = this.life;
+    ctx.fillStyle = this.color;
+    ctx.font = 'bold 20px Microsoft YaHei';
+    ctx.textAlign = 'center';
+    ctx.fillText(this.text, this.x, this.y);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ============================================================
+//  游戏逻辑
+// ============================================================
+function startGame() {
+  gameState = 'playing';
+  score = 0;
+  level = 1;
+  eatCount = 0;
+  eatToLevelUp = 5;
+  player = new Player();
+  fishes = [];
+  particles = [];
+  // 初始生成一些鱼
+  for (let i = 0; i < 12; i++) fishes.push(new Fish());
+  // 气泡
+  if (bubbles.length === 0) {
+    for (let i = 0; i < 30; i++) bubbles.push(new Bubble());
+  }
+
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('gameover-screen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('level-bar').classList.remove('hidden');
+  updateHUD();
+}
+
+function gameOver() {
+  gameState = 'gameover';
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('fishHighScore', String(highScore));
+  }
+  document.getElementById('final-score').textContent = `得分：${score}`;
+  document.getElementById('final-level').textContent = `成长等级：${level}`;
+  document.getElementById('gameover-screen').classList.remove('hidden');
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('level-bar').classList.add('hidden');
+}
+
+function updateHUD() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('level').textContent = level;
+  document.getElementById('highscore').textContent = highScore;
+  const pct = (eatCount / eatToLevelUp) * 100;
+  document.getElementById('bar-fill').style.width = pct + '%';
+  document.getElementById('bar-label').textContent = `升级进度  ${eatCount} / ${eatToLevelUp}`;
+}
+
+function spawnFish() {
+  // 根据玩家大小动态控制鱼的尺寸分布
+  // 确保有食物也有威胁
+  const f = new Fish();
+  // 有概率生成一条适合当前等级的鱼
+  if (Math.random() < 0.4) {
+    // 生成比玩家小的（食物）
+    f.size = rand(8, player.size * 0.85);
+  } else if (Math.random() < 0.7) {
+    // 生成接近玩家的
+    f.size = rand(player.size * 0.7, player.size * 1.1);
+  } else {
+    // 生成比玩家大的（威胁）
+    f.size = rand(player.size * 1.15, player.size * 1.6);
+  }
+  f.size = clamp(f.size, 8, 70);
+  f.assignBySize();
+  fishes.push(f);
+}
+
+function checkCollisions() {
+  if (!player) return;
+  for (let i = fishes.length - 1; i >= 0; i--) {
+    const f = fishes[i];
+    if (!f.alive) continue;
+    const d = dist(player.x, player.y, f.x, f.y);
+    if (d < player.size * 0.8 + f.size * 0.7) {
+      if (player.size > f.size * 1.05) {
+        // 吃掉小鱼
+        const points = Math.floor(f.size);
+        score += points;
+        eatCount++;
+
+        // 粒子效果
+        for (let j = 0; j < 12; j++) {
+          particles.push(new Particle(f.x, f.y, f.colorLight));
+        }
+        particles.push(new FloatText(f.x, f.y, `+${points}`, '#ffdd00'));
+
+        f.alive = false;
+        fishes.splice(i, 1);
+
+        // 升级检测
+        if (eatCount >= eatToLevelUp) {
+          level++;
+          eatCount = 0;
+          eatToLevelUp = 5 + level * 2;
+          player.targetSize += 4;
+          player.maxSpeed = Math.min(8, 5 + level * 0.3);
+          // 升级特效
+          for (let j = 0; j < 30; j++) {
+            particles.push(new Particle(player.x, player.y, '#ffd700'));
+          }
+          particles.push(new FloatText(player.x, player.y - 30, `等级 ${level}!`, '#00ff88'));
+        }
+        updateHUD();
+      } else if (f.size > player.size * 1.05) {
+        // 被大鱼吃掉 — 游戏结束
+        for (let j = 0; j < 25; j++) {
+          particles.push(new Particle(player.x, player.y, '#ff6347'));
+        }
+        gameOver();
+        return;
+      }
+      // 尺寸接近 — 擦肩而过，无事发生
+    }
+  }
+}
+
+// ============================================================
+//  背景绘制
+// ============================================================
+function drawBackground() {
+  // 深海渐变
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#003a5c');
+  grad.addColorStop(0.5, '#002244');
+  grad.addColorStop(1, '#001528');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // 光线效果
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 5; i++) {
+    const cx = (W / 5) * i + Math.sin(time * 0.0003 + i) * 60 + W / 10;
+    const rayGrad = ctx.createLinearGradient(cx, 0, cx + 100, H);
+    rayGrad.addColorStop(0, 'rgba(100,200,255,0.04)');
+    rayGrad.addColorStop(1, 'rgba(100,200,255,0)');
+    ctx.fillStyle = rayGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 40, 0);
+    ctx.lineTo(cx + 40, 0);
+    ctx.lineTo(cx + 120, H);
+    ctx.lineTo(cx - 120, H);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // 水底海草（简化）
+  ctx.fillStyle = 'rgba(0,30,20,0.5)';
+  for (let i = 0; i < 8; i++) {
+    const sx = (W / 8) * i + W / 16;
+    const sway = Math.sin(time * 0.001 + i) * 10;
+    ctx.beginPath();
+    ctx.moveTo(sx - 15, H);
+    ctx.quadraticCurveTo(sx + sway, H - 60, sx + sway * 1.5, H - 100);
+    ctx.quadraticCurveTo(sx + sway, H - 60, sx + 15, H);
+    ctx.fill();
+  }
+}
+
+// ============================================================
+//  主循环
+// ============================================================
+function loop() {
+  time++;
+  ctx.clearRect(0, 0, W, H);
+
+  drawBackground();
+
+  // 气泡
+  for (const b of bubbles) { b.update(); b.draw(); }
+
+  if (gameState === 'playing') {
+    // 生成鱼
+    if (fishes.length < 15 + level && Math.random() < 0.04) {
+      spawnFish();
+    }
+
+    // 更新和绘制鱼
+    for (let i = fishes.length - 1; i >= 0; i--) {
+      fishes[i].update();
+      if (!fishes[i].alive) {
+        fishes.splice(i, 1);
+        continue;
+      }
+      fishes[i].draw();
+    }
+
+    // 玩家
+    player.update();
+    player.draw();
+
+    // 碰撞检测
+    checkCollisions();
+  }
+
+  // 粒子
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update();
+    particles[i].draw();
+    if (particles[i].life <= 0) particles.splice(i, 1);
+  }
+
+  requestAnimationFrame(loop);
+}
+
+// ============================================================
+//  输入
+// ============================================================
+canvas.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches[0]) {
+    mouse.x = e.touches[0].clientX;
+    mouse.y = e.touches[0].clientY;
+  }
+}, { passive: false });
+
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', startGame);
+
+// 启动
+loop();
+</script>
+</body>
+</html>

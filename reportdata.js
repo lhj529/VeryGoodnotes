@@ -55,4 +55,32 @@ const REPORT_NOTES = {
         "abstract": "探索公司目前硬件与QRAM架构适配的可行设计方案。",
         "htmlFile": "reports/QRAM_architecture_report.html"
     },
+    "r009": {
+        "title": "QRC与傅里叶分解",
+        "date": "2026-07-03",
+        "tags": ["QRC","傅里叶分解" ],
+        "abstract": "探索QRC与傅里叶分解的结合应用。",
+        "htmlFile": "reports/Fourier_QRC_Image_Recognition_Report.html"
+    },
+    "r010": {
+        "title": "QRC与傅里叶分解",
+        "date": "2026-07-03",
+        "tags": ["QRC","傅里叶分解" ],
+        "abstract": "探索QRC与傅里叶分解的结合应用。",
+        "htmlFile": "reports/Fourier_QRC_Image_Recognition_Report.html"
+    },
+    "r011": {
+        "title": "中性原子光镊转移保真度",
+        "date": "2026-07-03",
+        "tags": ["中性原子","光镊","硬件" ,"保真度" ],
+        "abstract": "研究中性原子在光镊转移过程中的保真度问题与最新技术水平。",
+        "htmlFile": "reports/中性原子光镊转移保真度.html"
+    },
+    "r012": {
+        "title": "QRAM各技术路线进展综述",
+        "date": "2026-07-03",
+        "tags": ["QRAM","中性原子","光镊","硬件"],
+        "abstract": "综述QRAM各技术路线的最新进展与挑战。",
+        "htmlFile": "reports/QRAM comprehensive survey.html"
+    },
 };
